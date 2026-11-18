@@ -806,17 +806,19 @@ async function generate(){
   const run = ++genRun, base = PROFILES[st.mode];
   if(!WIDE.matches && sheetReady){ $('panel').classList.remove('open'); setSheet('peek'); }
 
-  // Même départ, même activité, même type : on garde les parcours déjà proposés (après les nouveaux)
+  // Même départ, même activité, même type : on garde les parcours déjà proposés, les nouveaux s'ajoutent à la suite
   const key = [start[0].toFixed(5), start[1].toFixed(5), st.mode, st.type, dest ? dest.ll.join(',') : ''].join('|');
   // (sauf ceux qui ne respectent plus l'écart maximum si la distance a changé)
   const keep = key === lastGenKey ? candidates.filter(c => dest || fits(c, target)) : [];
   let outOfRange = 0;
   lastGenKey = key;
   let fresh = [];
-  const show = () => { candidates = fresh.concat(keep); };
+  const show = () => { candidates = keep.concat(fresh); };
 
-  candidates = keep.slice(); selected = null; lastRoute = null; userPicked = false;
-  photoRun++; photoLayer.clearLayers();
+  // Ajout à une liste existante : l'ordre et le parcours sélectionné ne bougent pas
+  const prevSel = keep.length ? (keep.includes(selected) ? selected : keep[0]) : null;
+  candidates = keep.slice(); selected = prevSel; userPicked = false;
+  if(!prevSel){ lastRoute = null; photoRun++; photoLayer.clearLayers(); }
   drawAll(); renderList();
   $('btnGo').disabled = true;
   msg('');
@@ -844,8 +846,7 @@ async function generate(){
         if(run !== genRun) return;
         if(!c){ outOfRange++; continue; }   // impossible de respecter la distance dans cette direction
         if(!isNew(c)) continue;
-        // Pendant le calcul : les nouveaux parcours s'ajoutent à la suite, sans réordonner,
-        // et la sélection reste sur le 1er nouveau trouvé
+        // Pendant le calcul : les nouveaux parcours s'ajoutent à la suite, sans réordonner
         fresh.push(c); show();
         if(!selected){
           selected = c;
@@ -861,19 +862,26 @@ async function generate(){
 
   $('btnGo').disabled = false;
   if(run !== genRun) return;
-  // Nouveaux parcours triés en tête de liste, les précédents ensuite (40 au maximum)
+  // Nouveaux parcours triés entre eux puis ajoutés après les précédents (60 au maximum)
   fresh.sort((a, b) => scoreOf(a, target) - scoreOf(b, target));
   show();
-  candidates = candidates.slice(0, 40);
+  candidates = candidates.slice(0, 60);
   $('btnGo').textContent = candidates.length ? '🔁 Autres parcours' : 'Générer un parcours';
   if(!candidates.length){
     const t = tolerance(target);
     msg(lastErr && !outOfRange ? lastErr.message : 'Aucun parcours trouvé à ±' + (st.unit === 'km' ? (t / 1000).toFixed(1).replace('.', ',') + ' km' : Math.round(t / speed() / 1000 * 60) + ' min') + ' de ton objectif ici : réessaie, ou change de départ ou de distance.', true);
     return;
   }
-  if(userPicked && candidates.includes(selected)){ drawAll(); renderList(); }
+  if(keep.length){
+    // Liste complétée : on garde le parcours sélectionné
+    if(!candidates.includes(selected)) select(candidates[0]);
+    else { drawAll(); renderList(); }
+    const added = fresh.filter(c => candidates.includes(c)).length;
+    if(!added) msg((lastErr ? lastErr.message + ' ' : '') + 'Pas de nouveau parcours différent cette fois : réessaie ou change de distance.', !!lastErr);
+    else msg('+ ' + added + ' nouveau' + (added > 1 ? 'x' : '') + ' parcours ajouté' + (added > 1 ? 's' : '') + ' en fin de liste (' + candidates.length + ' en tout).');
+  }
+  else if(userPicked && candidates.includes(selected)){ drawAll(); renderList(); }
   else select(candidates[0]);
-  if(!fresh.length && keep.length) msg((lastErr ? lastErr.message + ' ' : '') + 'Pas de nouveau parcours différent cette fois : réessaie ou change de distance.', !!lastErr);
   nameRoutes(fresh);
 }
 
