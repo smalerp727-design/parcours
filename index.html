@@ -483,6 +483,14 @@ function overlapOf(coords){
   const P = densify(coords, 10), arc = cumul(P);
   return doubledShare(P, arc, 0, P.length - 1);
 }
+// Part du parcours "a" qui passe à moins de 25 m du parcours "b"
+function similarity(a, b){
+  const A = densify(a.geometry.coordinates, 20), B = densify(b.geometry.coordinates, 20);
+  const g = grid(B, 25, 0, B.length - 1);
+  let n = 0;
+  for(const p of A) if(g.near(p).some(m => hav(llOf(B[m]), llOf(p)) < 25)) n++;
+  return n / A.length;
+}
 function roadNames(r){
   const seen = new Set();
   (r.legs || []).forEach(l => (l.steps || []).forEach(s => {
@@ -506,9 +514,10 @@ function scoreOf(c, target){
 
 // Calcule un parcours dans une direction donnée (3 essais max) :
 // on ajuste la taille si la distance s'écarte, on tourne un peu le parcours s'il contient des allers-retours
-async function buildCandidate(base, kind, brg0, target){
-  let factor = kind === 'boucle' ? 1 / 1.25 : 1 / 1.3, brg = brg0, best = null;
-  for(let i = 0; i < 3; i++){
+// "learn" garde en mémoire le rapport demandé / obtenu : les parcours suivants visent juste du 1er coup
+async function buildCandidate(base, kind, brg0, target, learn){
+  let factor = learn.factor, brg = brg0, best = null;
+  for(let i = 0; i < 2; i++){
     const req = target * factor;
     const pts = kind === 'boucle' ? loopPoints(start, req, brg) : [start, destPoint(start, req, brg)];
     const j = await route(base, pts);
@@ -517,9 +526,10 @@ async function buildCandidate(base, kind, brg0, target){
     const wp = j.waypoints || [];
     const c = makeCandidate(r, coords, { kind, brg:brg0, endName: kind === 'aller' && wp.length ? wp[wp.length-1].name : '' });
     if(!best || scoreOf(c, target) < scoreOf(best, target)) best = c;
+    if(c.distance) learn.factor = factor * target / c.distance;
     const err = Math.abs(c.distance - target) / target;
     if(c.overlap > 0.08) brg += 25;                 // trop d'allers-retours : on décale le parcours
-    else if(err > 0.15) factor *= target / c.distance;
+    else if(err > 0.15) factor = learn.factor;
     else break;                                     // distance à ±15 % et sans aller-retour : parfait
   }
   return best;
@@ -670,13 +680,15 @@ async function generate(){
     }catch(e){ lastErr = e; }
   } else {
     // 4 directions différentes, calculées l'une après l'autre
-    const N = 4, off = Math.random() * 90;
+    const N = 10, off = Math.random() * 36;
+    const learn = { factor: st.type === 'boucle' ? 1 / 1.25 : 1 / 1.3 };
     for(let k = 0; k < N; k++){
       if(run !== genRun) return;
       $('btnGo').textContent = 'Calcul des parcours… ' + (k + 1) + ' / ' + N;
       try{
-        const c = await buildCandidate(base, st.type, off + k * 360 / N, target);
+        const c = await buildCandidate(base, st.type, off + k * 360 / N, target, learn);
         if(run !== genRun) return;
+        if(candidates.some(o => similarity(c, o) > 0.7)) continue;   // quasi identique à un parcours déjà proposé
         // Pendant le calcul : les parcours s'ajoutent à la suite, sans réordonner,
         // et la sélection reste sur le 1er trouvé (pas de saut d'un parcours à l'autre)
         candidates.push(c);
