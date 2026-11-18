@@ -36,8 +36,9 @@
   .sr b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .sr small{color:var(--mu);font-size:12px}
   .sr button{border:1px solid var(--bd);background:var(--bg);border-radius:8px;padding:6px 8px;font-size:12px;color:var(--tx)}
-  #destChip{display:flex;align-items:center;justify-content:space-between;gap:8px;background:#fef2f2;color:#991b1b;border-radius:9px;padding:6px 6px 6px 10px;font-size:14px;margin-bottom:10px}
-  #destChip button{border:none;background:none;font-size:16px;color:#991b1b;padding:2px 6px}
+  #destChip{flex:none;display:flex;align-items:center;justify-content:space-between;gap:8px;background:#fef2f2;color:#991b1b;border-radius:10px;padding:6px 6px 6px 12px;font-size:14px;margin-top:8px}
+  #destName{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #destChip button{flex:none;border:1px solid #fca5a5;background:#fff;border-radius:8px;font-size:13px;color:#991b1b;padding:6px 10px;cursor:pointer}
   /* Téléphone en portrait : liste qui défile horizontalement pour garder la carte visible */
   /* Téléphone (portrait) : liste verticale dans le tiroir */
   #list{margin:6px -14px 0;padding:0 14px 14px;display:flex;flex-direction:column;gap:8px;flex:1 1 auto;min-height:0;overflow-y:hidden;overscroll-behavior:contain}
@@ -71,6 +72,8 @@
   .tcp figcaption{font-size:11px;line-height:1.2;margin-top:3px;color:#374151;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
   .tcl p{font-size:13px;line-height:1.35;margin:4px 0;color:#374151}
   .tc .primary{margin-top:8px;padding:10px;font-size:15px}
+  .plc{width:46px !important;height:46px !important;position:relative}
+  .plc span{position:absolute;right:-6px;top:-6px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:#f59e0b;color:#fff;font:700 12px/20px system-ui,sans-serif;text-align:center;border:2px solid #fff}
   .pl{width:40px;height:40px;border-radius:50%;border:3px solid #f59e0b;background:#fff center/cover no-repeat;box-shadow:0 1px 5px rgba(0,0,0,.45)}
   .it{display:flex;gap:10px;align-items:center;text-align:left;width:100%;border:1px solid var(--bd);background:var(--bg);border-radius:11px;padding:8px 10px;color:var(--tx);font:inherit}
   .it.on{border-color:var(--c);background:#e6f4f1}
@@ -282,7 +285,6 @@
     <button data-v="boucle">🔄 Boucle</button>
     <button data-v="aller">➡️ Aller simple</button>
   </div>
-  <div id="destChip" hidden><span id="destName"></span><button id="destClear" title="Retirer l'arrivée">✕</button></div>
   <div class="row" id="valRow">
     <div class="seg" id="segUnit">
       <button data-v="km">km</button>
@@ -294,6 +296,7 @@
   <div id="hint"></div>
   <button id="btnGo" class="primary">Générer un parcours</button>
   </div>
+  <div id="destChip" hidden><span id="destName"></span><button id="destClear" title="Retirer l'arrivée">✕ Retirer</button></div>
   <div id="info"></div>
   <div id="tabs"><button data-t="parcours" class="on">🗺️ Parcours</button><button data-t="sugg">✨ Suggestions</button></div>
   <div id="list"></div>
@@ -376,7 +379,7 @@ function fitRoute(){
   const p = $('panel');
   map.fitBounds(routeLayer.getBounds(), WIDE.matches
     ? { paddingTopLeft:[p.offsetWidth + 40, 30], paddingBottomRight:[70, 30] }
-    : { paddingTopLeft:[30, 30], paddingBottomRight:[70, p.offsetHeight + 20] });
+    : { paddingTopLeft:[30, 80], paddingBottomRight:[70, p.offsetHeight + 20] });
 }
 function applyLayout(){
   map.attributionControl.setPosition(WIDE.matches ? 'bottomright' : 'topleft');
@@ -1055,7 +1058,19 @@ function clearDest(){
   $('valRow').hidden = $('hint').hidden = false;
   updateChip();
 }
-$('destClear').onclick = clearDest;
+$('destClear').onclick = e => {
+  e.stopPropagation();
+  clearDest();
+  if(candidates.some(c => c.kind === 'dest')){
+    genRun++; lastGenKey = '';
+    candidates = candidates.filter(c => c.kind !== 'dest');
+    if(!candidates.includes(selected)){ selected = null; lastRoute = null; photoRun++; photoLayer.clearLayers(); }
+    drawAll(); renderList(); showPlaces();
+    msg(selected ? '' : 'Arrivée retirée.');
+    $('btnGo').textContent = candidates.length ? '🔁 Autres parcours' : 'Générer un parcours';
+    if(selected) select(selected);
+  }
+};
 
 /* ---------- Parcours enregistrés (gardés sur cet appareil) ---------- */
 let saved = store.get('saved', []);
@@ -1509,7 +1524,15 @@ $('btnGo').onclick = generate;
 
 /* ---------- Suggestions : lieux à visiter (Wikipédia : photo + description) ---------- */
 let tab = 'parcours', suggKey = '', suggRun = 0, suggPlaces = [], suggTours = [];
-const placeLayer = L.layerGroup().addTo(map);
+const placeLayer = L.markerClusterGroup({
+  maxClusterRadius:55, showCoverageOnHover:false,
+  // groupe = photo du lieu le plus intéressant + nombre de lieux ; toucher = zoomer dessus
+  iconCreateFunction: c => {
+    const ps = c.getAllChildMarkers().map(m => m.place).sort((a, b) => b.score - a.score);
+    return L.divIcon({ className:'', iconSize:[46,46], iconAnchor:[23,23],
+      html:'<div class="pl plc" style="background-image:url(' + ps[0].thumb + ')"><span>' + ps.length + '</span></div>' });
+  }
+}).addTo(map);
 const SUG_BADTYPE = /^(country|state|adm|city|edu|event|satellite|airport|railwaystation)/;
 const SUG_BADNAME = /^(rue|avenue|boulevard|cours|impasse|chemin|route|liste|arrondissement|quartier|ligne|tunnel|autoroute|gare|station|lycée|collège|école|groupe scolaire|université|institut|hôpital|clinique|centre hospitalier|tramway|métro|échangeur|élection|bataille|siège)\b/i;
 
@@ -1601,14 +1624,16 @@ async function routeTour(base, t, target){
 
 /* --- Affichage --- */
 function placeMarker(p){
-  return L.marker(p.ll, { zIndexOffset:650, icon:L.divIcon({ className:'', iconSize:[40,40], iconAnchor:[20,20],
+  const m = L.marker(p.ll, { zIndexOffset:650, icon:L.divIcon({ className:'', iconSize:[40,40], iconAnchor:[20,20],
     html:'<div class="pl" style="background-image:url(' + p.thumb + ')"></div>' }) })
     .on('click', () => openGallery([{ img:p.thumb, link:p.url, title:p.title, credit:p.extract + ' — Wikipédia' }], 0));
+  m.place = p;
+  return m;
 }
 function showPlaces(){
   placeLayer.clearLayers();
   const list = tab === 'sugg' && st.type !== 'boucle' && !dest ? suggPlaces : (selected && selected.places) || [];
-  list.forEach(p => placeLayer.addLayer(placeMarker(p)));
+  placeLayer.addLayers(list.map(placeMarker));
 }
 function placeCard(p, withGo){
   const d = document.createElement('div');
