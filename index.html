@@ -36,7 +36,7 @@
   .sr b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .sr small{color:var(--mu);font-size:12px}
   .sr button{border:1px solid var(--bd);background:var(--bg);border-radius:8px;padding:6px 8px;font-size:12px;color:var(--tx)}
-  #destChip{flex:none;display:flex;align-items:center;justify-content:space-between;gap:8px;background:#fef2f2;color:#991b1b;border-radius:10px;padding:6px 6px 6px 12px;font-size:14px;margin-top:8px}
+  #destChip{flex:none;display:none !important;align-items:center;justify-content:space-between;gap:8px;background:#fef2f2;color:#991b1b;border-radius:10px;padding:6px 6px 6px 12px;font-size:14px;margin-top:8px}
   #destName{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #destChip button{flex:none;border:1px solid #fca5a5;background:#fff;border-radius:8px;font-size:13px;color:#991b1b;padding:6px 10px;cursor:pointer}
   /* Téléphone en portrait : liste qui défile horizontalement pour garder la carte visible */
@@ -50,6 +50,10 @@
   #tabs button.on{color:var(--c);border-bottom-color:var(--c)}
   #sugg{flex:1 1 auto;min-height:0;overflow-y:auto;margin:8px -14px 0;padding:0 14px 14px;overscroll-behavior:contain}
   .sg-h{font-weight:700;font-size:15px;margin:4px 0 8px}
+  #sugg .it.sg{margin-bottom:8px;padding:6px 8px;gap:8px}
+  .it .th{flex:none;width:46px;height:46px;border-radius:9px;object-fit:cover;background:#eee}
+  .it.sg div small{white-space:nowrap}
+  .vbtn{flex:none;border:none;background:var(--c);color:#fff;border-radius:9px;padding:8px 10px;font:600 13px system-ui,sans-serif;cursor:pointer;white-space:nowrap}
   .sg-msg{color:var(--mu);font-size:14px;text-align:center;margin:14px 0}
   .pc{display:flex;gap:10px;border:1px solid var(--bd);border-radius:12px;padding:8px;margin-bottom:8px;background:var(--bg)}
   .pc img{flex:none;width:96px;height:96px;object-fit:cover;border-radius:9px;cursor:pointer;background:#eee}
@@ -881,11 +885,12 @@ function drawAll(){
 // Choix fait par l'utilisateur (liste ou carte) : on ne le remplace plus pendant le calcul
 function pick(c){ userPicked = true; select(c); }
 
-function select(c, noFit){
+let keepSheetOnce = false;   // vrai : on ne replie pas le tiroir (choix depuis l'onglet Suggestions)
+function select(c, noFit, keepSize){
   selected = c;
   drawAll();
   renderList();
-  if(!WIDE.matches && sheetReady && sheetState !== 'peek'){
+  if(!WIDE.matches && sheetReady && sheetState !== 'peek' && !keepSize){
     // Téléphone : on replie le tiroir pour montrer le parcours sur la carte
     $('panel').classList.remove('open');
     setSheet('peek');
@@ -909,7 +914,8 @@ async function generate(){
   }
   const run = ++genRun, base = PROFILES[st.mode];
   if(tab !== 'parcours') setTab('parcours');
-  if(!WIDE.matches && sheetReady){ $('panel').classList.remove('open'); setSheet('peek'); }
+  const keepSize = keepSheetOnce; keepSheetOnce = false;
+  if(!WIDE.matches && sheetReady && !keepSize){ $('panel').classList.remove('open'); setSheet('peek'); }
 
   // Même départ, même activité, même type : on garde les parcours déjà proposés, les nouveaux s'ajoutent à la suite
   const key = [start[0].toFixed(5), start[1].toFixed(5), st.mode, st.type, dest ? dest.ll.join(',') : ''].join('|');
@@ -979,14 +985,14 @@ async function generate(){
   }
   if(keep.length){
     // Liste complétée : on garde le parcours sélectionné
-    if(!candidates.includes(selected)) select(candidates[0]);
+    if(!candidates.includes(selected)) select(candidates[0], false, keepSize);
     else { drawAll(); renderList(); }
     const added = fresh.filter(c => candidates.includes(c)).length;
     if(!added) msg((lastErr ? lastErr.message + ' ' : '') + 'Pas de nouveau parcours différent cette fois : réessaie ou change de distance.', !!lastErr);
     else msg('+ ' + added + ' nouveau' + (added > 1 ? 'x' : '') + ' parcours ajouté' + (added > 1 ? 's' : '') + ' en fin de liste (' + candidates.length + ' en tout).');
   }
   else if(userPicked && candidates.includes(selected)){ drawAll(); renderList(); }
-  else select(candidates[0]);
+  else select(candidates[0], false, keepSize);
   nameRoutes(fresh);
 }
 
@@ -1765,46 +1771,32 @@ function showPlaces(){
   const list = tab === 'sugg' && st.type !== 'boucle' && !dest ? suggPlaces : (selected && selected.places) || [];
   placeLayer.addLayers(list.map(placeMarker));
 }
-function placeCard(p, withGo){
+// Mini-liste des suggestions (même format que la liste des parcours)
+function miniCard(thumb, title, sub, right, onView, onThumb){
   const d = document.createElement('div');
-  d.className = 'pc';
-  d.innerHTML = '<img loading="lazy" alt=""><div class="pcb"><b></b><span class="pcd"></span><p></p>' +
-    '<div class="pca">' + (withGo ? '<button class="primary go">🏁 Y aller</button>' : '') + '<a target="_blank" rel="noopener">Wikipédia</a></div></div>';
-  d.querySelector('img').src = p.thumb;
-  d.querySelector('b').textContent = p.title;
-  d.querySelector('.pcd').textContent = 'à ' + fmtKm(p.dist) + ' à vol d\'oiseau';
-  d.querySelector('p').textContent = p.extract;
-  d.querySelector('a').href = p.url;
-  d.querySelector('img').onclick = () => { map.setView(p.ll, Math.max(map.getZoom(), 16)); if(!WIDE.matches) setSheet('peek'); };
-  if(withGo) d.querySelector('.go').onclick = () => { setDest(p.ll, p.title); setTab('parcours'); generate(); };
+  d.className = 'it sg';
+  d.innerHTML = '<img class="th" loading="lazy" alt=""><div><b></b><small></small></div>' +
+    (right ? '<span class="km">' + right + '</span>' : '') + '<button class="vbtn">Voir parcours</button>';
+  d.querySelector('img').src = thumb;
+  d.querySelector('b').textContent = title;
+  d.querySelector('small').textContent = sub;
+  d.querySelector('.vbtn').onclick = e => { e.stopPropagation(); onView(); };
+  d.onclick = onThumb;
   return d;
 }
+function placeCard(p, withGo){
+  const desc = (p.extract.match(/^.*?[.!?](\s|$)/) || [p.extract])[0].trim();
+  return miniCard(p.thumb, p.title, 'à ' + fmtKm(p.dist) + ' · ' + desc, '',
+    () => { setDest(p.ll, p.title); keepSheetOnce = true; setTab('parcours'); generate(); },   // itinéraire vers ce lieu
+    () => openGallery([{ img:p.thumb, link:p.url, title:p.title, credit:p.extract + ' — Wikipédia' }], 0));
+}
 function tourCard(c){
-  const km = c.distance / 1000, d = document.createElement('div');
-  d.className = 'tc';
-  d.innerHTML = '<div class="tch"><div><b></b><small></small></div><span class="km">' + km.toFixed(1) + ' km<small>≈ ' +
-    fmtMin(km / speed() * 60) + '</small></span></div><div class="tcp"></div><div class="tcl"></div><button class="primary">Voir ce parcours</button>';
-  d.querySelector('b').textContent = 'Balade · ' + c.places.length + ' lieu' + (c.places.length > 1 ? 'x' : '') + ' à voir';
-  d.querySelector('small').textContent = 'côté ' + dirOf(c.brg);
-  const strip = d.querySelector('.tcp'), lines = d.querySelector('.tcl');
-  c.places.forEach((p, i) => {
-    const f = document.createElement('figure');
-    f.innerHTML = '<img loading="lazy" alt=""><figcaption></figcaption>';
-    f.querySelector('img').src = p.thumb;
-    f.querySelector('figcaption').textContent = (i + 1) + '. ' + p.title;
-    f.onclick = () => openGallery(c.places.map(x => ({ img:x.thumb, link:x.url, title:x.title, credit:x.extract + ' — Wikipédia' })), i);
-    strip.appendChild(f);
-    const l = document.createElement('p');
-    l.innerHTML = '<b></b> — <span></span>';
-    l.querySelector('b').textContent = p.title;
-    l.querySelector('span').textContent = (p.extract.match(/^.*?[.!?](\s|$)/) || [p.extract])[0].trim();
-    lines.appendChild(l);
-  });
-  d.querySelector('button').onclick = () => {
-    candidates = suggTours.slice(); lastGenKey = ''; userPicked = true;
-    setTab('parcours'); select(c);
-  };
-  return d;
+  const km = c.distance / 1000, n = c.places.length;
+  return miniCard(c.places[0].thumb, 'Visite · ' + c.places.slice(0, 2).map(p => p.title).join(', ') + (n > 2 ? ' +' + (n - 2) : ''),
+    n + ' lieu' + (n > 1 ? 'x' : '') + ' à voir · côté ' + dirOf(c.brg),
+    km.toFixed(1) + ' km<small>≈ ' + fmtMin(km / speed() * 60) + '</small>',
+    () => { candidates = suggTours.slice(); lastGenKey = ''; userPicked = true; setTab('parcours'); select(c, false, true); },
+    () => openGallery(c.places.map(x => ({ img:x.thumb, link:x.url, title:x.title, credit:x.extract + ' — Wikipédia' })), 0));
 }
 
 async function runSugg(){
