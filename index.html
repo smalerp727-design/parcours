@@ -568,7 +568,7 @@ function nameRoutes(list){
 }
 
 /* ---------- Liste des parcours proposés ---------- */
-let candidates = [], selected = null, genRun = 0, altLayer = L.layerGroup().addTo(map);
+let candidates = [], selected = null, genRun = 0, userPicked = false, altLayer = L.layerGroup().addTo(map);
 
 function titleOf(c, i){
   const top = c.lm[0] && c.lm[0].name;
@@ -601,7 +601,7 @@ function renderList(){
       '<span class="km">' + km.toFixed(1) + ' km<small>≈ ' + fmtMin(km / speed() * 60) + '</small></span>';
     b.querySelector('b').textContent = titleOf(c, i);
     b.querySelector('div small').textContent = subOf(c);
-    b.onclick = () => select(c);
+    b.onclick = () => pick(c);
     L_.appendChild(b);
     if(c === selected) requestAnimationFrame(() => b.scrollIntoView({ block:'nearest', inline:'center', behavior:'smooth' }));
   });
@@ -616,12 +616,12 @@ function drawAll(){
     // Tracé gris visible + zone invisible plus large, pour qu'on puisse le toucher facilement au doigt
     L.geoJSON(c.geometry, { interactive:false, style:{ color:'#64748b', weight:4, opacity:.5 } }).addTo(altLayer);
     L.geoJSON(c.geometry, { bubblingMouseEvents:false, style:{ color:'#000', weight:24, opacity:0 } })
-      .on('click', e => { L.DomEvent.stop(e); select(c); }).addTo(altLayer);
+      .on('click', e => { L.DomEvent.stop(e); pick(c); }).addTo(altLayer);
   });
   candidates.forEach((c, i) => {   // numéro de chaque parcours sur la carte
     const co = c.geometry.coordinates[Math.floor(c.geometry.coordinates.length * 0.4)];
     L.marker([co[1], co[0]], { zIndexOffset:300, icon:L.divIcon({ className:'', iconSize:[22,22], iconAnchor:[11,11],
-      html:'<div class="rn' + (c === selected ? ' on' : '') + '">' + (i + 1) + '</div>' }) }).on('click', () => select(c)).addTo(altLayer);
+      html:'<div class="rn' + (c === selected ? ' on' : '') + '">' + (i + 1) + '</div>' }) }).on('click', () => pick(c)).addTo(altLayer);
   });
   if(!selected) return;
   routeLayer = L.geoJSON(selected.geometry, { bubblingMouseEvents:false, style:routeStyle() }).addTo(map);
@@ -630,6 +630,9 @@ function drawAll(){
     endMarker = L.marker([last[1], last[0]], { icon:pin('#dc2626') }).addTo(map);
   }
 }
+
+// Choix fait par l'utilisateur (liste ou carte) : on ne le remplace plus pendant le calcul
+function pick(c){ userPicked = true; select(c); }
 
 function select(c, noFit){
   selected = c;
@@ -650,7 +653,7 @@ async function generate(){
     if(target > 100000){ msg('Objectif limité à 100 km.', true); return; }
   }
   const run = ++genRun, base = PROFILES[st.mode];
-  candidates = []; selected = null; lastRoute = null;
+  candidates = []; selected = null; lastRoute = null; userPicked = false;
   photoRun++; photoLayer.clearLayers();
   drawAll(); renderList();
   $('btnGo').disabled = true;
@@ -676,7 +679,15 @@ async function generate(){
         if(run !== genRun) return;
         candidates.push(c);
         candidates.sort((a, b) => scoreOf(a, target) - scoreOf(b, target));
-        if(!selected) select(c); else { drawAll(); renderList(); }
+        if(!userPicked){
+          // Pendant le calcul, on met en avant le meilleur parcours trouvé jusqu'ici
+          const first = !selected;
+          selected = candidates[0];
+          drawAll(); renderList();
+          if(first) fitRoute();
+          const km = selected.distance / 1000;
+          msg('<b>' + km.toFixed(1) + ' km</b> · ≈ ' + fmtMin(km / speed() * 60));
+        } else { drawAll(); renderList(); }
       }catch(e){ lastErr = e; if(/connexion|demandes/.test(e.message)) break; }
     }
     // On écarte les parcours avec trop d'allers-retours s'il existe mieux
@@ -688,8 +699,8 @@ async function generate(){
   $('btnGo').textContent = candidates.length ? '🔁 Autres parcours' : 'Générer un parcours';
   if(!candidates.length){ msg(lastErr ? lastErr.message : 'Aucun parcours trouvé.', true); return; }
   candidates.sort((a, b) => scoreOf(a, target) - scoreOf(b, target));
-  if(candidates.includes(selected)){ drawAll(); renderList(); }
-  else select(candidates[0]);
+  if(userPicked && candidates.includes(selected)){ drawAll(); renderList(); }
+  else select(candidates[0]);   // le 1er de la liste = le meilleur parcours
   nameRoutes(candidates);
   $('btnGo').textContent = '🔁 Autres parcours';
 }
@@ -702,6 +713,7 @@ function placeLabel(p){
     .filter(Boolean).filter(s => s !== name).join(', ');
   return { name: name || p.city || 'Lieu', sub };
 }
+let lastResults = { q:'', list:[] };
 async function searchPlaces(q){
   const run = ++sRun;
   const c = start || meLL || [map.getCenter().lat, map.getCenter().lng];
@@ -714,6 +726,7 @@ async function searchPlaces(q){
   const box = $('sres');
   box.innerHTML = '';
   const feats = (j && j.features) || [];
+  lastResults = { q, list: feats.map(f => ({ ll:[f.geometry.coordinates[1], f.geometry.coordinates[0]], name:placeLabel(f.properties || {}).name })) };
   if(!feats.length){ box.innerHTML = '<div class="sr"><div><small>Aucun résultat</small></div></div>'; box.hidden = false; return; }
   feats.forEach(f => {
     const ll = [f.geometry.coordinates[1], f.geometry.coordinates[0]];
@@ -739,7 +752,20 @@ $('q').addEventListener('input', () => {
   if(v.length < 3){ $('sres').hidden = true; return; }
   sTimer = setTimeout(() => searchPlaces(v), 350);
 });
-$('q').addEventListener('keydown', e => { if(e.key === 'Escape') closeSearch(); });
+$('q').addEventListener('keydown', async e => {
+  if(e.key === 'Escape'){ closeSearch(); return; }
+  if(e.key !== 'Enter') return;
+  e.preventDefault();
+  const v = $('q').value.trim();
+  if(v.length < 2) return;
+  clearTimeout(sTimer);
+  if(lastResults.q !== v) await searchPlaces(v);   // résultats pas encore arrivés : on les attend
+  const r = lastResults.q === v && lastResults.list[0];
+  if(!r) return;
+  // Entrée : le 1er résultat devient le départ, et on lance directement les parcours
+  setStart(r.ll); map.setView(r.ll, 15); closeSearch();
+  if(!$('btnGo').disabled) generate();
+});
 
 function setDest(ll, name){
   dest = { ll, name };
