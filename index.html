@@ -44,6 +44,34 @@
   #list .it{flex:none}
   #list .it.pin{position:sticky;top:0;z-index:2}
   #list:empty{display:none}
+  #tabs{flex:none;display:flex;gap:6px;margin-top:8px}
+  #tabs button{flex:1;border:none;background:none;padding:7px 4px;border-radius:9px;font:600 14px system-ui,sans-serif;color:var(--mu);border-bottom:2px solid transparent;border-radius:0}
+  #tabs button.on{color:var(--c);border-bottom-color:var(--c)}
+  #sugg{flex:1 1 auto;min-height:0;overflow-y:auto;margin:8px -14px 0;padding:0 14px 14px;overscroll-behavior:contain}
+  .sg-h{font-weight:700;font-size:15px;margin:4px 0 8px}
+  .sg-msg{color:var(--mu);font-size:14px;text-align:center;margin:14px 0}
+  .pc{display:flex;gap:10px;border:1px solid var(--bd);border-radius:12px;padding:8px;margin-bottom:8px;background:var(--bg)}
+  .pc img{flex:none;width:96px;height:96px;object-fit:cover;border-radius:9px;cursor:pointer;background:#eee}
+  .pcb{flex:1;min-width:0;display:flex;flex-direction:column}
+  .pcb b{font-size:15px}
+  .pcd{font-size:12px;color:var(--mu)}
+  .pcb p{font-size:13px;line-height:1.35;margin:4px 0 6px;color:#374151}
+  .pca{display:flex;gap:8px;align-items:center;margin-top:auto}
+  .pca .primary{width:auto;padding:7px 12px;font-size:14px;border-radius:9px}
+  .pca a{font-size:13px;color:var(--c)}
+  .tc{border:1px solid var(--bd);border-radius:12px;padding:10px;margin-bottom:10px;background:var(--bg)}
+  .tch{display:flex;justify-content:space-between;gap:8px}
+  .tch b{display:block;font-size:15px}
+  .tch small{color:var(--mu);font-size:12px}
+  .tch .km{font-weight:700;text-align:right;white-space:nowrap}
+  .tch .km small{display:block;font-weight:400}
+  .tcp{display:flex;gap:8px;overflow-x:auto;margin:8px -2px;padding:0 2px 4px}
+  .tcp figure{margin:0;flex:none;width:92px;cursor:pointer}
+  .tcp img{width:92px;height:70px;object-fit:cover;border-radius:8px;display:block;background:#eee}
+  .tcp figcaption{font-size:11px;line-height:1.2;margin-top:3px;color:#374151;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .tcl p{font-size:13px;line-height:1.35;margin:4px 0;color:#374151}
+  .tc .primary{margin-top:8px;padding:10px;font-size:15px}
+  .pl{width:40px;height:40px;border-radius:50%;border:3px solid #f59e0b;background:#fff center/cover no-repeat;box-shadow:0 1px 5px rgba(0,0,0,.45)}
   .it{display:flex;gap:10px;align-items:center;text-align:left;width:100%;border:1px solid var(--bd);background:var(--bg);border-radius:11px;padding:8px 10px;color:var(--tx);font:inherit}
   .it.on{border-color:var(--c);background:#e6f4f1}
   .it .n,.rn{flex:0 0 22px;width:22px;height:22px;border-radius:50%;background:#64748b;color:#fff;font:700 12px/22px system-ui,sans-serif;text-align:center}
@@ -267,7 +295,9 @@
   <button id="btnGo" class="primary">Générer un parcours</button>
   </div>
   <div id="info"></div>
+  <div id="tabs"><button data-t="parcours" class="on">🗺️ Parcours</button><button data-t="sugg">✨ Suggestions</button></div>
   <div id="list"></div>
+  <div id="sugg" hidden></div>
 
 </div>
 
@@ -351,7 +381,7 @@ function fitRoute(){
 function applyLayout(){
   map.attributionControl.setPosition(WIDE.matches ? 'bottomright' : 'topleft');
   placeSearch();
-  if(WIDE.matches){ $('panel').style.height = ''; $('list').style.overflowY = $('list').style.touchAction = ''; }
+  if(WIDE.matches){ $('panel').style.height = ''; [$('list'), $('sugg')].forEach(el => { el.style.overflowY = el.style.touchAction = ''; }); }
   else setSheet(sheetState);
   map.invalidateSize();
   fitRoute();
@@ -692,6 +722,7 @@ let candidates = [], selected = null, genRun = 0, userPicked = false, altLayer =
 
 function titleOf(c, i){
   if(c.savedName) return c.savedName;
+  if(c.places) return 'Visite · ' + c.places.slice(0, 2).map(p => p.title).join(', ') + (c.places.length > 2 ? ' +' + (c.places.length - 2) : '');
   const top = c.lm[0] && c.lm[0].name;
   if(c.kind === 'dest') return (i === 0 ? 'Conseillé' : 'Variante ' + i) + (top ? ' · par ' + top : '');
   if(top) return (c.kind === 'boucle' ? 'Boucle · ' : 'Vers ') + top;
@@ -700,6 +731,7 @@ function titleOf(c, i){
   return 'Vers ' + (/^[eo]/.test(d) ? 'l\'' : 'le ') + d;
 }
 function subOf(c){
+  if(c.places) return c.places.length + ' lieu' + (c.places.length > 1 ? 'x' : '') + ' à voir — côté ' + dirOf(c.brg);
   const more = c.lm.slice(1).map(l => l.name);
   const d = c.kind === 'dest' ? '' : 'côté ' + dirOf(c.brg);
   if(more.length) return [more.join(' · '), d].filter(Boolean).join(' — ');
@@ -819,6 +851,7 @@ function select(c, noFit){
       (candidates.length > 1 ? ' · <span class="cnt">' + (candidates.indexOf(c) + 1) + '/' + candidates.length + '</span>' : ''));
   lastRoute = c;
   loadPhotos(c);
+  showPlaces();
 }
 
 let lastGenKey = '';
@@ -830,6 +863,7 @@ async function generate(){
     if(target > 100000){ msg('Objectif limité à 100 km.', true); return; }
   }
   const run = ++genRun, base = PROFILES[st.mode];
+  if(tab !== 'parcours') setTab('parcours');
   if(!WIDE.matches && sheetReady){ $('panel').classList.remove('open'); setSheet('peek'); }
 
   // Même départ, même activité, même type : on garde les parcours déjà proposés, les nouveaux s'ajoutent à la suite
@@ -1473,13 +1507,212 @@ idb.all().then(list => { myMedia = list || []; renderMine(); }).catch(() => {});
 
 $('btnGo').onclick = generate;
 
+/* ---------- Suggestions : lieux à visiter (Wikipédia : photo + description) ---------- */
+let tab = 'parcours', suggKey = '', suggRun = 0, suggPlaces = [], suggTours = [];
+const placeLayer = L.layerGroup().addTo(map);
+const SUG_BADTYPE = /^(country|state|adm|city|edu|event|satellite|airport|railwaystation)/;
+const SUG_BADNAME = /^(rue|avenue|boulevard|cours|impasse|chemin|route|liste|arrondissement|quartier|ligne|tunnel|autoroute|gare|station|lycée|collège|école|groupe scolaire|université|institut|hôpital|clinique|centre hospitalier|tramway|métro|échangeur|élection|bataille|siège)\b/i;
+
+const shorten = t => { t = (t || '').replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim();
+  return t.length > 240 ? t.slice(0, 237).replace(/\s+\S*$/, '') + '…' : t; };
+function bearingOf(a, b){
+  const r = Math.PI / 180, y = Math.sin((b[1]-a[1])*r) * Math.cos(b[0]*r);
+  const x = Math.cos(a[0]*r) * Math.sin(b[0]*r) - Math.sin(a[0]*r) * Math.cos(b[0]*r) * Math.cos((b[1]-a[1])*r);
+  return (Math.atan2(y, x) / r + 360) % 360;
+}
+const fmtKm = m => m < 1000 ? Math.round(m / 10) * 10 + ' m' : (m / 1000).toFixed(1).replace('.', ',') + ' km';
+
+// Lieux intéressants autour de c, dans un rayon donné, avec photo et quelques lignes de description
+async function findPlaces(c, radius){
+  const centers = radius <= 10000 ? [c] : [c].concat([0, 60, 120, 180, 240, 300].map(b => destPoint(c, radius * 0.6, b)));
+  const res = await inBatches(centers, 4, p => getJSON('https://fr.wikipedia.org/w/api.php?action=query&format=json&origin=*' +
+    '&list=geosearch&gslimit=100&gsprop=type%7Cdim&gsradius=' + Math.round(Math.min(10000, Math.max(200, radius))) +
+    '&gscoord=' + p[0].toFixed(5) + '%7C' + p[1].toFixed(5)).then(j => (j.query && j.query.geosearch) || []));
+  const seen = new Map();
+  res.flat().forEach(g => {
+    if(!g || seen.has(g.pageid) || (g.type && SUG_BADTYPE.test(g.type)) || SUG_BADNAME.test(g.title)) return;
+    const d = hav(c, [g.lat, g.lon]);
+    if(d > radius) return;
+    const score = (LM_STRONG.test(g.title) ? 3 : 0) + (LM_KEY.test(g.title) ? 2 : 0) + (g.type === 'landmark' ? 2 : 0) +
+                  (/^(waterbody|forest|isle|mountain)$/.test(g.type || '') ? 2 : 0);
+    if(score < 2) return;   // on ne garde que des lieux "à visiter"
+    seen.set(g.pageid, { id:g.pageid, title:cleanName(g.title), ll:[g.lat, g.lon], dist:d, score });
+  });
+  const top = [...seen.values()].sort((a, b) => b.score - a.score || a.dist - b.dist).slice(0, 40);
+  const chunks = [];
+  for(let i = 0; i < top.length; i += 20) chunks.push(top.slice(i, i + 20));
+  const det = await inBatches(chunks, 2, ch => getJSON('https://fr.wikipedia.org/w/api.php?action=query&format=json&origin=*' +
+    '&prop=pageimages%7Cextracts%7Cinfo&inprop=url&piprop=thumbnail&pithumbsize=640&exintro=1&explaintext=1&exsentences=3&exlimit=20' +
+    '&pageids=' + ch.map(p => p.id).join('%7C')));
+  const byId = new Map();
+  det.forEach(j => { const pg = j && j.query && j.query.pages; if(pg) Object.values(pg).forEach(x => byId.set(x.pageid, x)); });
+  return top.map(p => {
+    const pg = byId.get(p.id);
+    if(!pg || !pg.thumbnail) return null;   // uniquement des lieux avec une photo
+    return Object.assign(p, { thumb:pg.thumbnail.source, url:pg.fullurl || 'https://fr.wikipedia.org/?curid=' + p.id, extract:shorten(pg.extract) });
+  }).filter(Boolean);
+}
+
+// Boucles qui passent par des lieux à visiter : 3 directions, lieux dans l'ordre du tour
+function planTours(places, target){
+  const tours = [], off = Math.random() * 120, est = pts => { let d = 0; for(let i = 1; i < pts.length; i++) d += hav(pts[i-1], pts[i]); return d * 1.3; };
+  places.forEach(p => { p.brg = bearingOf(start, p.ll); });
+  [off, off + 120, off + 240].forEach(dir => {
+    const rel = p => ((p.brg - dir + 540) % 360) - 180;
+    const pool = places.filter(p => Math.abs(rel(p)) <= 75 && p.dist <= target * 0.42).sort((a, b) => b.score - a.score || a.dist - b.dist);
+    let chosen = [];
+    for(const p of pool){
+      if(chosen.length >= 5) break;
+      const t = chosen.concat([p]).sort((a, b) => rel(a) - rel(b));
+      if(est([start].concat(t.map(x => x.ll), [start])) <= target * 1.05) chosen = t;
+    }
+    const k = chosen.map(x => x.id).sort().join();
+    if(chosen.length && !tours.some(t => t.key === k)) tours.push({ dir, places:chosen, pool, rel, key:k });
+  });
+  return tours;
+}
+async function routeTour(base, t, target){
+  let places = t.places.slice(), stretch = 0, best = null;
+  for(let i = 0; i < 4; i++){
+    // Points de passage : les lieux dans l'ordre du tour (+ un point de détour si la balade est trop courte)
+    let pts = places.map(p => ({ ll:p.ll, r:t.rel(p) }));
+    if(stretch > 0){
+      const far = Math.max(...places.map(p => p.dist));
+      pts.push({ ll:destPoint(start, far + stretch, t.dir), r:0 });
+      pts.sort((a, b) => a.r - b.r);
+    }
+    const j = await route(base, [start].concat(pts.map(p => p.ll), [start]));
+    const r = j.routes[0];
+    const c = makeCandidate(r, r.geometry.coordinates, { kind:'boucle', brg:t.dir, places });
+    if(fits(c, target)) return c;
+    if(c.distance > target){   // trop long : on retire le lieu le moins intéressant (ou on réduit le détour)
+      if(stretch > 0){ stretch = Math.max(0, stretch - (c.distance - target) / 2.6); continue; }
+      if(places.length <= 1) return null;
+      const weakest = places.slice().sort((a, b) => a.score - b.score)[0];
+      places = places.filter(p => p !== weakest);
+    } else {                   // trop court : un lieu de plus dans cette direction, sinon un petit détour
+      const extra = t.pool.find(p => !places.includes(p));
+      if(extra && !stretch) places = places.concat([extra]).sort((a, b) => t.rel(a) - t.rel(b));
+      else stretch += (target - c.distance) / 2.6;
+    }
+  }
+  return null;
+}
+
+/* --- Affichage --- */
+function placeMarker(p){
+  return L.marker(p.ll, { zIndexOffset:650, icon:L.divIcon({ className:'', iconSize:[40,40], iconAnchor:[20,20],
+    html:'<div class="pl" style="background-image:url(' + p.thumb + ')"></div>' }) })
+    .on('click', () => openGallery([{ img:p.thumb, link:p.url, title:p.title, credit:p.extract + ' — Wikipédia' }], 0));
+}
+function showPlaces(){
+  placeLayer.clearLayers();
+  const list = tab === 'sugg' && st.type !== 'boucle' && !dest ? suggPlaces : (selected && selected.places) || [];
+  list.forEach(p => placeLayer.addLayer(placeMarker(p)));
+}
+function placeCard(p, withGo){
+  const d = document.createElement('div');
+  d.className = 'pc';
+  d.innerHTML = '<img loading="lazy" alt=""><div class="pcb"><b></b><span class="pcd"></span><p></p>' +
+    '<div class="pca">' + (withGo ? '<button class="primary go">🏁 Y aller</button>' : '') + '<a target="_blank" rel="noopener">Wikipédia</a></div></div>';
+  d.querySelector('img').src = p.thumb;
+  d.querySelector('b').textContent = p.title;
+  d.querySelector('.pcd').textContent = 'à ' + fmtKm(p.dist) + ' à vol d\'oiseau';
+  d.querySelector('p').textContent = p.extract;
+  d.querySelector('a').href = p.url;
+  d.querySelector('img').onclick = () => { map.setView(p.ll, Math.max(map.getZoom(), 16)); if(!WIDE.matches) setSheet('peek'); };
+  if(withGo) d.querySelector('.go').onclick = () => { setDest(p.ll, p.title); setTab('parcours'); generate(); };
+  return d;
+}
+function tourCard(c){
+  const km = c.distance / 1000, d = document.createElement('div');
+  d.className = 'tc';
+  d.innerHTML = '<div class="tch"><div><b></b><small></small></div><span class="km">' + km.toFixed(1) + ' km<small>≈ ' +
+    fmtMin(km / speed() * 60) + '</small></span></div><div class="tcp"></div><div class="tcl"></div><button class="primary">Voir ce parcours</button>';
+  d.querySelector('b').textContent = 'Balade · ' + c.places.length + ' lieu' + (c.places.length > 1 ? 'x' : '') + ' à voir';
+  d.querySelector('small').textContent = 'côté ' + dirOf(c.brg);
+  const strip = d.querySelector('.tcp'), lines = d.querySelector('.tcl');
+  c.places.forEach((p, i) => {
+    const f = document.createElement('figure');
+    f.innerHTML = '<img loading="lazy" alt=""><figcaption></figcaption>';
+    f.querySelector('img').src = p.thumb;
+    f.querySelector('figcaption').textContent = (i + 1) + '. ' + p.title;
+    f.onclick = () => openGallery(c.places.map(x => ({ img:x.thumb, link:x.url, title:x.title, credit:x.extract + ' — Wikipédia' })), i);
+    strip.appendChild(f);
+    const l = document.createElement('p');
+    l.innerHTML = '<b></b> — <span></span>';
+    l.querySelector('b').textContent = p.title;
+    l.querySelector('span').textContent = (p.extract.match(/^.*?[.!?](\s|$)/) || [p.extract])[0].trim();
+    lines.appendChild(l);
+  });
+  d.querySelector('button').onclick = () => {
+    candidates = suggTours.slice(); lastGenKey = ''; userPicked = true;
+    setTab('parcours'); select(c);
+  };
+  return d;
+}
+
+async function runSugg(){
+  const box = $('sugg');
+  if(!start){ box.innerHTML = '<p class="sg-msg">Place d\'abord ton départ (📍 ou touche la carte).</p>'; return; }
+  if(dest){ box.innerHTML = '<p class="sg-msg">Retire l\'arrivée choisie (✕) pour voir des suggestions autour de toi.</p>'; return; }
+  const target = targetMeters(), loop = st.type === 'boucle';
+  const key = [start[0].toFixed(4), start[1].toFixed(4), st.mode, st.type, Math.round(target)].join('|');
+  if(key === suggKey){ showPlaces(); return; }
+  const run = ++suggRun;
+  suggKey = key; suggPlaces = []; suggTours = [];
+  const radius = loop ? target * 0.42 : target / 1.3;
+  box.innerHTML = '<p class="sg-msg">🔎 Recherche des lieux à visiter à moins de ' + fmtKm(radius) + '…</p>';
+  let places = [];
+  try{ places = await findPlaces(start, radius); }catch(e){}
+  if(run !== suggRun) return;
+  if(!places.length){ box.innerHTML = '<p class="sg-msg">Aucun lieu à visiter trouvé dans ce rayon. Essaie une distance plus grande.</p>'; suggKey = ''; return; }
+
+  if(!loop){
+    // Aller simple : liste des lieux touristiques dans le rayon, du plus proche au plus loin
+    suggPlaces = places.sort((a, b) => a.dist - b.dist);
+    box.innerHTML = '<p class="sg-h">' + places.length + ' lieu' + (places.length > 1 ? 'x' : '') + ' à visiter à moins de ' + fmtKm(radius) + '</p>';
+    places.forEach(p => box.appendChild(placeCard(p, true)));
+    showPlaces();
+    return;
+  }
+  // Boucle : balades qui passent par des lieux à visiter
+  const tours = planTours(places, target), base = PROFILES[st.mode];
+  box.innerHTML = '<p class="sg-h">Balades de ' + fmtKm(target) + ' avec des lieux à visiter</p><p class="sg-msg" id="sgWait">Calcul des balades… 0 / ' + tours.length + '</p>';
+  for(let i = 0; i < tours.length; i++){
+    if(run !== suggRun) return;
+    const w = $('sgWait'); if(w) w.textContent = 'Calcul des balades… ' + (i + 1) + ' / ' + tours.length;
+    try{
+      const c = await routeTour(base, tours[i], target);
+      if(run !== suggRun) return;
+      if(c && !suggTours.some(o => similarity(c, o) > 0.7)){ suggTours.push(c); box.insertBefore(tourCard(c), $('sgWait')); }
+    }catch(e){ break; }
+  }
+  const w = $('sgWait');
+  if(w) w.remove();
+  if(!suggTours.length){
+    box.insertAdjacentHTML('beforeend', '<p class="sg-msg">Pas de balade à ±' + fmtKm(tolerance(target)) + ' de ton objectif avec ces lieux. Essaie une autre distance.</p>');
+    suggKey = '';
+  }
+}
+function setTab(t){
+  tab = t;
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+  $('list').hidden = t !== 'parcours';
+  $('sugg').hidden = t !== 'sugg';
+  if(t === 'sugg'){ runSugg(); if(!WIDE.matches && sheetReady && sheetState === 'peek') setSheet('half'); }
+  showPlaces();
+  if(sheetReady && !WIDE.matches) setSheet(sheetState);
+}
+document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => setTab(b.dataset.t));
+
 /* ---------- Téléphone : panneau en tiroir façon Android (glisser pour agrandir) ---------- */
 var sheetState = 'peek', sheetReady = false;
 function sheetH(){
   const vh = window.innerHeight, first = $('list').querySelector('.it');
   // Replié : la ligne de résumé + la ligne d'info + le parcours sélectionné
-  const top = $('info').getBoundingClientRect().bottom - $('panel').getBoundingClientRect().top;
-  const peek = Math.min(Math.round(vh * 0.6), Math.round(top + (first ? first.offsetHeight + 20 : 10)));
+  const top = $('tabs').getBoundingClientRect().bottom - $('panel').getBoundingClientRect().top;
+  const peek = Math.min(Math.round(vh * 0.6), Math.round(top + (first && tab === 'parcours' ? first.offsetHeight + 20 : 10)));
   return { peek, half: Math.max(peek + 80, Math.round(vh * 0.58)), full: vh };
 }
 // Le bouton de localisation suit le haut du tiroir (masqué quand le tiroir prend presque tout l'écran)
@@ -1498,9 +1731,11 @@ function setSheet(s){
   // Mi-hauteur et plein écran : la liste défile sans changer la taille du tiroir
   // (on change la taille avec la poignée ou la ligne de résumé) ; replié : glisser sur la liste agrandit le tiroir
   const scrolls = s !== 'peek';
-  l.style.touchAction = scrolls ? 'pan-y' : 'none';
-  l.style.overflowY = scrolls ? 'auto' : 'hidden';
-  if(!scrolls) l.scrollTop = 0;
+  [l, $('sugg')].forEach(el => {
+    el.style.touchAction = scrolls ? 'pan-y' : 'none';
+    el.style.overflowY = scrolls ? 'auto' : 'hidden';
+    if(!scrolls) el.scrollTop = 0;
+  });
 }
 function placeSearch(){
   const s = $('search');
@@ -1516,7 +1751,7 @@ function placeSearch(){
 let drag = null, swallowClick = false;
 function dragStart(e){
   if(WIDE.matches || (e.pointerType === 'mouse' && e.button !== 0)) return;
-  if(e.currentTarget.id === 'list' && sheetState !== 'peek') return;   // mi-hauteur / plein écran : la liste défile normalement
+  if((e.currentTarget.id === 'list' || e.currentTarget.id === 'sugg') && sheetState !== 'peek') return;   // mi-hauteur / plein écran : la liste défile normalement
   drag = { x:e.clientX, y:e.clientY, h:$('panel').offsetHeight, id:e.pointerId, el:e.currentTarget, moved:false, axis:null,
            lastX:e.clientX, lastY:e.clientY, lastT:performance.now(), v:0, vx:0 };
 }
@@ -1586,7 +1821,7 @@ function swipeEnd(d, dx){
     }
   }, 170);
 }
-['grab', 'sumrow', 'list'].forEach(id => $(id).addEventListener('pointerdown', dragStart));
+['grab', 'sumrow', 'tabs', 'list', 'sugg'].forEach(id => $(id).addEventListener('pointerdown', dragStart));
 // suivi du doigt sur toute la fenêtre (le doigt sort vite de la poignée)
 window.addEventListener('pointermove', dragMove);
 window.addEventListener('pointerup', dragEnd);
