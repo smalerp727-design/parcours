@@ -684,6 +684,7 @@ function select(c, noFit){
   loadPhotos(c);
 }
 
+let lastGenKey = '';
 async function generate(){
   if(!start){ msg('Position inconnue : touche la carte pour placer ton départ.', true); return; }
   const target = targetMeters();
@@ -692,12 +693,21 @@ async function generate(){
     if(target > 100000){ msg('Objectif limité à 100 km.', true); return; }
   }
   const run = ++genRun, base = PROFILES[st.mode];
-  candidates = []; selected = null; lastRoute = null; userPicked = false; page = 0;
+
+  // Même départ, même activité, même type : on garde les parcours déjà proposés (après les nouveaux)
+  const key = [start[0].toFixed(5), start[1].toFixed(5), st.mode, st.type, dest ? dest.ll.join(',') : ''].join('|');
+  const keep = key === lastGenKey ? candidates.slice() : [];
+  lastGenKey = key;
+  let fresh = [];
+  const show = () => { candidates = fresh.concat(keep); };
+
+  candidates = keep.slice(); selected = null; lastRoute = null; userPicked = false; page = 0;
   photoRun++; photoLayer.clearLayers();
   drawAll(); renderList();
   $('btnGo').disabled = true;
   msg('');
   let lastErr = null;
+  const isNew = c => !fresh.concat(keep).some(o => similarity(c, o) > 0.7);   // pas un quasi-doublon
 
   if(dest){
     // Destination choisie : itinéraire conseillé + variantes
@@ -705,10 +715,11 @@ async function generate(){
     try{
       const j = await route(base, [start, dest.ll], '&alternatives=3');
       if(run !== genRun) return;
-      candidates = j.routes.map(r => makeCandidate(r, r.geometry.coordinates, { kind:'dest' }));
+      j.routes.map(r => makeCandidate(r, r.geometry.coordinates, { kind:'dest' }))
+        .forEach(c => { if(isNew(c)) fresh.push(c); });
     }catch(e){ lastErr = e; }
   } else {
-    // 4 directions différentes, calculées l'une après l'autre
+    // 10 directions différentes, calculées l'une après l'autre
     const N = 10, off = Math.random() * 36;
     const learn = { factor: st.type === 'boucle' ? 1 / 1.25 : 1 / 1.3 };
     for(let k = 0; k < N; k++){
@@ -717,31 +728,34 @@ async function generate(){
       try{
         const c = await buildCandidate(base, st.type, off + k * 360 / N, target, learn);
         if(run !== genRun) return;
-        if(candidates.some(o => similarity(c, o) > 0.7)) continue;   // quasi identique à un parcours déjà proposé
-        // Pendant le calcul : les parcours s'ajoutent à la suite, sans réordonner,
-        // et la sélection reste sur le 1er trouvé (pas de saut d'un parcours à l'autre)
-        candidates.push(c);
+        if(!isNew(c)) continue;
+        // Pendant le calcul : les nouveaux parcours s'ajoutent à la suite, sans réordonner,
+        // et la sélection reste sur le 1er nouveau trouvé
+        fresh.push(c); show();
         if(!selected){
-          selected = candidates[0];
+          selected = c;
           drawAll(); renderList(); fitRoute();
-          const km = selected.distance / 1000;
+          const km = c.distance / 1000;
           msg('<b>' + km.toFixed(1) + ' km</b> · ≈ ' + fmtMin(km / speed() * 60));
         } else { drawAll(); renderList(); }
       }catch(e){ lastErr = e; if(/connexion|demandes/.test(e.message)) break; }
     }
-    // On écarte les parcours avec trop d'allers-retours s'il existe mieux
-    if(candidates.some(c => c.overlap <= 0.1)) candidates = candidates.filter(c => c.overlap <= 0.1);
+    // On écarte les nouveaux parcours avec trop d'allers-retours s'il existe mieux
+    if(fresh.some(c => c.overlap <= 0.1)) fresh = fresh.filter(c => c.overlap <= 0.1);
   }
 
   $('btnGo').disabled = false;
   if(run !== genRun) return;
+  // Nouveaux parcours triés en tête de liste, les précédents ensuite (40 au maximum)
+  fresh.sort((a, b) => scoreOf(a, target) - scoreOf(b, target));
+  show();
+  candidates = candidates.slice(0, 40);
   $('btnGo').textContent = candidates.length ? '🔁 Autres parcours' : 'Générer un parcours';
   if(!candidates.length){ msg(lastErr ? lastErr.message : 'Aucun parcours trouvé.', true); return; }
-  candidates.sort((a, b) => scoreOf(a, target) - scoreOf(b, target));
   if(userPicked && candidates.includes(selected)){ drawAll(); renderList(); }
-  else select(candidates[0]);   // le 1er de la liste = le meilleur parcours
-  nameRoutes(candidates);
-  $('btnGo').textContent = '🔁 Autres parcours';
+  else select(candidates[0]);
+  if(!fresh.length && keep.length) msg((lastErr ? lastErr.message + ' ' : '') + 'Pas de nouveau parcours différent cette fois : réessaie ou change de distance.', !!lastErr);
+  nameRoutes(fresh);
 }
 
 /* ---------- Recherche de lieu (Photon, sans compte) ---------- */
