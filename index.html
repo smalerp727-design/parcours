@@ -52,6 +52,16 @@
   .tiles-clair{filter:grayscale(.9) brightness(1.08) contrast(.85)}
   .tiles-sombre{filter:invert(1) hue-rotate(180deg) brightness(.9) contrast(.9) grayscale(.3)}
   .leaflet-container{background:#ddd}
+  #btnPhoto{top:calc(174px + env(safe-area-inset-top))}
+  #btnPhoto.off{opacity:.45}
+  .ph{width:26px;height:26px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;font-size:13px}
+  .ph-wiki{background:#ea580c}
+  .ph-pano{background:#2563eb}
+  #viewer .card{max-width:680px;padding:12px}
+  #vImg{display:block;width:100%;max-height:62vh;object-fit:contain;background:#111;border-radius:10px;min-height:120px}
+  #vCap{font-size:14px;margin-top:8px;line-height:1.4}
+  #vCap small{display:block;color:var(--mu);margin-top:2px}
+  #vLink{flex:1;padding:11px;border-radius:10px;border:1px solid var(--bd);text-align:center;text-decoration:none;color:var(--c);font-size:15px}
   #styles button{border:none;background:none;text-align:left;padding:9px 12px;border-radius:8px;font-size:15px;white-space:nowrap;color:var(--tx)}
   #styles button.on{background:#e6f4f1;color:var(--c);font-weight:600}
 
@@ -77,6 +87,18 @@
 <button id="btnLoc" class="fab" title="Ma position">📍</button>
 <button id="btnStyle" class="fab" title="Style de carte">🗺️</button>
 <div id="styles" class="hidden"></div>
+<button id="btnPhoto" class="fab" title="Photos du parcours">📷</button>
+
+<div id="viewer" class="modal hidden">
+  <div class="card">
+    <img id="vImg" alt="">
+    <div id="vCap"></div>
+    <div class="btns">
+      <a id="vLink" href="#" target="_blank" rel="noopener">Voir la source</a>
+      <button id="vClose" class="primary">Fermer</button>
+    </div>
+  </div>
+</div>
 
 <div id="panel">
   <div class="seg" id="segMode">
@@ -377,7 +399,136 @@ function draw(rt){
 
   const km = rt.distance / 1000;
   msg('<b>' + km.toFixed(1) + ' km</b> · ≈ ' + fmtMin(km / speed() * 60));
+  lastRoute = rt;
+  loadPhotos(rt);
 }
+
+/* ---------- Photos le long du parcours ---------- */
+// 🟠 Wikimedia Commons : photos géolocalisées (monuments, paysages…)
+// 🔵 Panoramax : vues depuis la rue / le chemin (équivalent libre de Street View)
+let photoLayer = L.layerGroup().addTo(map), photoRun = 0, lastRoute = null;
+if(st.photos === undefined) st.photos = true;
+$('btnPhoto').classList.toggle('off', !st.photos);
+
+function hav(a, b){ // distance en mètres entre [lat,lng]
+  const R = 6371000, r = Math.PI / 180;
+  const dLa = (b[0] - a[0]) * r, dLo = (b[1] - a[1]) * r;
+  const x = Math.sin(dLa/2) ** 2 + Math.cos(a[0]*r) * Math.cos(b[0]*r) * Math.sin(dLo/2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(x));
+}
+// Points régulièrement espacés le long du tracé
+function samples(line, step){
+  const out = [line[0]]; let acc = 0;
+  for(let i = 1; i < line.length; i++){
+    acc += hav(line[i-1], line[i]);
+    if(acc >= step){ out.push(line[i]); acc = 0; }
+  }
+  return out;
+}
+const nearRoute = (line, p, max) => line.some(q => hav(q, p) <= max);
+const stripHtml = s => { const d = document.createElement('div'); d.innerHTML = s || ''; return d.textContent.trim(); };
+
+async function getJSON(url){
+  const r = await fetch(url);
+  if(!r.ok) throw new Error(r.status);
+  return r.json();
+}
+async function inBatches(items, size, fn){
+  const out = [];
+  for(let i = 0; i < items.length; i += size) out.push(...await Promise.all(items.slice(i, i + size).map(x => fn(x).catch(() => null))));
+  return out;
+}
+
+async function wikiPhotos(line, length){
+  const step = Math.max(400, length / 12);
+  const radius = Math.min(10000, Math.round(step * 0.7));
+  const res = await inBatches(samples(line, step), 4, p => getJSON(
+    'https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*' +
+    '&generator=geosearch&ggsnamespace=6&ggslimit=15&ggsradius=' + radius +
+    '&ggscoord=' + p[0].toFixed(5) + '%7C' + p[1].toFixed(5) +
+    '&prop=imageinfo%7Ccoordinates&iiprop=url%7Cextmetadata&iiurlwidth=900' +
+    '&iiextmetadatafilter=ObjectName%7CArtist%7CLicenseShortName'));
+  const seen = new Set(), out = [];
+  res.forEach(j => {
+    const pages = j && j.query && j.query.pages; if(!pages) return;
+    Object.values(pages).forEach(pg => {
+      const ii = pg.imageinfo && pg.imageinfo[0], c = pg.coordinates && pg.coordinates[0];
+      if(!ii || !c || seen.has(pg.pageid) || !/\.(jpe?g|png|webp)$/i.test(pg.title)) return;
+      const ll = [c.lat, c.lon];
+      if(!nearRoute(line, ll, 150)) return;
+      seen.add(pg.pageid);
+      const m = ii.extmetadata || {};
+      out.push({
+        src:'wiki', ll, img: ii.thumburl || ii.url, link: ii.descriptionurl,
+        title: stripHtml(m.ObjectName && m.ObjectName.value) || pg.title.replace(/^File:|\.[a-z]+$/gi, ''),
+        credit: [stripHtml(m.Artist && m.Artist.value), m.LicenseShortName && m.LicenseShortName.value].filter(Boolean).join(' · ') + ' · Wikimedia Commons'
+      });
+    });
+  });
+  return out.slice(0, 30);
+}
+
+async function panoPhotos(line, length){
+  const step = Math.max(300, length / 15);
+  const pts = samples(line, step).slice(1);
+  const d = 0.0004; // ≈ 40 m autour de chaque point
+  const res = await inBatches(pts, 5, p => getJSON(
+    'https://api.panoramax.xyz/api/search?limit=1&bbox=' +
+    [p[1] - d, p[0] - d, p[1] + d, p[0] + d].map(v => v.toFixed(6)).join(',')));
+  const out = [];
+  res.forEach(j => {
+    const f = j && j.features && j.features[0]; if(!f || !f.assets) return;
+    const c = f.geometry.coordinates, pr = f.properties || {};
+    const date = pr.datetime ? new Date(pr.datetime).toLocaleDateString('fr-FR', { month:'long', year:'numeric' }) : '';
+    out.push({
+      src:'pano', ll:[c[1], c[0]],
+      img: (f.assets.sd || f.assets.thumb).href, link: (f.assets.hd || f.assets.sd).href,
+      title: 'Vue sur le parcours' + (date ? ' (' + date + ')' : ''),
+      credit: [pr['geovisio:producer'], pr.license].filter(Boolean).join(' · ') + ' · Panoramax'
+    });
+  });
+  return out;
+}
+
+function showPhoto(p){
+  $('vImg').src = p.img;
+  $('vCap').innerHTML = '';
+  const t = document.createElement('div'); t.textContent = p.title;
+  const s = document.createElement('small'); s.textContent = p.credit;
+  $('vCap').append(t, s);
+  $('vLink').href = p.link;
+  $('viewer').classList.remove('hidden');
+}
+$('vClose').onclick = () => { $('viewer').classList.add('hidden'); $('vImg').src = ''; };
+$('viewer').onclick = e => { if(e.target.id === 'viewer') $('vClose').onclick(); };
+
+async function loadPhotos(rt){
+  const run = ++photoRun;
+  photoLayer.clearLayers();
+  if(!st.photos) return;
+  const line = rt.geometry.coordinates.map(c => [c[1], c[0]]);
+  const base = $('info').innerHTML.replace(/ · 📷.*$/, '');
+  $('info').innerHTML = base + ' · 📷 recherche…';
+  const [wiki, pano] = await Promise.all([
+    wikiPhotos(line, rt.distance).catch(() => []),
+    panoPhotos(line, rt.distance).catch(() => [])
+  ]);
+  if(run !== photoRun) return;   // un autre parcours a été demandé entre-temps
+  const all = pano.concat(wiki);
+  all.forEach(p => {
+    L.marker(p.ll, { zIndexOffset:500, icon: L.divIcon({ className:'', iconSize:[26,26], iconAnchor:[13,13],
+      html:'<div class="ph ' + (p.src === 'wiki' ? 'ph-wiki">📷' : 'ph-pano">👁') + '</div>' }) })
+      .on('click', () => showPhoto(p)).addTo(photoLayer);
+  });
+  $('info').innerHTML = base + ' · 📷 ' + (all.length ? all.length + ' photo' + (all.length > 1 ? 's' : '') : 'aucune photo');
+}
+
+$('btnPhoto').onclick = () => {
+  st.photos = !st.photos; store.set('st', st);
+  $('btnPhoto').classList.toggle('off', !st.photos);
+  if(st.photos && lastRoute) loadPhotos(lastRoute);
+  else { photoRun++; photoLayer.clearLayers(); $('info').innerHTML = $('info').innerHTML.replace(/ · 📷.*$/, ''); }
+};
 
 $('btnGo').onclick = generate;
 </script>
