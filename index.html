@@ -48,6 +48,10 @@
   #btnStyle{top:calc(120px + env(safe-area-inset-top))}
   #styles{position:fixed;right:66px;top:calc(120px + env(safe-area-inset-top));z-index:1100;background:var(--bg);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.25);padding:6px;display:flex;flex-direction:column;gap:2px}
   #styles.hidden{display:none}
+  /* Variantes claire et sombre obtenues en filtrant la carte OpenStreetMap */
+  .tiles-clair{filter:grayscale(.9) brightness(1.08) contrast(.85)}
+  .tiles-sombre{filter:invert(1) hue-rotate(180deg) brightness(.9) contrast(.9) grayscale(.3)}
+  .leaflet-container{background:#ddd}
   #styles button{border:none;background:none;text-align:left;padding:9px 12px;border-radius:8px;font-size:15px;white-space:nowrap;color:var(--tx)}
   #styles button.on{background:#e6f4f1;color:var(--c);font-weight:600}
 
@@ -137,8 +141,8 @@ const OSM = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap<
 const ATTR_END = ' · itinéraires FOSSGIS · <a href="https://www.openstreetmap.org/fixthemap">Signaler une erreur</a>';
 const STYLES = {
   plan:      { label:'🗺️ Plan',      url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png', max:19, attr:OSM },
-  clair:     { label:'⬜ Clair',     url:'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', max:20, sub:'abcd', attr:OSM + ' © CARTO' },
-  sombre:    { label:'⬛ Sombre',    url:'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',  max:20, sub:'abcd', attr:OSM + ' © CARTO', dark:true },
+  clair:     { label:'⬜ Clair',     url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png', max:19, attr:OSM, cls:'tiles-clair' },
+  sombre:    { label:'⬛ Sombre',    url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png', max:19, attr:OSM, cls:'tiles-sombre', dark:true },
   satellite: { label:'🛰️ Satellite', url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', max:19, attr:'Imagerie © Esri · ' + OSM, dark:true },
   relief:    { label:'⛰️ Relief',    url:'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', max:17, sub:'abc', attr:OSM + ' · © OpenTopoMap (CC-BY-SA)' },
   velo:      { label:'🚲 Vélo',      url:'https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png', max:20, sub:'abc', attr:OSM + ' · CyclOSM' }
@@ -151,7 +155,7 @@ function setStyle(k){
   st.style = k; store.set('st', st);
   const s = STYLES[k];
   if(tiles) map.removeLayer(tiles);
-  tiles = L.tileLayer(s.url, { maxZoom:s.max, subdomains:s.sub || 'abc', attribution:s.attr + ATTR_END }).addTo(map);
+  tiles = L.tileLayer(s.url, { maxZoom:s.max, subdomains:s.sub || 'abc', className:s.cls || '', attribution:s.attr + ATTR_END }).addTo(map);
   if(map.getZoom() > s.max) map.setZoom(s.max);
   if(routeLayer) routeLayer.setStyle(routeStyle());
   $('styles').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === k));
