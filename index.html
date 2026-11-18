@@ -416,7 +416,7 @@ function loopPoints(ll, length, brg){
 const llOf = c => [c[1], c[0]];
 function lengthOf(coords){ let d = 0; for(let i = 1; i < coords.length; i++) d += hav(llOf(coords[i-1]), llOf(coords[i])); return d; }
 
-// Supprime les allers-retours "en cul-de-sac" (on va jusqu'à un point puis on revient sur ses pas)
+// Supprime les allers-retours exacts (on va au bout d'une rue puis on revient sur ses pas)
 function removeSpikes(coords){
   const s = [];
   for(const c of coords){
@@ -426,18 +426,62 @@ function removeSpikes(coords){
   }
   return s;
 }
-// Part du parcours empruntée deux fois (même tronçon dans un sens puis dans l'autre)
-function overlapOf(coords){
-  const key = c => c[0].toFixed(5) + ',' + c[1].toFixed(5);
-  const cnt = new Map(), segs = [];
-  let total = 0, dup = 0;
+// Ajoute des points tous les ~10 m pour analyser finement le tracé
+function densify(coords, step){
+  const out = [coords[0]];
   for(let i = 1; i < coords.length; i++){
-    const a = key(coords[i-1]), b = key(coords[i]), k = a < b ? a + '|' + b : b + '|' + a;
-    const d = hav(llOf(coords[i-1]), llOf(coords[i]));
-    cnt.set(k, (cnt.get(k) || 0) + 1); segs.push([k, d]); total += d;
+    const a = coords[i-1], b = coords[i], n = Math.floor(hav(llOf(a), llOf(b)) / step);
+    for(let t = 1; t <= n; t++) out.push([a[0] + (b[0]-a[0]) * t/(n+1), a[1] + (b[1]-a[1]) * t/(n+1)]);
+    out.push(b);
   }
-  segs.forEach(([k, d]) => { if(cnt.get(k) > 1) dup += d; });
-  return total ? dup / total : 0;
+  return out;
+}
+function cumul(P){ const a = [0]; for(let i = 1; i < P.length; i++) a.push(a[i-1] + hav(llOf(P[i-1]), llOf(P[i]))); return a; }
+// Grille pour retrouver vite les points proches les uns des autres
+function grid(P, cell, from, to){
+  const g = new Map(), k = c => Math.floor(c[1] * 111000 / cell) + ',' + Math.floor(c[0] * 78000 / cell);
+  for(let i = from; i <= to; i++){ const key = k(P[i]); if(!g.has(key)) g.set(key, []); g.get(key).push(i); }
+  return { near(c){
+    const y = Math.floor(c[1] * 111000 / cell), x = Math.floor(c[0] * 78000 / cell), out = [];
+    for(let dy = -1; dy <= 1; dy++) for(let dx = -1; dx <= 1; dx++){ const l = g.get((y+dy) + ',' + (x+dx)); if(l) out.push(...l); }
+    return out;
+  }};
+}
+// Part d'un tronçon (i → j) où l'on repasse à moins de 15 m d'un endroit déjà emprunté
+function doubledShare(P, arc, i, j){
+  const g = grid(P, 15, i, j); let n = 0;
+  for(let k = i; k <= j; k++){
+    if(g.near(P[k]).some(m => Math.abs(arc[m] - arc[k]) > 40 && hav(llOf(P[m]), llOf(P[k])) < 15)) n++;
+  }
+  return n / (j - i + 1);
+}
+// Coupe les détours "aller-retour" : on revient presque au même point en ayant surtout refait le même chemin
+function cleanLoop(coords){
+  let P = densify(removeSpikes(coords), 10);
+  for(let pass = 0; pass < 3; pass++){
+    const arc = cumul(P), total = arc[arc.length-1], g = grid(P, 20, 0, P.length - 1), out = [];
+    let i = 0, changed = false;
+    while(i < P.length){
+      out.push(P[i]);
+      let jBest = -1;
+      for(const j of g.near(P[i])){
+        if(j <= i || j <= jBest) continue;
+        const a = arc[j] - arc[i];
+        if(a < 40 || a > 0.45 * total) continue;
+        if(hav(llOf(P[i]), llOf(P[j])) < 20) jBest = j;
+      }
+      if(jBest > 0 && doubledShare(P, arc, i, jBest) > 0.6){ i = jBest; changed = true; }
+      else i++;
+    }
+    P = out;
+    if(!changed) break;
+  }
+  return P;
+}
+// Part du parcours complet empruntée deux fois
+function overlapOf(coords){
+  const P = densify(coords, 10), arc = cumul(P);
+  return doubledShare(P, arc, 0, P.length - 1);
 }
 function roadNames(r){
   const seen = new Set();
@@ -451,47 +495,96 @@ const DIRS = ['nord', 'nord-est', 'est', 'sud-est', 'sud', 'sud-ouest', 'ouest',
 const dirOf = brg => DIRS[Math.round((((brg % 360) + 360) % 360) / 45) % 8];
 
 function makeCandidate(r, coords, extra){
-  const c = Object.assign({ geometry:{ type:'LineString', coordinates:coords }, distance:lengthOf(coords),
-    overlap:overlapOf(coords), names:roadNames(r) }, extra);
-  return c;
+  return Object.assign({ geometry:{ type:'LineString', coordinates:coords }, distance:lengthOf(coords),
+    overlap:overlapOf(coords), names:roadNames(r), lm:[] }, extra);
+}
+function scoreOf(c, target){
+  if(c.kind === 'dest') return c.distance;
+  // Un aller-retour pèse plus lourd qu'un écart de distance : mieux vaut un parcours un peu plus long ou court
+  return Math.abs(c.distance - target) / target + c.overlap * 3;
 }
 
-// Calcule un parcours dans une direction donnée, en ajustant sa taille (2 essais max)
-async function buildCandidate(base, kind, brg, target){
-  let factor = kind === 'boucle' ? 1 / 1.25 : 1 / 1.3, best = null;
-  for(let i = 0; i < 2; i++){
+// Calcule un parcours dans une direction donnée (3 essais max) :
+// on ajuste la taille si la distance s'écarte, on tourne un peu le parcours s'il contient des allers-retours
+async function buildCandidate(base, kind, brg0, target){
+  let factor = kind === 'boucle' ? 1 / 1.25 : 1 / 1.3, brg = brg0, best = null;
+  for(let i = 0; i < 3; i++){
     const req = target * factor;
     const pts = kind === 'boucle' ? loopPoints(start, req, brg) : [start, destPoint(start, req, brg)];
     const j = await route(base, pts);
     const r = j.routes[0];
-    const coords = kind === 'boucle' ? removeSpikes(r.geometry.coordinates) : r.geometry.coordinates;
+    const coords = kind === 'boucle' ? cleanLoop(r.geometry.coordinates) : r.geometry.coordinates;
     const wp = j.waypoints || [];
-    const c = makeCandidate(r, coords, { kind, brg, endName: kind === 'aller' && wp.length ? wp[wp.length-1].name : '' });
-    if(!best || Math.abs(c.distance - target) < Math.abs(best.distance - target)) best = c;
-    if(Math.abs(c.distance - target) / target < 0.12) break;
-    factor *= target / c.distance;
+    const c = makeCandidate(r, coords, { kind, brg:brg0, endName: kind === 'aller' && wp.length ? wp[wp.length-1].name : '' });
+    if(!best || scoreOf(c, target) < scoreOf(best, target)) best = c;
+    const err = Math.abs(c.distance - target) / target;
+    if(c.overlap > 0.08) brg += 25;                 // trop d'allers-retours : on décale le parcours
+    else if(err > 0.15) factor *= target / c.distance;
+    else break;                                     // distance à ±15 % et sans aller-retour : parfait
   }
   return best;
+}
+
+/* ---------- Noms marquants (Wikipédia : parcs, quais, monuments…) ---------- */
+const lmCache = new Map();
+function wikiAround(p, radius){
+  const k = p[0].toFixed(3) + ',' + p[1].toFixed(3) + ',' + radius;
+  if(!lmCache.has(k)) lmCache.set(k, getJSON('https://fr.wikipedia.org/w/api.php?action=query&format=json&origin=*' +
+    '&list=geosearch&gslimit=50&gsprop=type%7Cdim&gsradius=' + radius +
+    '&gscoord=' + p[0].toFixed(5) + '%7C' + p[1].toFixed(5))
+    .then(j => (j.query && j.query.geosearch) || []).catch(() => []));
+  return lmCache.get(k);
+}
+const LM_KEY = /parc|jardin|quai|berge|pont|passerelle|place|square|esplanade|promenade|basilique|cathédrale|église|abbaye|chapelle|musée|théâtre|opéra|colline|lac|étang|île|bois|forêt|fontaine|tour|château|fort|halle|hôtel|hôpital|stade|port|marina|plage|belvédère|arc|statue|monument|mairie|palais|gare/i;
+const LM_STRONG = /^(parc|jardin|quais?|berges?|lac|île|bois|forêt|colline|promenade|esplanade|belvédère|plage)\b/i;
+const LM_BADTYPE = /^(country|state|adm|city|edu|event|satellite|airport)/;
+const LM_BADNAME = /^(rue|avenue|boulevard|cours|impasse|chemin|route|liste|arrondissement|quartier|ligne|tunnel|autoroute)\b/i;
+const cleanName = t => t.replace(/\s*\([^)]*\)\s*$/, '');
+
+async function landmarksOf(c){
+  const line = c.geometry.coordinates.map(llOf);
+  const step = Math.max(300, c.distance / 10);
+  const res = await inBatches(samples(line, step), 4, p => wikiAround(p, Math.min(10000, Math.round(step * 0.8))));
+  const found = new Map();
+  res.flat().forEach(g => {
+    if(!g || found.has(g.pageid) || (g.type && LM_BADTYPE.test(g.type))) return;
+    if(!LM_KEY.test(g.title) || LM_BADNAME.test(g.title)) return;
+    const tol = Math.min(600, Math.max(80, (parseFloat(g.dim) || 0) / 2));   // grands parcs : on tolère plus loin
+    let best = Infinity, idx = 0;
+    for(let i = 0; i < line.length; i += 2){ const d = hav(line[i], [g.lat, g.lon]); if(d < best){ best = d; idx = i; } }
+    if(best > tol) return;
+    found.set(g.pageid, { name:cleanName(g.title), idx,
+      score:(LM_STRONG.test(g.title) ? 5 : 3) + (g.type === 'landmark' ? 1 : 0) - best / 300 });
+  });
+  let lm = [...found.values()].sort((a, b) => b.score - a.score)
+    .filter((l, i, arr) => arr.findIndex(x => x.name.toLowerCase() === l.name.toLowerCase()) === i);
+  // Les quais et berges empruntés comptent aussi, même sans article Wikipédia
+  c.names.filter(n => /^(quai|berges?|promenade|allée|esplanade|voie verte)\b/i.test(n))
+    .forEach(n => { if(!lm.some(l => l.name.toLowerCase() === n.toLowerCase())) lm.push({ name:n, idx:0, score:2 }); });
+  return lm.slice(0, 3);
+}
+function nameRoutes(list){
+  list.forEach(c => landmarksOf(c).then(lm => { c.lm = lm; if(candidates.includes(c)) renderList(); }).catch(() => {}));
 }
 
 /* ---------- Liste des parcours proposés ---------- */
 let candidates = [], selected = null, genRun = 0, altLayer = L.layerGroup().addTo(map);
 
 function titleOf(c, i){
-  if(c.kind === 'dest') return i === 0 ? 'Itinéraire conseillé' : 'Variante ' + i;
+  const top = c.lm[0] && c.lm[0].name;
+  if(c.kind === 'dest') return (i === 0 ? 'Conseillé' : 'Variante ' + i) + (top ? ' · par ' + top : '');
+  if(top) return (c.kind === 'boucle' ? 'Boucle · ' : 'Vers ') + top;
   const d = dirOf(c.brg);
   if(c.kind === 'boucle') return 'Boucle ' + d;
   return 'Vers ' + (/^[eo]/.test(d) ? 'l\'' : 'le ') + d;
 }
 function subOf(c){
+  const more = c.lm.slice(1).map(l => l.name);
+  const d = c.kind === 'dest' ? '' : 'côté ' + dirOf(c.brg);
+  if(more.length) return [more.join(' · '), d].filter(Boolean).join(' — ');
   const n = c.names.slice(0, 2);
-  if(c.kind === 'aller' && c.endName) return 'arrivée ' + c.endName + (n.length ? ' · via ' + n[0] : '');
-  if(c.kind === 'dest') return dest && dest.name ? 'vers ' + dest.name : (n.length ? 'via ' + n.join(', ') : '');
-  return n.length ? 'via ' + n.join(', ') : '';
-}
-function scoreOf(c, target){
-  if(c.kind === 'dest') return c.distance;
-  return Math.abs(c.distance - target) / target + c.overlap * 1.5;
+  if(c.kind === 'aller' && c.endName) return 'arrivée ' + c.endName;
+  return [n.length ? 'via ' + n.join(', ') : '', d].filter(Boolean).join(' — ');
 }
 
 function renderList(){
@@ -584,7 +677,7 @@ async function generate(){
       }catch(e){ lastErr = e; if(/connexion|demandes/.test(e.message)) break; }
     }
     // On écarte les parcours avec trop d'allers-retours s'il existe mieux
-    if(candidates.some(c => c.overlap <= 0.3)) candidates = candidates.filter(c => c.overlap <= 0.3);
+    if(candidates.some(c => c.overlap <= 0.1)) candidates = candidates.filter(c => c.overlap <= 0.1);
   }
 
   $('btnGo').disabled = false;
@@ -594,6 +687,7 @@ async function generate(){
   candidates.sort((a, b) => scoreOf(a, target) - scoreOf(b, target));
   if(candidates.includes(selected)){ drawAll(); renderList(); }
   else select(candidates[0]);
+  nameRoutes(candidates);
   $('btnGo').textContent = '🔁 Autres parcours';
 }
 
