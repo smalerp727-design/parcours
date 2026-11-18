@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/lite.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
 <style>
   :root{--c:#0f766e;--bg:#fff;--tx:#1f2937;--mu:#6b7280;--bd:#e5e7eb}
@@ -123,7 +124,15 @@
   .it{cursor:pointer}
   .it .star{flex:none;border:none;background:none;font-size:20px;line-height:1;padding:4px 2px;color:#9ca3af;cursor:pointer}
   .it .star.on{color:#f59e0b}
-  #btnPhoto.off{opacity:.45}
+  .ph-me{width:34px;height:34px;background:#7c3aed center/cover no-repeat;border-width:2px}
+  .ph-me i{color:#fff;font-style:normal;font-size:12px;text-shadow:0 0 4px #000}
+  .clu.clu-me{background:#7c3aed}
+  #vVid{display:block;width:100%;max-height:62vh;background:#000;border-radius:10px}
+  #vDel{flex:1;padding:11px;border-radius:10px;border:1px solid #fca5a5;background:#fff;color:#991b1b;font-size:15px}
+  #vDel.sure{background:#fee2e2}
+  .card label.sw{display:flex;align-items:center;gap:10px;margin:8px 0;color:var(--tx);font-size:15px;cursor:pointer}
+  .sw input{width:20px;height:20px;flex:none;accent-color:var(--c)}
+  .sw small{display:block;margin:0;font-size:12px}
   .ph{width:26px;height:26px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center}
   .ph svg{width:14px;height:14px;display:block}
   .ph b{color:#fff;font:700 8px/1 system-ui,sans-serif}
@@ -176,7 +185,8 @@
 <div id="map"></div>
 <button id="btnCfg" class="fab" title="Réglages"><svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.48.48 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6a3.6 3.6 0 1 1 0-7.2 3.6 3.6 0 0 1 0 7.2z"/></svg></button>
 <button id="btnLoc" class="fab" title="Ma position"><svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm8.94 3A8.99 8.99 0 0 0 13 3.06V1h-2v2.06A8.99 8.99 0 0 0 3.06 11H1v2h2.06A8.99 8.99 0 0 0 11 20.94V23h2v-2.06A8.99 8.99 0 0 0 20.94 13H23v-2h-2.06zM12 19a7 7 0 1 1 0-14 7 7 0 0 1 0 14z"/></svg></button>
-<button id="btnPhoto" class="fab" title="Photos du parcours"><svg viewBox="0 0 24 24" style="transform:translateY(1px)"><path d="M9 2 7.17 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3.17L15 2H9zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-8a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" fill-rule="evenodd"/></svg></button>
+<button id="btnPhoto" class="fab" title="Ajouter des photos ou vidéos"><svg viewBox="0 0 24 24" style="transform:translate(1px,0)"><path d="M3 4V1h2v3h3v2H5v3H3V6H0V4h3zm3 6V7h3V4h7l1.83 2H21a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V10h3zm7 9a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm-3.2-5a3.2 3.2 0 1 0 6.4 0 3.2 3.2 0 0 0-6.4 0z"/></svg></button>
+<input id="mediaIn" type="file" accept="image/*,video/*" multiple hidden>
 
 <button id="btnSaved" class="fab" title="Mes parcours"><svg viewBox="0 0 24 24"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg><span id="svCount" hidden></span></button>
 
@@ -197,6 +207,7 @@
   <div class="card">
     <div id="vStage">
       <img id="vImg" alt="">
+      <video id="vVid" controls playsinline hidden></video>
       <div id="vPano" hidden></div>
       <button id="vPrev" class="vNav" title="Photo précédente">‹</button>
       <button id="vNext" class="vNav" title="Photo suivante">›</button>
@@ -206,6 +217,7 @@
     <div id="vCap"></div>
     <div class="btns">
       <a id="vLink" href="#" target="_blank" rel="noopener">Voir la source</a>
+      <button id="vDel" hidden>🗑 Supprimer</button>
       <button id="vClose" class="primary">Fermer</button>
     </div>
   </div>
@@ -253,6 +265,9 @@
     <h2>Réglages</h2>
     <label>Style de carte</label>
     <div id="styles"></div>
+    <label>Photos sur la carte</label>
+    <label class="sw"><input type="checkbox" id="optPhotos"><span>Photos autour du parcours<small>Wikimedia Commons et Panoramax</small></span></label>
+    <label class="sw"><input type="checkbox" id="optMine"><span>Mes photos et vidéos<small>ajoutées avec le bouton 📷+</small></span></label>
     <label>Vitesses moyennes (km/h) — servent à convertir une durée en distance</label>
     <div class="speeds">
       <div><small>Marche</small><input id="spMarche" type="number" inputmode="decimal" step="0.5"></div>
@@ -1092,7 +1107,6 @@ photoLayer.on('clusterclick', e => {
   openGallery(list, 0);
 });
 if(st.photos === undefined) st.photos = true;
-$('btnPhoto').classList.toggle('off', !st.photos);
 
 function hav(a, b){ // distance en mètres entre [lat,lng]
   const R = 6371000, r = Math.PI / 180;
@@ -1208,10 +1222,24 @@ $('vImg').addEventListener('touchend', e => {
   if(Math.abs(dx) > 50) step(dx < 0 ? 1 : -1);
 });
 
+let curUrl = null;
+function stopVideo(){ const v = $('vVid'); v.pause(); v.removeAttribute('src'); v.load(); v.hidden = true; }
 function showPhoto(p){
-  closePano();
+  closePano(); stopVideo();
+  if(curUrl){ URL.revokeObjectURL(curUrl); curUrl = null; }
+  if(p.mine){ curUrl = URL.createObjectURL(p.media.blob); p.img = curUrl; }   // fichier gardé sur l'appareil
+  $('vLink').hidden = !!p.mine;
+  $('vDel').hidden = !p.mine;
+  $('vDel').classList.remove('sure'); $('vDel').textContent = '🗑 Supprimer';
+  $('vDel').onclick = () => {
+    if(!$('vDel').classList.contains('sure')){ $('vDel').classList.add('sure'); $('vDel').textContent = 'Confirmer ?'; return; }
+    deleteMine(p);
+  };
   $('vCount').textContent = (gIdx + 1) + ' / ' + gallery.length;
-  if(p.is360 && window.pannellum){
+  if(p.video){
+    $('vImg').hidden = true; $('vImg').src = '';
+    $('vVid').hidden = false; $('vVid').src = p.img;
+  } else if(p.is360 && window.pannellum){
     $('vImg').hidden = true; $('vImg').src = '';
     $('vPano').hidden = false; $('vTip').hidden = false;
     // Les 360° sont chargées en HD pour rester nettes quand on zoome
@@ -1228,7 +1256,10 @@ function showPhoto(p){
   $('vLink').href = p.link;
   $('viewer').classList.remove('hidden');
 }
-$('vClose').onclick = () => { $('viewer').classList.add('hidden'); $('vImg').src = ''; closePano(); };
+$('vClose').onclick = () => {
+  $('viewer').classList.add('hidden'); $('vImg').src = ''; closePano(); stopVideo();
+  if(curUrl){ URL.revokeObjectURL(curUrl); curUrl = null; }
+};
 $('viewer').onclick = e => { if(e.target.id === 'viewer') $('vClose').onclick(); };
 
 const CAM_SMALL = '<svg viewBox="0 0 24 24" fill="#fff"><path d="M9 4 7.2 6H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3.2L15 4H9zm3 4.5a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9z"/></svg>';
@@ -1262,12 +1293,144 @@ async function loadPhotos(rt){
   $('info').innerHTML = base + ' · 📷 ' + (all.length ? all.length + ' photo' + (all.length > 1 ? 's' : '') : 'aucune photo');
 }
 
-$('btnPhoto').onclick = () => {
-  st.photos = !st.photos; store.set('st', st);
-  $('btnPhoto').classList.toggle('off', !st.photos);
+
+/* ---------- Mes photos et vidéos (gardées sur cet appareil) ---------- */
+const idb = (() => {
+  let dbp = null;
+  const open = () => dbp || (dbp = new Promise((res, rej) => {
+    const r = indexedDB.open('parcours', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('media', { keyPath:'id' });
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  }));
+  const run = async (mode, fn) => {
+    const db = await open();
+    return new Promise((res, rej) => {
+      const t = db.transaction('media', mode), req = fn(t.objectStore('media'));
+      t.oncomplete = () => res(req.result);
+      t.onerror = t.onabort = () => rej(t.error);
+    });
+  };
+  return { all: () => run('readonly', s => s.getAll()), put: m => run('readwrite', s => s.put(m)), del: id => run('readwrite', s => s.delete(id)) };
+})();
+
+let myMedia = [];
+const myLayer = L.markerClusterGroup({
+  maxClusterRadius:45, zoomToBoundsOnClick:false, showCoverageOnHover:false, spiderfyOnMaxZoom:false,
+  iconCreateFunction: c => L.divIcon({ className:'', iconSize:[34,34], iconAnchor:[17,17],
+    html:'<div class="clu clu-me">' + CAM_SMALL + c.getChildCount() + '</div>' })
+}).addTo(map);
+myLayer.on('clusterclick', e => {
+  const list = e.layer.getAllChildMarkers().map(m => m.photo).sort((a, b) => a.media.date.localeCompare(b.media.date));
+  openGallery(list, 0);
+});
+
+// Petite image d'aperçu (affichée dans la bulle sur la carte)
+function toBlob(cv){ return new Promise(r => cv.toBlob(r, 'image/jpeg', 0.8)); }
+async function imageThumb(f){
+  try{
+    const bmp = await createImageBitmap(f), s = Math.min(1, 240 / Math.max(bmp.width, bmp.height));
+    const cv = document.createElement('canvas'); cv.width = Math.round(bmp.width * s); cv.height = Math.round(bmp.height * s);
+    cv.getContext('2d').drawImage(bmp, 0, 0, cv.width, cv.height);
+    return await toBlob(cv);
+  }catch(e){ return null; }
+}
+function videoThumb(f){
+  return new Promise(res => {
+    const v = document.createElement('video'), url = URL.createObjectURL(f);
+    const done = b => { URL.revokeObjectURL(url); res(b); };
+    const timer = setTimeout(() => done(null), 5000);
+    v.muted = true; v.playsInline = true; v.preload = 'auto'; v.src = url;
+    v.onloadeddata = () => { try{ v.currentTime = Math.min(0.5, (v.duration || 1) / 2); }catch(e){ clearTimeout(timer); done(null); } };
+    v.onseeked = async () => {
+      try{
+        const s = Math.min(1, 240 / Math.max(v.videoWidth, v.videoHeight));
+        const cv = document.createElement('canvas'); cv.width = Math.round(v.videoWidth * s); cv.height = Math.round(v.videoHeight * s);
+        cv.getContext('2d').drawImage(v, 0, 0, cv.width, cv.height);
+        clearTimeout(timer); done(await toBlob(cv));
+      }catch(e){ clearTimeout(timer); done(null); }
+    };
+    v.onerror = () => { clearTimeout(timer); done(null); };
+  });
+}
+
+function minePhoto(m){
+  const d = new Date(m.date);
+  return { mine:true, media:m, video: m.type === 'video', ll:m.ll,
+    title: (m.type === 'video' ? '🎬 ' : '📷 ') + d.toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' }) + ' · ' + d.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }),
+    credit: m.name + (m.noGps ? ' · placée à ta position (pas de GPS dans le fichier)' : '') };
+}
+function renderMine(){
+  myLayer.clearLayers();
+  if(!st.mine) return;
+  myLayer.addLayers(myMedia.map(m => {
+    if(m.thumb && !m._thumbUrl) m._thumbUrl = URL.createObjectURL(m.thumb);
+    const p = minePhoto(m);
+    const mk = L.marker(m.ll, { zIndexOffset:600, icon:L.divIcon({ className:'', iconSize:[34,34], iconAnchor:[17,17],
+      html:'<div class="ph ph-me"' + (m._thumbUrl ? ' style="background-image:url(' + m._thumbUrl + ')"' : '') + '>' +
+        (m.type === 'video' ? '<i>▶</i>' : (m._thumbUrl ? '' : CAM)) + '</div>' }) });
+    mk.photo = p;
+    return mk.on('click', () => openGallery([p], 0));
+  }));
+}
+
+$('btnPhoto').onclick = () => $('mediaIn').click();
+$('mediaIn').onchange = async () => {
+  const files = [...$('mediaIn').files];
+  $('mediaIn').value = '';
+  if(!files.length) return;
+  msg('Ajout de ' + files.length + ' fichier' + (files.length > 1 ? 's' : '') + '…');
+  let n = 0, noGps = 0, last = null;
+  for(const f of files){
+    const isVid = f.type.startsWith('video/');
+    let ll = null, date = new Date(f.lastModified || Date.now());
+    if(!isVid && window.exifr){   // position et date de prise de vue enregistrées dans la photo
+      try{
+        const x = await exifr.parse(f);
+        if(x && isFinite(x.latitude) && isFinite(x.longitude)) ll = [x.latitude, x.longitude];
+        const v = x && x.DateTimeOriginal;
+        const dv = v instanceof Date ? v : (typeof v === 'string' ? new Date(v.replace(/^(\d{4}):(\d{2}):(\d{2}) /, '$1-$2-$3T')) : null);
+        if(dv && !isNaN(dv)) date = dv;
+      }catch(e){}
+    }
+    const m = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), type: isVid ? 'video' : 'image',
+      name: f.name, blob: f, thumb: isVid ? await videoThumb(f) : await imageThumb(f), date: date.toISOString() };
+    if(!ll){ noGps++; m.noGps = true; ll = meLL || start || [map.getCenter().lat, map.getCenter().lng]; }
+    m.ll = ll;
+    try{ await idb.put(m); myMedia.push(m); n++; last = m; }
+    catch(e){ msg('Pas assez de place pour enregistrer « ' + f.name + ' ».', true); }
+  }
+  if(!st.mine){ st.mine = true; store.set('st', st); $('optMine').checked = true; }
+  renderMine();
+  if(last) map.setView(last.ll, Math.max(map.getZoom(), 15));
+  if(n) msg('✓ ' + n + ' ajouté' + (n > 1 ? 's' : '') + ' sur la carte' + (noGps ? ' · ' + noGps + ' sans position GPS, placé' + (noGps > 1 ? 's' : '') + ' à ta position' : '') + '.');
+};
+
+async function deleteMine(p){
+  try{ await idb.del(p.media.id); }catch(e){ msg('Suppression impossible.', true); return; }
+  myMedia = myMedia.filter(m => m !== p.media);
+  if(p.media._thumbUrl) URL.revokeObjectURL(p.media._thumbUrl);
+  renderMine();
+  gallery = gallery.filter(x => x !== p);
+  if(!gallery.length){ $('vClose').onclick(); return; }
+  gIdx = Math.min(gIdx, gallery.length - 1);
+  $('vPrev').hidden = $('vNext').hidden = $('vCount').hidden = gallery.length < 2;
+  showPhoto(gallery[gIdx]);
+}
+
+// Réglages : affichage des photos
+if(st.mine === undefined) st.mine = true;
+$('optPhotos').checked = !!st.photos;
+$('optMine').checked = !!st.mine;
+$('optPhotos').onchange = () => {
+  st.photos = $('optPhotos').checked; store.set('st', st);
   if(st.photos && lastRoute) loadPhotos(lastRoute);
   else { photoRun++; photoLayer.clearLayers(); $('info').innerHTML = $('info').innerHTML.replace(/ · 📷.*$/, ''); }
 };
+$('optMine').onchange = () => { st.mine = $('optMine').checked; store.set('st', st); renderMine(); };
+
+idb.all().then(list => { myMedia = list || []; renderMine(); }).catch(() => {});
+
 
 $('btnGo').onclick = generate;
 
