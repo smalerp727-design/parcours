@@ -86,6 +86,22 @@
   .tiles-sombre{filter:invert(1) hue-rotate(180deg) brightness(.9) contrast(.9) grayscale(.3)}
   .leaflet-container{background:#ddd}
   #btnPhoto{top:calc(120px + env(safe-area-inset-top))}
+  #btnSaved{top:calc(174px + env(safe-area-inset-top))}
+  #btnSaved svg{fill:#f59e0b}
+  #svCount{position:absolute;top:-3px;right:-3px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:var(--c);color:#fff;font:700 11px/18px system-ui,sans-serif}
+  #savedList{max-height:55vh;overflow-y:auto;margin:0 -4px;padding:0 4px}
+  #savedList .empty{color:var(--mu);font-size:14px;text-align:center;line-height:1.5}
+  .sv{display:flex;align-items:center;gap:6px;padding:8px 0;border-bottom:1px solid #f1f1f1}
+  .sv div{flex:1;min-width:0}
+  .sv input{width:100%;border:1px solid transparent;border-radius:7px;padding:3px 6px;font:600 15px system-ui,sans-serif;color:var(--tx);background:none}
+  .sv input:focus{border-color:var(--bd);background:#f9fafb;outline:none}
+  .sv small{display:block;color:var(--mu);font-size:12px;padding-left:7px;margin-top:0}
+  .sv button{border:1px solid var(--bd);background:var(--bg);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--tx);white-space:nowrap}
+  .sv .del.sure{background:#fee2e2;border-color:#fca5a5;color:#991b1b}
+  .btnlike{flex:1;padding:11px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);font-size:15px;text-align:center;cursor:pointer;margin:0 !important;color:var(--tx) !important}
+  .it{cursor:pointer}
+  .it .star{flex:none;border:none;background:none;font-size:20px;line-height:1;padding:4px 2px;color:#9ca3af;cursor:pointer}
+  .it .star.on{color:#f59e0b}
   #btnPhoto.off{opacity:.45}
   .ph{width:26px;height:26px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center}
   .ph svg{width:14px;height:14px;display:block}
@@ -136,6 +152,21 @@
 <button id="btnCfg" class="fab" title="Réglages"><svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.48.48 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6a3.6 3.6 0 1 1 0-7.2 3.6 3.6 0 0 1 0 7.2z"/></svg></button>
 <button id="btnLoc" class="fab" title="Ma position"><svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm8.94 3A8.99 8.99 0 0 0 13 3.06V1h-2v2.06A8.99 8.99 0 0 0 3.06 11H1v2h2.06A8.99 8.99 0 0 0 11 20.94V23h2v-2.06A8.99 8.99 0 0 0 20.94 13H23v-2h-2.06zM12 19a7 7 0 1 1 0-14 7 7 0 0 1 0 14z"/></svg></button>
 <button id="btnPhoto" class="fab" title="Photos du parcours"><svg viewBox="0 0 24 24" style="transform:translateY(1px)"><path d="M9 2 7.17 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3.17L15 2H9zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-8a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" fill-rule="evenodd"/></svg></button>
+
+<button id="btnSaved" class="fab" title="Mes parcours"><svg viewBox="0 0 24 24"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg><span id="svCount" hidden></span></button>
+
+<div id="savedModal" class="modal hidden">
+  <div class="card">
+    <h2>Mes parcours</h2>
+    <div id="savedList"></div>
+    <div class="btns">
+      <button id="svExport">Exporter</button>
+      <label class="btnlike">Importer<input id="svImport" type="file" accept=".json,application/json" hidden></label>
+      <button id="svClose" class="primary">Fermer</button>
+    </div>
+    <small>Enregistrés sur cet appareil. « Exporter » en fait une copie (fichier) pour ne pas les perdre ou les mettre sur un autre téléphone.</small>
+  </div>
+</div>
 
 <div id="viewer" class="modal hidden">
   <div class="card">
@@ -589,6 +620,7 @@ function nameRoutes(list){
 let candidates = [], selected = null, genRun = 0, userPicked = false, altLayer = L.layerGroup().addTo(map);
 
 function titleOf(c, i){
+  if(c.savedName) return c.savedName;
   const top = c.lm[0] && c.lm[0].name;
   if(c.kind === 'dest') return (i === 0 ? 'Conseillé' : 'Variante ' + i) + (top ? ' · par ' + top : '');
   if(top) return (c.kind === 'boucle' ? 'Boucle · ' : 'Vers ') + top;
@@ -628,8 +660,9 @@ function renderList(){
   const order = selected && candidates.includes(selected) ? [selected].concat(candidates.filter(c => c !== selected)) : candidates;
   order.forEach(c => {
     const i = candidates.indexOf(c), km = c.distance / 1000;
-    const b = document.createElement('button');
+    const b = document.createElement('div');
     b.className = 'it' + (c === selected ? ' on pin' : '');
+    b.setAttribute('role', 'button'); b.tabIndex = 0;
     const tag = c.kind !== 'boucle' ? '' : c.overlap < 0.05
       ? '<span class="tag ok">✓ Sans aller-retour</span>'
       : '<span class="tag warn">↩︎ ' + Math.round(c.overlap * 100) + ' % en double</span>';
@@ -638,6 +671,13 @@ function renderList(){
     b.querySelector('b').textContent = titleOf(c, i);
     b.querySelector('div small').textContent = subOf(c);
     b.onclick = () => pick(c);
+    const star = document.createElement('button');
+    const sv = isSaved(c);
+    star.className = 'star' + (sv ? ' on' : '');
+    star.textContent = sv ? '★' : '☆';
+    star.title = sv ? 'Retirer de Mes parcours' : 'Enregistrer ce parcours';
+    star.onclick = e => { e.stopPropagation(); toggleSave(c); };
+    b.appendChild(star);
     b._c = c;
     L_.appendChild(b);
   });
@@ -859,6 +899,114 @@ function clearDest(){
   $('valRow').hidden = $('hint').hidden = false;
 }
 $('destClear').onclick = clearDest;
+
+/* ---------- Parcours enregistrés (gardés sur cet appareil) ---------- */
+let saved = store.get('saved', []);
+function persist(){
+  try{ localStorage.setItem('prc_saved', JSON.stringify(saved)); return true; }
+  catch(e){ msg('Mémoire pleine : supprime ou exporte des parcours.', true); return false; }
+}
+const isSaved = c => !!c.savedId && saved.some(s => s.id === c.savedId);
+const MODE_ICO = { marche:'🚶', course:'🏃', velo:'🚴' };
+
+function saveRoute(c){
+  const s = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    name: titleOf(c, candidates.indexOf(c)), date: new Date().toISOString(), mode: st.mode,
+    kind: c.kind, brg: c.brg || 0, distance: Math.round(c.distance), overlap: c.overlap || 0,
+    lm: c.lm || [], names: (c.names || []).slice(0, 3),
+    coords: c.geometry.coordinates.map(p => [+p[0].toFixed(5), +p[1].toFixed(5)])   // arrondi : prend moins de place
+  };
+  saved.unshift(s);
+  if(!persist()){ saved.shift(); return; }
+  c.savedId = s.id; c.savedName = s.name;
+  msg('★ Parcours enregistré dans « Mes parcours ».');
+}
+function unsaveRoute(c){
+  saved = saved.filter(s => s.id !== c.savedId); persist();
+  c.savedId = null; delete c.savedName;
+  msg('Parcours retiré de « Mes parcours ».');
+}
+function toggleSave(c){ isSaved(c) ? unsaveRoute(c) : saveRoute(c); renderList(); renderSaved(); updateSavedBadge(); }
+
+function fromSaved(s){
+  return { geometry:{ type:'LineString', coordinates:s.coords }, distance:s.distance, overlap:s.overlap || 0,
+    names:s.names || [], lm:s.lm || [], kind:s.kind, brg:s.brg || 0, savedId:s.id, savedName:s.name };
+}
+function showSaved(s){
+  $('savedModal').classList.add('hidden');
+  clearDest();
+  if(s.mode && s.mode !== st.mode) document.querySelector('#segMode [data-v="' + s.mode + '"]').click();
+  const type = s.kind === 'boucle' ? 'boucle' : 'aller';
+  if(st.type !== type) document.querySelector('#segType [data-v="' + type + '"]').click();
+  const c = fromSaved(s), f = s.coords[0];
+  setStart([f[1], f[0]]);
+  genRun++; lastGenKey = ''; userPicked = false;
+  candidates = [c];
+  select(c);
+  $('btnGo').textContent = 'Générer des parcours ici';
+}
+
+function renderSaved(){
+  const box = $('savedList');
+  box.innerHTML = '';
+  if(!saved.length){ box.innerHTML = '<p class="empty">Aucun parcours enregistré pour l\'instant.<br>Touche ☆ sur un parcours de la liste pour le garder.</p>'; return; }
+  saved.forEach(s => {
+    const row = document.createElement('div');
+    row.className = 'sv';
+    const d = new Date(s.date).toLocaleDateString('fr-FR', { day:'numeric', month:'short', year:'numeric' });
+    row.innerHTML = '<div><input aria-label="Nom du parcours"><small></small></div>' +
+      '<button class="see">Voir</button><button class="del" title="Supprimer">🗑</button>';
+    const inp = row.querySelector('input');
+    inp.value = s.name;
+    inp.onchange = () => {   // renommer
+      s.name = inp.value.trim() || s.name; inp.value = s.name; persist();
+      candidates.forEach(c => { if(c.savedId === s.id) c.savedName = s.name; });
+      renderList();
+    };
+    row.querySelector('small').textContent = [MODE_ICO[s.mode] || '', (s.distance / 1000).toFixed(1) + ' km', s.kind === 'boucle' ? 'boucle' : 'aller simple', d].filter(Boolean).join(' · ');
+    row.querySelector('.see').onclick = () => showSaved(s);
+    const del = row.querySelector('.del');
+    del.onclick = () => {   // 1er appui : demande confirmation, 2e appui : supprime
+      if(!del.classList.contains('sure')){ del.classList.add('sure'); del.textContent = 'Supprimer ?'; setTimeout(() => { del.classList.remove('sure'); del.textContent = '🗑'; }, 3000); return; }
+      saved = saved.filter(x => x.id !== s.id); persist();
+      candidates.forEach(c => { if(c.savedId === s.id){ c.savedId = null; delete c.savedName; } });
+      renderSaved(); renderList(); updateSavedBadge();
+    };
+    box.appendChild(row);
+  });
+}
+function updateSavedBadge(){
+  $('svCount').textContent = saved.length;
+  $('svCount').hidden = !saved.length;
+}
+$('btnSaved').onclick = () => { renderSaved(); $('savedModal').classList.remove('hidden'); };
+$('svClose').onclick = () => $('savedModal').classList.add('hidden');
+$('savedModal').onclick = e => { if(e.target.id === 'savedModal') $('svClose').onclick(); };
+
+// Sauvegarde dans un fichier, et récupération (changement de téléphone, navigateur vidé…)
+$('svExport').onclick = () => {
+  const blob = new Blob([JSON.stringify(saved)], { type:'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'mes-parcours-' + new Date().toISOString().slice(0, 10) + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+};
+$('svImport').onchange = async () => {
+  const f = $('svImport').files[0]; if(!f) return;
+  try{
+    const list = JSON.parse(await f.text());
+    if(!Array.isArray(list)) throw 0;
+    let n = 0;
+    list.forEach(s => { if(s && s.id && Array.isArray(s.coords) && !saved.some(x => x.id === s.id)){ saved.push(s); n++; } });
+    saved.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    persist(); renderSaved(); updateSavedBadge();
+    msg(n + ' parcours importé' + (n > 1 ? 's' : '') + '.');
+  }catch(e){ msg('Fichier non reconnu.', true); }
+  $('svImport').value = '';
+};
+updateSavedBadge();
 
 /* ---------- Photos le long du parcours ---------- */
 // 🟠 Wikimedia Commons : photos géolocalisées (monuments, paysages…)
