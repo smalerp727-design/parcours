@@ -677,14 +677,12 @@ async function generate(){
       try{
         const c = await buildCandidate(base, st.type, off + k * 360 / N, target);
         if(run !== genRun) return;
+        // Pendant le calcul : les parcours s'ajoutent à la suite, sans réordonner,
+        // et la sélection reste sur le 1er trouvé (pas de saut d'un parcours à l'autre)
         candidates.push(c);
-        candidates.sort((a, b) => scoreOf(a, target) - scoreOf(b, target));
-        if(!userPicked){
-          // Pendant le calcul, on met en avant le meilleur parcours trouvé jusqu'ici
-          const first = !selected;
+        if(!selected){
           selected = candidates[0];
-          drawAll(); renderList();
-          if(first) fitRoute();
+          drawAll(); renderList(); fitRoute();
           const km = selected.distance / 1000;
           msg('<b>' + km.toFixed(1) + ' km</b> · ≈ ' + fmtMin(km / speed() * 60));
         } else { drawAll(); renderList(); }
