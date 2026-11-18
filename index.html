@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f766e">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Parcours</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  :root{--c:#0f766e;--bg:#fff;--tx:#1f2937;--mu:#6b7280;--bd:#e5e7eb}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--tx)}
+  #map{position:fixed;inset:0}
+  .fab{position:fixed;right:12px;z-index:1000;width:46px;height:46px;border-radius:50%;border:none;background:var(--bg);box-shadow:0 2px 8px rgba(0,0,0,.25);font-size:20px}
+  #btnCfg{top:calc(12px + env(safe-area-inset-top))}
+  #btnLoc{top:calc(66px + env(safe-area-inset-top))}
+  #panel{position:fixed;left:0;right:0;bottom:0;z-index:1000;background:var(--bg);border-radius:18px 18px 0 0;box-shadow:0 -2px 12px rgba(0,0,0,.2);padding:14px 14px calc(14px + env(safe-area-inset-bottom))}
+  .seg{display:flex;background:#f3f4f6;border-radius:10px;padding:3px;margin-bottom:10px}
+  .seg button{flex:1;border:none;background:none;padding:9px 4px;border-radius:8px;font-size:15px;color:var(--mu)}
+  .seg button.on{background:var(--bg);color:var(--tx);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+  .row{display:flex;gap:10px;align-items:center;margin-bottom:6px}
+  .row .seg{margin:0;flex:0 0 120px}
+  #val{flex:1;min-width:0;font-size:20px;padding:8px 10px;border:1px solid var(--bd);border-radius:10px;text-align:center}
+  #unitLbl{width:34px;color:var(--mu)}
+  #hint{font-size:13px;color:var(--mu);text-align:center;margin-bottom:10px;min-height:16px}
+  .primary{width:100%;border:none;background:var(--c);color:#fff;font-size:17px;font-weight:600;padding:13px;border-radius:12px}
+  .primary:disabled{opacity:.6}
+  #info{margin-top:10px;text-align:center;font-size:15px;min-height:20px}
+  #info b{font-size:18px}
+  #info .err{color:#b91c1c}
+  .modal{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px}
+  .modal.hidden{display:none}
+  .card{background:var(--bg);border-radius:14px;padding:18px;width:100%;max-width:420px}
+  .card h2{margin:0 0 12px;font-size:19px}
+  .card label{display:block;font-size:14px;margin:10px 0 4px;color:var(--mu)}
+  .card input{width:100%;font-size:16px;padding:9px 10px;border:1px solid var(--bd);border-radius:9px}
+  .speeds{display:flex;gap:8px}
+  .speeds div{flex:1}
+  .card small{display:block;color:var(--mu);margin-top:6px;line-height:1.4}
+  .card a{color:var(--c)}
+  .btns{display:flex;gap:8px;margin-top:16px}
+  .btns button{flex:1;padding:11px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);font-size:15px}
+  .btns .primary{border:none}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<button id="btnCfg" class="fab" title="Réglages">⚙️</button>
+<button id="btnLoc" class="fab" title="Ma position">📍</button>
+
+<div id="panel">
+  <div class="seg" id="segMode">
+    <button data-v="marche">🚶 Marche</button>
+    <button data-v="course">🏃 Course</button>
+    <button data-v="velo">🚴 Vélo</button>
+  </div>
+  <div class="seg" id="segType">
+    <button data-v="boucle">🔄 Boucle</button>
+    <button data-v="aller">➡️ Aller simple</button>
+  </div>
+  <div class="row">
+    <div class="seg" id="segUnit">
+      <button data-v="km">km</button>
+      <button data-v="min">min</button>
+    </div>
+    <input id="val" type="number" inputmode="decimal" min="0" step="any">
+    <span id="unitLbl">km</span>
+  </div>
+  <div id="hint"></div>
+  <button id="btnGo" class="primary">Générer un parcours</button>
+  <div id="info"></div>
+</div>
+
+<div id="cfg" class="modal hidden">
+  <div class="card">
+    <h2>Réglages</h2>
+    <label for="key">Clé API OpenRouteService</label>
+    <input id="key" type="password" autocomplete="off" placeholder="Colle ta clé ici">
+    <small>Gratuite : crée un compte sur <a href="https://openrouteservice.org/dev/#/signup" target="_blank" rel="noopener">openrouteservice.org</a> (openrouteservice.org), puis copie ta clé « Basic ». Elle reste enregistrée sur ce téléphone uniquement.</small>
+    <label>Vitesses moyennes (km/h) — servent à convertir une durée en distance</label>
+    <div class="speeds">
+      <div><small>Marche</small><input id="spMarche" type="number" inputmode="decimal" step="0.5"></div>
+      <div><small>Course</small><input id="spCourse" type="number" inputmode="decimal" step="0.5"></div>
+      <div><small>Vélo</small><input id="spVelo" type="number" inputmode="decimal" step="0.5"></div>
+    </div>
+    <div class="btns">
+      <button id="cfgCancel">Annuler</button>
+      <button id="cfgSave" class="primary">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem('prc_'+k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem('prc_'+k, JSON.stringify(v)); }catch(e){} }
+};
+
+const PROFILES = { marche:'foot-walking', course:'foot-walking', velo:'cycling-regular' };
+let cfg = store.get('cfg', { key:'', speeds:{ marche:5, course:10, velo:18 } });
+let st  = store.get('st',  { mode:'course', type:'boucle', unit:'km', val:5 });
+
+let start = null, startMarker = null, endMarker = null, meMarker = null, meLL = null, routeLayer = null;
+
+/* ---------- Carte ---------- */
+const map = L.map('map', { zoomControl:false }).setView([45.75, 4.85], 13);
+map.attributionControl.setPosition('topleft');
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom:19, attribution:'© OpenStreetMap · ORS'
+}).addTo(map);
+
+const pin = color => L.divIcon({
+  className:'', iconSize:[22,22], iconAnchor:[11,11],
+  html:`<div style="width:22px;height:22px;border-radius:50%;background:${color};border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)"></div>`
+});
+
+function setStart(ll){
+  start = [ll[0], ll[1]];
+  if(!startMarker) startMarker = L.marker(start, { icon:pin('#16a34a') }).addTo(map);
+  else startMarker.setLatLng(start);
+}
+
+map.on('click', e => { setStart([e.latlng.lat, e.latlng.lng]); msg('Départ placé ici.'); });
+
+/* ---------- Géolocalisation ---------- */
+if(navigator.geolocation){
+  navigator.geolocation.watchPosition(p => {
+    meLL = [p.coords.latitude, p.coords.longitude];
+    if(!meMarker) meMarker = L.circleMarker(meLL, { radius:7, color:'#fff', weight:2, fillColor:'#2563eb', fillOpacity:1 }).addTo(map);
+    else meMarker.setLatLng(meLL);
+    if(!start){ setStart(meLL); map.setView(meLL, 15); }
+  }, err => {
+    if(!start) msg('Position introuvable : touche la carte pour placer ton départ.', true);
+  }, { enableHighAccuracy:true, maximumAge:5000 });
+} else {
+  msg('Géolocalisation indisponible : touche la carte pour placer ton départ.', true);
+}
+
+$('btnLoc').onclick = () => {
+  if(meLL){ setStart(meLL); map.setView(meLL, 15); msg('Départ = ta position actuelle.'); return; }
+  if(!navigator.geolocation) return;
+  msg('Localisation en cours…');
+  navigator.geolocation.getCurrentPosition(
+    p => { const ll = [p.coords.latitude, p.coords.longitude]; setStart(ll); map.setView(ll, 15); msg(''); },
+    e => msg('Position introuvable (' + e.message + ').', true),
+    { enableHighAccuracy:true, timeout:15000 }
+  );
+};
+
+/* ---------- Contrôles ---------- */
+function seg(id, key, onchange){
+  const el = $(id), btns = el.querySelectorAll('button');
+  btns.forEach(b => {
+    b.classList.toggle('on', b.dataset.v === st[key]);
+    b.onclick = () => {
+      const old = st[key];
+      st[key] = b.dataset.v;
+      btns.forEach(x => x.classList.toggle('on', x === b));
+      if(onchange) onchange(old);
+      store.set('st', st);
+      hint();
+    };
+  });
+}
+const speed = () => cfg.speeds[st.mode] || 5;
+
+seg('segMode', 'mode');
+seg('segType', 'type');
+seg('segUnit', 'unit', old => {
+  if(old === st.unit) return;
+  const v = parseFloat($('val').value) || 0;
+  $('val').value = st.unit === 'min' ? Math.round(v / speed() * 60) : Math.round(v * speed() / 60 * 10) / 10;
+  st.val = parseFloat($('val').value);
+  $('unitLbl').textContent = st.unit;
+});
+$('val').value = st.val;
+$('unitLbl').textContent = st.unit;
+$('val').oninput = () => { st.val = parseFloat($('val').value) || 0; store.set('st', st); hint(); };
+
+function targetMeters(){
+  const v = parseFloat($('val').value) || 0;
+  return st.unit === 'km' ? v * 1000 : v / 60 * speed() * 1000;
+}
+function fmtMin(m){
+  m = Math.round(m);
+  return m < 60 ? m + ' min' : Math.floor(m/60) + ' h ' + String(m % 60).padStart(2, '0');
+}
+function hint(){
+  const t = targetMeters();
+  $('hint').textContent = !t ? '' : st.unit === 'km'
+    ? '≈ ' + fmtMin(t/1000 / speed() * 60) + ' à ' + speed() + ' km/h'
+    : '≈ ' + (t/1000).toFixed(1) + ' km à ' + speed() + ' km/h';
+}
+hint();
+
+function msg(t, err){ $('info').innerHTML = err ? '<span class="err">' + t + '</span>' : t; }
+
+/* ---------- Réglages ---------- */
+function openCfg(){
+  $('key').value = cfg.key;
+  $('spMarche').value = cfg.speeds.marche;
+  $('spCourse').value = cfg.speeds.course;
+  $('spVelo').value = cfg.speeds.velo;
+  $('cfg').classList.remove('hidden');
+}
+$('btnCfg').onclick = openCfg;
+$('cfgCancel').onclick = () => $('cfg').classList.add('hidden');
+$('cfgSave').onclick = () => {
+  cfg.key = $('key').value.trim();
+  cfg.speeds = {
+    marche: parseFloat($('spMarche').value) || 5,
+    course: parseFloat($('spCourse').value) || 10,
+    velo:   parseFloat($('spVelo').value)   || 18
+  };
+  store.set('cfg', cfg);
+  $('cfg').classList.add('hidden');
+  hint();
+  msg('Réglages enregistrés.');
+};
+
+/* ---------- Calcul d'itinéraire (OpenRouteService) ---------- */
+async function ors(profile, body){
+  const r = await fetch('https://api.openrouteservice.org/v2/directions/' + profile + '/geojson', {
+    method:'POST',
+    headers:{ 'Authorization':cfg.key, 'Content-Type':'application/json', 'Accept':'application/geo+json, application/json' },
+    body:JSON.stringify(body)
+  });
+  const j = await r.json().catch(() => ({}));
+  if(!r.ok){
+    if(r.status === 401 || r.status === 403) throw new Error('Clé API refusée : vérifie-la dans les réglages ⚙️.');
+    if(r.status === 429) throw new Error('Trop de demandes : attends une minute.');
+    throw new Error((j.error && (j.error.message || j.error)) || ('Erreur ' + r.status));
+  }
+  if(!j.features || !j.features.length) throw new Error('Aucun parcours trouvé.');
+  return j.features[0];
+}
+
+// Point situé à "dist" mètres de ll, dans la direction "brg" (degrés)
+function destPoint(ll, dist, brg){
+  const R = 6371000, d = dist / R, b = brg * Math.PI / 180;
+  const la1 = ll[0] * Math.PI / 180, lo1 = ll[1] * Math.PI / 180;
+  const la2 = Math.asin(Math.sin(la1) * Math.cos(d) + Math.cos(la1) * Math.sin(d) * Math.cos(b));
+  const lo2 = lo1 + Math.atan2(Math.sin(b) * Math.sin(d) * Math.cos(la1), Math.cos(d) - Math.sin(la1) * Math.sin(la2));
+  return [la2 * 180 / Math.PI, lo2 * 180 / Math.PI];
+}
+
+async function generate(){
+  if(!cfg.key){ openCfg(); msg('Ajoute d\'abord ta clé OpenRouteService.', true); return; }
+  if(!start){ msg('Position inconnue : touche la carte pour placer ton départ.', true); return; }
+  const target = targetMeters();
+  if(!(target >= 300)){ msg('Objectif trop court (300 m minimum).', true); return; }
+  if(target > 100000){ msg('Objectif limité à 100 km.', true); return; }
+
+  const profile = PROFILES[st.mode];
+  const seed = Math.floor(Math.random() * 1e6);
+  const brg = Math.random() * 360;
+  let factor = st.type === 'boucle' ? 1 : 1 / 1.3;   // à vol d'oiseau, un trajet est ~30 % plus court
+  let best = null, lastErr = null;
+
+  $('btnGo').disabled = true;
+  msg('Calcul du parcours…');
+
+  // Jusqu'à 3 essais : on ajuste la longueur demandée pour coller à l'objectif
+  for(let i = 0; i < 3; i++){
+    const req = target * factor;
+    let body;
+    if(st.type === 'boucle'){
+      body = { coordinates:[[start[1], start[0]]], elevation:true,
+               options:{ round_trip:{ length:Math.round(req), points: target < 4000 ? 3 : 5, seed } } };
+    } else {
+      const e = destPoint(start, req, brg);
+      body = { coordinates:[[start[1], start[0]], [e[1], e[0]]], elevation:true, radiuses:[-1, -1] };
+    }
+    try{
+      const f = await ors(profile, body);
+      const got = f.properties.summary.distance;
+      if(!best || Math.abs(got - target) < Math.abs(best.properties.summary.distance - target)) best = f;
+      if(Math.abs(got - target) / target < 0.08 || !got) break;
+      factor *= target / got;
+    }catch(e){ lastErr = e; break; }
+  }
+
+  $('btnGo').disabled = false;
+  if(!best){ msg(lastErr ? lastErr.message : 'Aucun parcours trouvé.', true); return; }
+  draw(best);
+  $('btnGo').textContent = '🔁 Autre parcours';
+}
+
+function draw(f){
+  if(routeLayer) map.removeLayer(routeLayer);
+  if(endMarker){ map.removeLayer(endMarker); endMarker = null; }
+  routeLayer = L.geoJSON(f, { style:{ color:'#0f766e', weight:5, opacity:.85 } }).addTo(map);
+
+  const coords = f.geometry.coordinates;
+  if(st.type === 'aller'){
+    const last = coords[coords.length - 1];
+    endMarker = L.marker([last[1], last[0]], { icon:pin('#dc2626') }).addTo(map);
+  }
+  map.fitBounds(routeLayer.getBounds(), {
+    paddingTopLeft:[30, 30],
+    paddingBottomRight:[30, $('panel').offsetHeight + 20]
+  });
+
+  const p = f.properties, km = p.summary.distance / 1000;
+  const up = p.ascent != null ? p.ascent : p.summary.ascent;
+  msg('<b>' + km.toFixed(1) + ' km</b> · ≈ ' + fmtMin(km / speed() * 60) +
+      (up != null ? ' · ↗ ' + Math.round(up) + ' m' : ''));
+}
+
+$('btnGo').onclick = generate;
+</script>
+</body>
+</html>
