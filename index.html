@@ -90,7 +90,30 @@
   .tag.warn{background:#fef3c7;color:#92400e}
   #btnCfg{top:calc(12px + env(safe-area-inset-top))}
   #btnLoc{top:auto;bottom:calc(var(--sheet, 170px) + 12px);transition:bottom .28s cubic-bezier(.2,.8,.2,1),opacity .2s}
-  body.sheet-drag #btnLoc{transition:none}
+  body.sheet-drag #btnLoc,body.sheet-drag #routeActs{transition:none}
+  #routeActs{position:fixed;right:66px;bottom:calc(var(--sheet, 170px) + 14px);z-index:1000;display:none;gap:8px;align-items:center;transition:bottom .28s cubic-bezier(.2,.8,.2,1)}
+  body.has-routes #routeActs{display:flex}
+  body.sheet-tall #routeActs,body.nav #routeActs{display:none}
+  #btnStart{height:42px;border:none;border-radius:21px;padding:0 16px;background:var(--c);color:#fff;font:700 15px system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.3);cursor:pointer}
+  #btnClear{height:42px;min-width:42px;border:none;border-radius:21px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;gap:4px;padding:0 10px;cursor:pointer}
+  #btnClear svg{width:22px;height:22px;fill:#b91c1c}
+  #btnClear span{display:none;color:#b91c1c;font:700 14px system-ui,sans-serif}
+  #btnClear.sure{background:#fee2e2}
+  #btnClear.sure span{display:inline}
+  /* Mode navigation */
+  #navbar{display:none;position:fixed;left:0;right:0;bottom:0;z-index:1100;background:var(--bg);border-radius:18px 18px 0 0;box-shadow:0 -2px 12px rgba(0,0,0,.25);padding:0 14px calc(12px + env(safe-area-inset-bottom))}
+  body.nav #navbar{display:block}
+  body.nav #panel,body.nav #search,body.nav #btnCfg,body.nav #btnPhoto,body.nav #btnSaved{display:none !important}
+  body.nav #btnLoc{bottom:calc(112px + env(safe-area-inset-bottom)) !important;opacity:1;pointer-events:auto}
+  #navTrack{height:5px;background:#e5e7eb;border-radius:3px;margin:12px 0 10px;overflow:hidden}
+  #navProg{height:100%;width:0;background:var(--c);transition:width .5s}
+  .nvr{display:flex;align-items:center;gap:8px}
+  .nvt{flex:1;min-width:0}
+  .nvt b{display:block;font-size:17px}
+  .nvt small{color:var(--mu);font-size:13px}
+  #navMaps{font-size:13px;color:var(--c);text-decoration:none;border:1px solid var(--bd);border-radius:9px;padding:9px 10px;white-space:nowrap}
+  #navStop{border:none;background:#b91c1c;color:#fff;border-radius:10px;padding:10px 14px;font:700 15px system-ui,sans-serif;cursor:pointer}
+  #navAlert{position:fixed;top:calc(12px + env(safe-area-inset-top));left:12px;right:12px;z-index:1100;background:#fef3c7;color:#92400e;border-radius:12px;padding:12px 14px;font:600 15px system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.25);text-align:center}
   body.sheet-tall #btnLoc{opacity:0;pointer-events:none}
   #panel{position:fixed;left:0;right:0;bottom:0;z-index:1000;background:var(--bg);border-radius:18px 18px 0 0;box-shadow:0 -2px 12px rgba(0,0,0,.2);padding:0 14px env(safe-area-inset-bottom);display:flex;flex-direction:column;height:170px;max-height:100%;transition:height .28s cubic-bezier(.2,.8,.2,1)}
   #panel.dragging{transition:none}
@@ -198,6 +221,9 @@
   /* Écran large (PC, tablette) ou téléphone en paysage : panneau sur le côté */
   @media (min-width:800px), (orientation:landscape) and (max-height:520px){
     #btnLoc{bottom:calc(24px + env(safe-area-inset-bottom)) !important;opacity:1 !important;pointer-events:auto !important}
+    #routeActs{bottom:calc(26px + env(safe-area-inset-bottom)) !important}
+    body.sheet-tall.has-routes:not(.nav) #routeActs{display:flex}
+    #navbar{left:auto;right:12px;bottom:12px;width:420px;border-radius:18px}
     /* Le haut du panneau reste fixe, seule la liste défile */
     #list{flex-direction:column;overflow-y:auto;margin:8px -4px 0;padding:0 4px;flex:1 1 auto;min-height:0}
     #ctrl{flex:none;display:block !important;padding-top:0}
@@ -225,6 +251,19 @@
 <body>
 <div id="map"></div>
 <button id="btnCfg" class="fab" title="Réglages"><svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.48.48 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6a3.6 3.6 0 1 1 0-7.2 3.6 3.6 0 0 1 0 7.2z"/></svg></button>
+<div id="routeActs">
+  <button id="btnStart" title="Suivre le parcours sélectionné">▶ Démarrer</button>
+  <button id="btnClear" title="Effacer tous les parcours de la liste"><svg viewBox="0 0 24 24"><path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg><span>Effacer ?</span></button>
+</div>
+<div id="navAlert" hidden></div>
+<div id="navbar">
+  <div id="navTrack"><div id="navProg"></div></div>
+  <div class="nvr">
+    <div class="nvt"><b id="navMain"></b><small id="navSub"></small></div>
+    <a id="navMaps" target="_blank" rel="noopener" title="Ouvrir dans Google Maps">🧭 Maps</a>
+    <button id="navStop">■ Arrêter</button>
+  </div>
+</div>
 <button id="btnLoc" class="fab" title="Ma position"><svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm8.94 3A8.99 8.99 0 0 0 13 3.06V1h-2v2.06A8.99 8.99 0 0 0 3.06 11H1v2h2.06A8.99 8.99 0 0 0 11 20.94V23h2v-2.06A8.99 8.99 0 0 0 20.94 13H23v-2h-2.06zM12 19a7 7 0 1 1 0-14 7 7 0 0 1 0 14z"/></svg></button>
 <button id="btnPhoto" class="fab" title="Ajouter des photos ou vidéos"><svg viewBox="0 0 24 24" style="transform:translate(1px,0)"><path d="M3 4V1h2v3h3v2H5v3H3V6H0V4h3zm3 6V7h3V4h7l1.83 2H21a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V10h3zm7 9a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm-3.2-5a3.2 3.2 0 1 0 6.4 0 3.2 3.2 0 0 0-6.4 0z"/></svg></button>
 <input id="mediaIn" type="file" accept="image/*,video/*" multiple hidden>
@@ -414,6 +453,7 @@ if(navigator.geolocation){
     if(!meMarker) meMarker = L.circleMarker(meLL, { radius:7, color:'#fff', weight:2, fillColor:'#2563eb', fillOpacity:1 }).addTo(map);
     else meMarker.setLatLng(meLL);
     if(!start){ setStart(meLL); map.setView(meLL, 15); }
+    if(nav) navUpdate(meLL);
   }, err => {
     if(!start) msg('Position introuvable : touche la carte pour placer ton départ.', true);
   }, { enableHighAccuracy:true, maximumAge:5000 });
@@ -422,6 +462,7 @@ if(navigator.geolocation){
 }
 
 $('btnLoc').onclick = () => {
+  if(nav){ nav.follow = true; if(meLL) map.setView(meLL, 17); return; }
   if(meLL){ setStart(meLL); map.setView(meLL, 15); msg('Départ = ta position actuelle.'); return; }
   if(!navigator.geolocation) return;
   msg('Localisation en cours…');
@@ -791,6 +832,7 @@ function renderList(){
   listObs = makeObserver(WIDE.matches && pinned ? pinned.offsetHeight + 6 : 0);
   L_.querySelectorAll('.it:not(.pin)').forEach(b => listObs.observe(b));
   L_.scrollLeft = keepX; L_.scrollTop = keepY;
+  document.body.classList.toggle('has-routes', candidates.length > 0 && !!selected);
   if(sheetReady && !WIDE.matches && sheetState !== 'full') setSheet(sheetState);   // hauteur du tiroir replié
 }
 
@@ -1521,6 +1563,94 @@ idb.all().then(list => { myMedia = list || []; renderMine(); }).catch(() => {});
 
 
 $('btnGo').onclick = generate;
+
+/* ---------- Boutons "Démarrer" et "Effacer" (à côté de la localisation) ---------- */
+function clearAll(){
+  genRun++; suggRun++; lastGenKey = ''; suggKey = ''; suggTours = []; suggPlaces = [];
+  clearDest();
+  candidates = []; selected = null; lastRoute = null; userPicked = false;
+  photoRun++; photoLayer.clearLayers();
+  drawAll(); renderList(); showPlaces();
+  $('sugg').innerHTML = '';
+  $('btnGo').disabled = false; $('btnGo').textContent = 'Générer un parcours';
+  msg('Liste effacée. Tes parcours enregistrés ⭐ sont conservés.');
+  if(sheetReady && !WIDE.matches) setSheet('peek');
+}
+$('btnClear').onclick = () => {   // 1er appui : confirmation, 2e appui : effacer
+  const b = $('btnClear');
+  if(!b.classList.contains('sure')){
+    b.classList.add('sure');
+    clearTimeout(b._t); b._t = setTimeout(() => b.classList.remove('sure'), 3000);
+    return;
+  }
+  b.classList.remove('sure');
+  clearAll();
+};
+
+/* ---------- Mode navigation : on suit le parcours en direct ---------- */
+let nav = null, doneLine = null, wakeLock = null;
+async function keepAwake(){ try{ if('wakeLock' in navigator && nav) wakeLock = await navigator.wakeLock.request('screen'); }catch(e){} }
+document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible' && nav) keepAwake(); });
+
+function gmapsUrl(c){
+  // Ouvre le parcours dans Google Maps (départ, 8 points de passage, arrivée)
+  const co = c.geometry.coordinates, pts = [];
+  for(let k = 1; k <= 8; k++) pts.push(co[Math.floor(co.length * k / 9)]);
+  const f = p => p[1].toFixed(5) + ',' + p[0].toFixed(5);
+  return 'https://www.google.com/maps/dir/?api=1&origin=' + f(co[0]) + '&destination=' + f(co[co.length - 1]) +
+    '&waypoints=' + encodeURIComponent(pts.map(f).join('|')) + '&travelmode=' + (st.mode === 'velo' ? 'bicycling' : 'walking');
+}
+function startNav(){
+  if(!selected) return;
+  const co = selected.geometry.coordinates;
+  nav = { c:selected, line:co.map(llOf), arc:cumul(co), idx:0, t0:Date.now(), follow:true, done:false };
+  nav.total = nav.arc[nav.arc.length - 1];
+  document.body.classList.add('nav');
+  $('navMaps').href = gmapsUrl(selected);
+  doneLine = L.polyline([], { color:'#94a3b8', weight:6, opacity:.9, interactive:false }).addTo(map);
+  keepAwake();
+  if(meLL) navUpdate(meLL); else navBar('En attente du GPS…');
+  map.setView(meLL || nav.line[0], 17);
+}
+function stopNav(){
+  nav = null;
+  document.body.classList.remove('nav');
+  if(doneLine){ map.removeLayer(doneLine); doneLine = null; }
+  if(wakeLock){ try{ wakeLock.release(); }catch(e){} wakeLock = null; }
+  $('navAlert').hidden = true;
+  if(sheetReady && !WIDE.matches) setSheet('peek');
+  fitRoute();
+}
+function navBar(main){
+  const el = Math.round((Date.now() - nav.t0) / 60000), done = nav.arc[nav.idx], left = Math.max(0, nav.total - done);
+  $('navMain').textContent = main || (fmtKm(left) + ' restants · ≈ ' + fmtMin(left / 1000 / speed() * 60));
+  $('navSub').textContent = '⏱ ' + fmtMin(el) + ' · ' + fmtKm(done) + ' parcourus';
+  $('navProg').style.width = Math.min(100, done / nav.total * 100) + '%';
+}
+function navUpdate(ll){
+  if(!nav) return;
+  // Point du parcours le plus proche, en avançant (une boucle repasse par son départ à la fin)
+  const L_ = nav.line, from = Math.max(0, nav.idx - 20), to = Math.min(L_.length - 1, nav.idx + 300);
+  let best = Infinity, bi = nav.idx;
+  for(let i = from; i <= to; i++){ const d = hav(L_[i], ll); if(d < best){ best = d; bi = i; } }
+  if(best > 80){   // pas trouvé près de la position attendue : on cherche sur tout le parcours
+    for(let i = 0; i < L_.length; i++){ const d = hav(L_[i], ll); if(d < best){ best = d; bi = i; } }
+  }
+  if(bi > nav.idx && best < 60) nav.idx = bi;
+  doneLine.setLatLngs(L_.slice(0, nav.idx + 1));
+  const off = best > 40;
+  $('navAlert').hidden = !off;
+  if(off) $('navAlert').textContent = '⚠️ Tu t\'éloignes du parcours (' + fmtKm(best) + ')';
+  const left = nav.total - nav.arc[nav.idx];
+  if(left < 40 && nav.idx > L_.length * 0.7 && !nav.done){ nav.done = true; }
+  navBar(nav.done ? '🎉 Parcours terminé !' : null);
+  if(nav.follow) map.panTo(ll, { animate:true });
+}
+map.on('dragstart', () => { if(nav) nav.follow = false; });   // on déplace la carte : on arrête de suivre
+setInterval(() => { if(nav && !nav.done) navBar(); }, 30000);
+$('btnStart').onclick = startNav;
+$('navStop').onclick = stopNav;
+
 
 /* ---------- Suggestions : lieux à visiter (Wikipédia : photo + description) ---------- */
 let tab = 'parcours', suggKey = '', suggRun = 0, suggPlaces = [], suggTours = [];
