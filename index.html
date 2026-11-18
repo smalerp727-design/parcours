@@ -1279,10 +1279,12 @@ function setSheet(s){
   p.style.height = sheetH()[s] + 'px';
   p.dataset.state = s;
   document.body.dataset.sheet = s;   // plein écran : on masque la barre de recherche flottante
-  // Plein écran : la liste défile ; sinon, glisser sur la liste agrandit le tiroir
-  l.style.touchAction = s === 'full' ? 'pan-y' : 'none';
-  l.style.overflowY = s === 'full' ? 'auto' : 'hidden';
-  if(s !== 'full') l.scrollTop = 0;
+  // Mi-hauteur et plein écran : la liste défile sans changer la taille du tiroir
+  // (on change la taille avec la poignée ou la ligne de résumé) ; replié : glisser sur la liste agrandit le tiroir
+  const scrolls = s !== 'peek';
+  l.style.touchAction = scrolls ? 'pan-y' : 'none';
+  l.style.overflowY = scrolls ? 'auto' : 'hidden';
+  if(!scrolls) l.scrollTop = 0;
 }
 function placeSearch(){
   const s = $('search');
@@ -1298,7 +1300,7 @@ function placeSearch(){
 let drag = null, swallowClick = false;
 function dragStart(e){
   if(WIDE.matches || (e.pointerType === 'mouse' && e.button !== 0)) return;
-  if(e.currentTarget.id === 'list' && sheetState === 'full') return;   // plein écran : défilement normal
+  if(e.currentTarget.id === 'list' && sheetState !== 'peek') return;   // mi-hauteur / plein écran : la liste défile normalement
   drag = { x:e.clientX, y:e.clientY, h:$('panel').offsetHeight, id:e.pointerId, el:e.currentTarget, moved:false, axis:null,
            lastX:e.clientX, lastY:e.clientY, lastT:performance.now(), v:0, vx:0 };
 }
