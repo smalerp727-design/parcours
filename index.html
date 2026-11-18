@@ -22,6 +22,13 @@
   .fab{display:flex;align-items:center;justify-content:center;padding:0}
   .fab svg{width:24px;height:24px;fill:#374151;display:block}
   #search{position:relative}
+  #mic{position:absolute;right:4px;top:0;height:38px;width:38px;border:none;background:none;border-radius:50%;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
+  #mic svg{width:22px;height:22px;fill:#4b5563}
+  #mic.on svg{fill:#fff}
+  #mic.on{background:#dc2626;animation:pulse 1.2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(220,38,38,.5)}100%{box-shadow:0 0 0 12px rgba(220,38,38,0)}}
+  #search.has-mic #q{padding-right:44px}
+  #search.floating #mic{top:4px;right:5px}
   #q{width:100%;font-size:15px;padding:9px 12px;border:1px solid var(--bd);border-radius:10px;margin-bottom:10px;background:#f9fafb}
   #sres{position:absolute;left:0;right:0;top:44px;z-index:5;background:var(--bg);border:1px solid var(--bd);border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.18);max-height:260px;overflow-y:auto}
   .sr{display:flex;align-items:center;gap:6px;padding:8px 10px;border-bottom:1px solid #f1f1f1}
@@ -51,7 +58,9 @@
   .tag.ok{background:#dcfce7;color:#166534}
   .tag.warn{background:#fef3c7;color:#92400e}
   #btnCfg{top:calc(12px + env(safe-area-inset-top))}
-  #btnLoc{top:calc(66px + env(safe-area-inset-top))}
+  #btnLoc{top:auto;bottom:calc(var(--sheet, 170px) + 12px);transition:bottom .28s cubic-bezier(.2,.8,.2,1),opacity .2s}
+  body.sheet-drag #btnLoc{transition:none}
+  body.sheet-tall #btnLoc{opacity:0;pointer-events:none}
   #panel{position:fixed;left:0;right:0;bottom:0;z-index:1000;background:var(--bg);border-radius:18px 18px 0 0;box-shadow:0 -2px 12px rgba(0,0,0,.2);padding:0 14px env(safe-area-inset-bottom);display:flex;flex-direction:column;height:170px;max-height:100%;transition:height .28s cubic-bezier(.2,.8,.2,1)}
   #panel.dragging{transition:none}
   #info .cnt{color:var(--mu)}
@@ -107,8 +116,8 @@
   .tiles-clair{filter:grayscale(.9) brightness(1.08) contrast(.85)}
   .tiles-sombre{filter:invert(1) hue-rotate(180deg) brightness(.9) contrast(.9) grayscale(.3)}
   .leaflet-container{background:#ddd}
-  #btnPhoto{top:calc(120px + env(safe-area-inset-top))}
-  #btnSaved{top:calc(174px + env(safe-area-inset-top))}
+  #btnPhoto{top:calc(66px + env(safe-area-inset-top))}
+  #btnSaved{top:calc(120px + env(safe-area-inset-top))}
   #btnSaved svg{fill:#f59e0b}
   #svCount{position:absolute;top:-3px;right:-3px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:var(--c);color:#fff;font:700 11px/18px system-ui,sans-serif}
   #savedList{max-height:55vh;overflow-y:auto;margin:0 -4px;padding:0 4px}
@@ -157,6 +166,7 @@
 
   /* Écran large (PC, tablette) ou téléphone en paysage : panneau sur le côté */
   @media (min-width:800px), (orientation:landscape) and (max-height:520px){
+    #btnLoc{bottom:calc(24px + env(safe-area-inset-bottom)) !important;opacity:1 !important;pointer-events:auto !important}
     /* Le haut du panneau reste fixe, seule la liste défile */
     #list{flex-direction:column;overflow-y:auto;margin:8px -4px 0;padding:0 4px;flex:1 1 auto;min-height:0}
     #ctrl{flex:none;display:block !important;padding-top:0}
@@ -232,6 +242,7 @@
  <div id="ctrl">
   <div id="search">
     <input id="q" type="search" placeholder="Rechercher un lieu, une adresse…" autocomplete="off" enterkeyhint="search">
+    <button id="mic" title="Recherche vocale" hidden><svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5.3-3a5.3 5.3 0 0 1-10.6 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-1.7z"/></svg></button>
     <div id="sres" hidden></div>
   </div>
   <div class="seg" id="segMode">
@@ -947,6 +958,34 @@ $('q').addEventListener('input', () => {
   if(v.length < 3){ $('sres').hidden = true; return; }
   sTimer = setTimeout(() => searchPlaces(v), 350);
 });
+/* --- Recherche vocale (micro du téléphone, reconnaissance en français) --- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+if(SR){
+  $('mic').hidden = false;
+  $('search').classList.add('has-mic');
+  let rec = null;
+  $('mic').onclick = () => {
+    if(rec){ rec.stop(); return; }
+    rec = new SR();
+    rec.lang = 'fr-FR'; rec.interimResults = true; rec.maxAlternatives = 1;
+    const ph = $('q').placeholder;
+    $('mic').classList.add('on');
+    $('q').value = ''; $('q').placeholder = '🎙️ Je t\'écoute…';
+    rec.onresult = ev => {
+      const r = ev.results[ev.results.length - 1], text = r[0].transcript.trim();
+      $('q').value = text;
+      if(r.isFinal && text.length >= 2){ clearTimeout(sTimer); searchPlaces(text); }   // suggestions affichées
+    };
+    rec.onerror = ev => {
+      if(ev.error === 'not-allowed' || ev.error === 'service-not-allowed') msg('Micro refusé : autorise-le dans les réglages du navigateur.', true);
+      else if(ev.error === 'no-speech') msg('Je n\'ai rien entendu, réessaie.', true);
+      else if(ev.error !== 'aborted') msg('Recherche vocale indisponible (' + ev.error + ').', true);
+    };
+    rec.onend = () => { rec = null; $('mic').classList.remove('on'); $('q').placeholder = ph; };
+    try{ rec.start(); }catch(e){ rec = null; $('mic').classList.remove('on'); $('q').placeholder = ph; }
+  };
+}
+
 $('q').addEventListener('keydown', async e => {
   if(e.key === 'Escape'){ closeSearch(); return; }
   if(e.key !== 'Enter') return;
@@ -1443,11 +1482,17 @@ function sheetH(){
   const peek = Math.min(Math.round(vh * 0.6), Math.round(top + (first ? first.offsetHeight + 20 : 10)));
   return { peek, half: Math.max(peek + 80, Math.round(vh * 0.58)), full: vh };
 }
+// Le bouton de localisation suit le haut du tiroir (masqué quand le tiroir prend presque tout l'écran)
+function setSheetVar(px){
+  document.documentElement.style.setProperty('--sheet', Math.round(px) + 'px');
+  document.body.classList.toggle('sheet-tall', px > window.innerHeight * 0.7);
+}
 function setSheet(s){
   if(!sheetReady || WIDE.matches) return;
   sheetState = s;
   const p = $('panel'), l = $('list');
   p.style.height = sheetH()[s] + 'px';
+  setSheetVar(sheetH()[s]);
   p.dataset.state = s;
   document.body.dataset.sheet = s;   // plein écran : on masque la barre de recherche flottante
   // Mi-hauteur et plein écran : la liste défile sans changer la taille du tiroir
@@ -1494,7 +1539,10 @@ function dragMove(e){
     drag.vx = (e.clientX - drag.lastX) / dt;
   } else {
     const H = sheetH();
-    $('panel').style.height = Math.max(H.peek * 0.75, Math.min(H.full, drag.h - dy)) + 'px';
+    const hh = Math.max(H.peek * 0.75, Math.min(H.full, drag.h - dy));
+    $('panel').style.height = hh + 'px';
+    setSheetVar(hh);
+    document.body.classList.add('sheet-drag');
     drag.v = (e.clientY - drag.lastY) / dt;
   }
   drag.lastX = e.clientX; drag.lastY = e.clientY; drag.lastT = now;
@@ -1506,6 +1554,7 @@ function dragEnd(e){
   swallowClick = true; setTimeout(() => { swallowClick = false; }, 60);
   if(d.axis === 'x'){ swipeEnd(d, (e && e.clientX != null ? e.clientX : d.lastX) - d.x); return; }
   $('panel').classList.remove('dragging');
+  document.body.classList.remove('sheet-drag');
   const H = sheetH(), h = $('panel').offsetHeight, order = ['peek', 'half', 'full'];
   let s;
   if(d.v < -0.4) s = order.find(k => H[k] > h + 10) || 'full';                    // lancé vers le haut
