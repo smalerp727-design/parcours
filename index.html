@@ -47,6 +47,10 @@
   #list .it{flex:none}
   #list .it.pin{position:sticky;top:0;z-index:2}
   #list:empty{display:none}
+  .chk{display:flex;align-items:center;gap:10px;margin:-2px 2px 10px;font-size:15px;cursor:pointer}
+  .chk input{width:20px;height:20px;flex:none;accent-color:var(--c)}
+  .chk small{display:block;font-size:12px;color:var(--mu)}
+  .tag.elev{background:#eef2ff;color:#3730a3}
   #tabs{flex:none;display:flex;gap:6px;margin-top:8px}
   #tabs button{flex:1;border:none;background:none;padding:7px 4px;border-radius:9px;font:600 14px system-ui,sans-serif;color:var(--mu);border-bottom:2px solid transparent;border-radius:0}
   #tabs button.on{color:var(--c);border-bottom-color:var(--c)}
@@ -340,6 +344,7 @@
     <button data-v="boucle">🔄 Boucle</button>
     <button data-v="aller">➡️ Aller simple</button>
   </div>
+  <label id="retRow" class="chk" hidden><input type="checkbox" id="optRet"><span>Afficher le retour<small>distance, temps et dénivelé comptés aller + retour</small></span></label>
   <div class="row" id="valRow">
     <div class="seg" id="segUnit">
       <button data-v="km">km</button>
@@ -401,7 +406,7 @@ let start = null, startMarker = null, endMarker = null, meMarker = null, meLL = 
 /* ---------- Carte ---------- */
 const map = L.map('map', { zoomControl:false }).setView([45.75, 4.85], 13);
 const OSM = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
-const ATTR_END = ' · itinéraires FOSSGIS · <a href="https://www.openstreetmap.org/fixthemap">Signaler une erreur</a>';
+const ATTR_END = ' · itinéraires FOSSGIS · altitudes <a href="https://open-meteo.com/">Open-Meteo</a> (Copernicus) · <a href="https://www.openstreetmap.org/fixthemap">Signaler une erreur</a>';
 const STYLES = {
   plan:      { label:'🗺️ Plan',      url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png', max:19, attr:OSM },
   clair:     { label:'⬜ Clair',     url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png', max:19, attr:OSM, cls:'tiles-clair' },
@@ -507,7 +512,7 @@ function seg(id, key, onchange){
 const speed = () => cfg.speeds[st.mode] || 5;
 
 seg('segMode', 'mode');
-seg('segType', 'type', () => { if(st.type === 'boucle') clearDest(); });
+seg('segType', 'type', () => { if(st.type === 'boucle') clearDest(); syncRet(); });
 seg('segUnit', 'unit', old => {
   if(old === st.unit) return;
   const v = parseFloat($('val').value) || 0;
@@ -822,15 +827,14 @@ function renderList(){
   // Le parcours sélectionné en premier (épinglé en haut), puis les autres dans l'ordre
   const order = selected && candidates.includes(selected) ? [selected].concat(candidates.filter(c => c !== selected)) : candidates;
   order.forEach(c => {
-    const i = candidates.indexOf(c), km = c.distance / 1000;
+    const i = candidates.indexOf(c), s = statsOf(c), km = s.dist / 1000;
+    needElev(c);
     const b = document.createElement('div');
     b.className = 'it' + (c === selected ? ' on pin' : '');
     b.setAttribute('role', 'button'); b.tabIndex = 0;
-    const tag = c.kind !== 'boucle' ? '' : c.overlap < 0.05
-      ? '<span class="tag ok">✓ Sans aller-retour</span>'
-      : '<span class="tag warn">↩︎ ' + Math.round(c.overlap * 100) + ' % en double</span>';
+    const tag = elevTag(c);
     b.innerHTML = '<span class="n">' + (i + 1) + '</span><div><b></b><small></small>' + tag + '</div>' +
-      '<span class="km">' + km.toFixed(1) + ' km<small>≈ ' + fmtMin(km / speed() * 60) + '</small></span>';
+      '<span class="km">' + km.toFixed(1) + ' km<small>' + (s.r ? 'A/R · ' : '') + '≈ ' + fmtMin(km / speed() * 60) + '</small></span>';
     b.querySelector('b').textContent = titleOf(c, i);
     b.querySelector('div small').textContent = subOf(c);
     b.onclick = () => pick(c);
@@ -908,9 +912,7 @@ function select(c, noFit, keepSize){
     setSheet('peek');
     if(!noFit) setTimeout(fitRoute, 320);
   } else if(!noFit) fitRoute();
-  const km = c.distance / 1000;
-  msg('<b>' + km.toFixed(1) + ' km</b> · ≈ ' + fmtMin(km / speed() * 60) +
-      (candidates.length > 1 ? ' · <span class="cnt">' + (candidates.indexOf(c) + 1) + '/' + candidates.length + '</span>' : ''));
+  msg(routeInfo(c));
   lastRoute = c;
   loadPhotos(c);
   showPlaces();
@@ -974,8 +976,7 @@ async function generate(){
         if(!selected){
           selected = c;
           drawAll(); renderList(); fitRoute();
-          const km = c.distance / 1000;
-          msg('<b>' + km.toFixed(1) + ' km</b> · ≈ ' + fmtMin(km / speed() * 60));
+          msg(routeInfo(c));
         } else { drawAll(); renderList(); }
       }catch(e){ lastErr = e; if(/connexion|demandes/.test(e.message)) break; }
     }
@@ -1132,6 +1133,80 @@ $('destClear').onclick = e => {
   }
 };
 
+/* ---------- Dénivelé (Open-Meteo, sans compte) et option "Afficher le retour" ---------- */
+const withRet = c => c.kind !== 'boucle' && !!st.withReturn;
+// Chiffres affichés : en aller simple avec "retour", on compte l'aller ET le retour
+function statsOf(c){
+  const r = withRet(c), up = c.up, down = c.down;
+  return { dist: c.distance * (r ? 2 : 1),
+           up: up == null ? null : (r ? up + down : up),
+           down: down == null ? null : (r ? up + down : down), r };
+}
+function elevTag(c){
+  const s = statsOf(c);
+  if(s.up == null) return '<span class="tag elev">' + (c._evErr ? 'dénivelé indisponible' : '⛰️ dénivelé…') + '</span>';
+  return '<span class="tag elev">↗ ' + s.up + ' m · ↘ ' + s.down + ' m' + (s.r ? ' · A/R' : '') + '</span>';
+}
+function routeInfo(c){
+  const s = statsOf(c), km = s.dist / 1000;
+  return '<b>' + km.toFixed(1) + ' km</b>' + (s.r ? ' A/R' : '') + ' · ≈ ' + fmtMin(km / speed() * 60) +
+    (s.up != null ? ' · ↗ ' + s.up + ' m' : '') +
+    (candidates.length > 1 && candidates.includes(c) ? ' · <span class="cnt">' + (candidates.indexOf(c) + 1) + '/' + candidates.length + '</span>' : '');
+}
+function updateInfo(){   // met à jour la ligne d'info sans perdre le nombre de photos
+  if(!selected) return;
+  const suf = ($('info').innerHTML.match(/ · 📷.*$/) || [''])[0];
+  $('info').innerHTML = routeInfo(selected) + suf;
+}
+
+// Altitudes le long du parcours (≈ 100 points), puis cumul des montées / descentes
+async function elevationOf(c){
+  const line = c.geometry.coordinates.map(llOf), step = Math.max(40, c.distance / 99);
+  let pts = samples(line, step);
+  if(pts.length > 99) pts = pts.slice(0, 99);
+  pts.push(line[line.length - 1]);
+  const j = await getJSON('https://api.open-meteo.com/v1/elevation?latitude=' + pts.map(p => p[0].toFixed(5)).join(',') +
+    '&longitude=' + pts.map(p => p[1].toFixed(5)).join(','));
+  const e = j && j.elevation;
+  if(!Array.isArray(e) || !e.length) throw new Error('altitudes');
+  let up = 0, down = 0, ref = e[0];
+  for(const v of e){   // on ignore les variations de moins de 3 m (bruit du relief)
+    const d = v - ref;
+    if(d >= 3){ up += d; ref = v; } else if(d <= -3){ down -= d; ref = v; }
+  }
+  c.up = Math.round(up); c.down = Math.round(down);
+}
+const elevQ = [];
+let elevBusy = 0, elevRender = false;
+function needElev(c){
+  if(c._ev || c.up != null) return;
+  c._ev = true; elevQ.push(c); pumpElev();
+}
+function pumpElev(){
+  while(elevBusy < 3 && elevQ.length){
+    const c = elevQ.shift();
+    elevBusy++;
+    elevationOf(c).catch(() => { c._evErr = true; }).finally(() => {
+      elevBusy--;
+      if(candidates.includes(c) && !elevRender){   // un seul rafraîchissement pour plusieurs réponses
+        elevRender = true;
+        requestAnimationFrame(() => { elevRender = false; renderList(); updateInfo(); });
+      }
+      pumpElev();
+    });
+  }
+}
+// Case "Afficher le retour" (aller simple uniquement)
+function syncRet(){
+  $('retRow').hidden = st.type === 'boucle';
+  $('optRet').checked = !!st.withReturn;
+}
+$('optRet').onchange = () => {
+  st.withReturn = $('optRet').checked; store.set('st', st);
+  renderList(); updateInfo(); if(sheetReady) updateChip();
+};
+syncRet();
+
 /* ---------- Parcours enregistrés (gardés sur cet appareil) ---------- */
 let saved = store.get('saved', []);
 function persist(){
@@ -1146,7 +1221,7 @@ function saveRoute(c){
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
     name: titleOf(c, candidates.indexOf(c)), date: new Date().toISOString(), mode: st.mode,
     kind: c.kind, brg: c.brg || 0, distance: Math.round(c.distance), overlap: c.overlap || 0,
-    lm: c.lm || [], names: (c.names || []).slice(0, 3),
+    lm: c.lm || [], names: (c.names || []).slice(0, 3), up: c.up, down: c.down,
     coords: c.geometry.coordinates.map(p => [+p[0].toFixed(5), +p[1].toFixed(5)])   // arrondi : prend moins de place
   };
   saved.unshift(s);
@@ -1163,7 +1238,7 @@ function toggleSave(c){ isSaved(c) ? unsaveRoute(c) : saveRoute(c); renderList()
 
 function fromSaved(s){
   return { geometry:{ type:'LineString', coordinates:s.coords }, distance:s.distance, overlap:s.overlap || 0,
-    names:s.names || [], lm:s.lm || [], kind:s.kind, brg:s.brg || 0, savedId:s.id, savedName:s.name };
+    names:s.names || [], lm:s.lm || [], up:s.up, down:s.down, kind:s.kind, brg:s.brg || 0, savedId:s.id, savedName:s.name };
 }
 function showSaved(s){
   $('savedModal').classList.add('hidden');
@@ -2101,7 +2176,7 @@ $('grab').onclick = () => setSheet(sheetState === 'peek' ? 'half' : 'peek');
 function updateChip(){
   const ico = { marche:'🚶', course:'🏃', velo:'🚴' }, lbl = { marche:'Marche', course:'Course', velo:'Vélo' };
   const what = dest ? '→ ' + dest.name : (($('val').value || '?') + ' ' + st.unit);
-  $('chipTxt').textContent = ico[st.mode] + ' ' + lbl[st.mode] + ' · ' + (st.type === 'boucle' ? 'Boucle' : 'Aller') + ' · ' + what;
+  $('chipTxt').textContent = ico[st.mode] + ' ' + lbl[st.mode] + ' · ' + (st.type === 'boucle' ? 'Boucle' : (st.withReturn ? 'Aller-retour' : 'Aller')) + ' · ' + what;
 }
 $('chip').onclick = () => {
   const open = !$('panel').classList.contains('open');
