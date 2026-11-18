@@ -613,7 +613,10 @@ function drawAll(){
   if(endMarker){ map.removeLayer(endMarker); endMarker = null; }
   candidates.forEach((c, i) => {
     if(c === selected) return;
-    L.geoJSON(c.geometry, { style:{ color:'#64748b', weight:4, opacity:.45 } }).on('click', () => select(c)).addTo(altLayer);
+    // Tracé gris visible + zone invisible plus large, pour qu'on puisse le toucher facilement au doigt
+    L.geoJSON(c.geometry, { interactive:false, style:{ color:'#64748b', weight:4, opacity:.5 } }).addTo(altLayer);
+    L.geoJSON(c.geometry, { bubblingMouseEvents:false, style:{ color:'#000', weight:24, opacity:0 } })
+      .on('click', e => { L.DomEvent.stop(e); select(c); }).addTo(altLayer);
   });
   candidates.forEach((c, i) => {   // numéro de chaque parcours sur la carte
     const co = c.geometry.coordinates[Math.floor(c.geometry.coordinates.length * 0.4)];
@@ -621,7 +624,7 @@ function drawAll(){
       html:'<div class="rn' + (c === selected ? ' on' : '') + '">' + (i + 1) + '</div>' }) }).on('click', () => select(c)).addTo(altLayer);
   });
   if(!selected) return;
-  routeLayer = L.geoJSON(selected.geometry, { style:routeStyle() }).addTo(map);
+  routeLayer = L.geoJSON(selected.geometry, { bubblingMouseEvents:false, style:routeStyle() }).addTo(map);
   if(selected.kind !== 'boucle'){
     const co = selected.geometry.coordinates, last = co[co.length - 1];
     endMarker = L.marker([last[1], last[0]], { icon:pin('#dc2626') }).addTo(map);
