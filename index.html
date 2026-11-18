@@ -76,9 +76,6 @@
 <div id="cfg" class="modal hidden">
   <div class="card">
     <h2>Réglages</h2>
-    <label for="key">Clé API OpenRouteService</label>
-    <input id="key" type="password" autocomplete="off" placeholder="Colle ta clé ici">
-    <small>Gratuite : crée un compte sur <a href="https://openrouteservice.org/dev/#/signup" target="_blank" rel="noopener">openrouteservice.org</a> (openrouteservice.org), puis copie ta clé « Basic ». Elle reste enregistrée sur ce téléphone uniquement.</small>
     <label>Vitesses moyennes (km/h) — servent à convertir une durée en distance</label>
     <div class="speeds">
       <div><small>Marche</small><input id="spMarche" type="number" inputmode="decimal" step="0.5"></div>
@@ -99,8 +96,13 @@ const store = {
   set(k, v){ try{ localStorage.setItem('prc_'+k, JSON.stringify(v)); }catch(e){} }
 };
 
-const PROFILES = { marche:'foot-walking', course:'foot-walking', velo:'cycling-regular' };
-let cfg = store.get('cfg', { key:'', speeds:{ marche:5, course:10, velo:18 } });
+// Serveurs de calcul d'itinéraire gratuits et sans compte (FOSSGIS / OSRM, données OpenStreetMap)
+const PROFILES = {
+  marche:'https://routing.openstreetmap.de/routed-foot',
+  course:'https://routing.openstreetmap.de/routed-foot',
+  velo:  'https://routing.openstreetmap.de/routed-bike'
+};
+let cfg = store.get('cfg', { speeds:{ marche:5, course:10, velo:18 } });
 let st  = store.get('st',  { mode:'course', type:'boucle', unit:'km', val:5 });
 
 let start = null, startMarker = null, endMarker = null, meMarker = null, meLL = null, routeLayer = null;
@@ -109,7 +111,7 @@ let start = null, startMarker = null, endMarker = null, meMarker = null, meLL = 
 const map = L.map('map', { zoomControl:false }).setView([45.75, 4.85], 13);
 map.attributionControl.setPosition('topleft');
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom:19, attribution:'© OpenStreetMap · ORS'
+  maxZoom:19, attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · itinéraires FOSSGIS · <a href="https://www.openstreetmap.org/fixthemap">Signaler une erreur</a>'
 }).addTo(map);
 
 const pin = color => L.divIcon({
@@ -200,7 +202,6 @@ function msg(t, err){ $('info').innerHTML = err ? '<span class="err">' + t + '</
 
 /* ---------- Réglages ---------- */
 function openCfg(){
-  $('key').value = cfg.key;
   $('spMarche').value = cfg.speeds.marche;
   $('spCourse').value = cfg.speeds.course;
   $('spVelo').value = cfg.speeds.velo;
@@ -209,7 +210,6 @@ function openCfg(){
 $('btnCfg').onclick = openCfg;
 $('cfgCancel').onclick = () => $('cfg').classList.add('hidden');
 $('cfgSave').onclick = () => {
-  cfg.key = $('key').value.trim();
   cfg.speeds = {
     marche: parseFloat($('spMarche').value) || 5,
     course: parseFloat($('spCourse').value) || 10,
@@ -221,21 +221,21 @@ $('cfgSave').onclick = () => {
   msg('Réglages enregistrés.');
 };
 
-/* ---------- Calcul d'itinéraire (OpenRouteService) ---------- */
-async function ors(profile, body){
-  const r = await fetch('https://api.openrouteservice.org/v2/directions/' + profile + '/geojson', {
-    method:'POST',
-    headers:{ 'Authorization':cfg.key, 'Content-Type':'application/json', 'Accept':'application/geo+json, application/json' },
-    body:JSON.stringify(body)
-  });
+/* ---------- Calcul d'itinéraire (OSRM / FOSSGIS, sans compte) ---------- */
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// pts = liste de [lat, lng] ; renvoie { distance (m), geometry (GeoJSON LineString) }
+async function route(base, pts){
+  const coords = pts.map(p => p[1].toFixed(6) + ',' + p[0].toFixed(6)).join(';');
+  let r;
+  try{
+    r = await fetch(base + '/route/v1/driving/' + coords + '?overview=full&geometries=geojson&continue_straight=true');
+  }catch(e){ throw new Error('Pas de connexion au serveur d\'itinéraires.'); }
+  if(r.status === 429) throw new Error('Trop de demandes : attends quelques secondes.');
   const j = await r.json().catch(() => ({}));
-  if(!r.ok){
-    if(r.status === 401 || r.status === 403) throw new Error('Clé API refusée : vérifie-la dans les réglages ⚙️.');
-    if(r.status === 429) throw new Error('Trop de demandes : attends une minute.');
-    throw new Error((j.error && (j.error.message || j.error)) || ('Erreur ' + r.status));
-  }
-  if(!j.features || !j.features.length) throw new Error('Aucun parcours trouvé.');
-  return j.features[0];
+  if(!r.ok || j.code !== 'Ok' || !j.routes || !j.routes.length)
+    throw new Error(j.code === 'NoRoute' ? 'Aucun chemin trouvé ici : essaie un autre départ.' : 'Calcul impossible (' + (j.message || r.status) + ').');
+  return j.routes[0];
 }
 
 // Point situé à "dist" mètres de ll, dans la direction "brg" (degrés)
@@ -247,39 +247,42 @@ function destPoint(ll, dist, brg){
   return [la2 * 180 / Math.PI, lo2 * 180 / Math.PI];
 }
 
+// Points de passage d'une boucle : un cercle qui passe par le départ
+function loopPoints(ll, length, brg){
+  const n = length < 4000 ? 3 : 4;                 // nombre de points intermédiaires
+  const r = length / (2 * Math.PI);                // rayon du cercle
+  const center = destPoint(ll, r, brg);
+  const back = (brg + 180) % 360;                  // direction centre → départ
+  const pts = [ll];
+  for(let k = 1; k <= n; k++) pts.push(destPoint(center, r, back + k * 360 / (n + 1)));
+  pts.push(ll);
+  return pts;
+}
+
 async function generate(){
-  if(!cfg.key){ openCfg(); msg('Ajoute d\'abord ta clé OpenRouteService.', true); return; }
   if(!start){ msg('Position inconnue : touche la carte pour placer ton départ.', true); return; }
   const target = targetMeters();
   if(!(target >= 300)){ msg('Objectif trop court (300 m minimum).', true); return; }
   if(target > 100000){ msg('Objectif limité à 100 km.', true); return; }
 
-  const profile = PROFILES[st.mode];
-  const seed = Math.floor(Math.random() * 1e6);
+  const base = PROFILES[st.mode];
   const brg = Math.random() * 360;
-  let factor = st.type === 'boucle' ? 1 : 1 / 1.3;   // à vol d'oiseau, un trajet est ~30 % plus court
+  let factor = 1 / 1.3;   // les chemins réels font ~30 % de plus que la ligne droite
   let best = null, lastErr = null;
 
   $('btnGo').disabled = true;
   msg('Calcul du parcours…');
 
-  // Jusqu'à 3 essais : on ajuste la longueur demandée pour coller à l'objectif
+  // Jusqu'à 3 essais : on ajuste la taille pour coller à l'objectif
   for(let i = 0; i < 3; i++){
+    if(i) await sleep(1100);   // règle du serveur : 1 demande par seconde maximum
     const req = target * factor;
-    let body;
-    if(st.type === 'boucle'){
-      body = { coordinates:[[start[1], start[0]]], elevation:true,
-               options:{ round_trip:{ length:Math.round(req), points: target < 4000 ? 3 : 5, seed } } };
-    } else {
-      const e = destPoint(start, req, brg);
-      body = { coordinates:[[start[1], start[0]], [e[1], e[0]]], elevation:true, radiuses:[-1, -1] };
-    }
+    const pts = st.type === 'boucle' ? loopPoints(start, req, brg) : [start, destPoint(start, req, brg)];
     try{
-      const f = await ors(profile, body);
-      const got = f.properties.summary.distance;
-      if(!best || Math.abs(got - target) < Math.abs(best.properties.summary.distance - target)) best = f;
-      if(Math.abs(got - target) / target < 0.08 || !got) break;
-      factor *= target / got;
+      const rt = await route(base, pts);
+      if(!best || Math.abs(rt.distance - target) < Math.abs(best.distance - target)) best = rt;
+      if(!rt.distance || Math.abs(rt.distance - target) / target < 0.08) break;
+      factor *= target / rt.distance;
     }catch(e){ lastErr = e; break; }
   }
 
@@ -289,12 +292,12 @@ async function generate(){
   $('btnGo').textContent = '🔁 Autre parcours';
 }
 
-function draw(f){
+function draw(rt){
   if(routeLayer) map.removeLayer(routeLayer);
   if(endMarker){ map.removeLayer(endMarker); endMarker = null; }
-  routeLayer = L.geoJSON(f, { style:{ color:'#0f766e', weight:5, opacity:.85 } }).addTo(map);
+  routeLayer = L.geoJSON(rt.geometry, { style:{ color:'#0f766e', weight:5, opacity:.85 } }).addTo(map);
 
-  const coords = f.geometry.coordinates;
+  const coords = rt.geometry.coordinates;
   if(st.type === 'aller'){
     const last = coords[coords.length - 1];
     endMarker = L.marker([last[1], last[0]], { icon:pin('#dc2626') }).addTo(map);
@@ -304,10 +307,8 @@ function draw(f){
     paddingBottomRight:[30, $('panel').offsetHeight + 20]
   });
 
-  const p = f.properties, km = p.summary.distance / 1000;
-  const up = p.ascent != null ? p.ascent : p.summary.ascent;
-  msg('<b>' + km.toFixed(1) + ' km</b> · ≈ ' + fmtMin(km / speed() * 60) +
-      (up != null ? ' · ↗ ' + Math.round(up) + ' m' : ''));
+  const km = rt.distance / 1000;
+  msg('<b>' + km.toFixed(1) + ' km</b> · ≈ ' + fmtMin(km / speed() * 60));
 }
 
 $('btnGo').onclick = generate;
