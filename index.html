@@ -51,6 +51,12 @@
   #sugg{flex:1 1 auto;min-height:0;overflow-y:auto;margin:8px -14px 0;padding:0 14px 14px;overscroll-behavior:contain}
   .sg-h{font-weight:700;font-size:15px;margin:4px 0 8px}
   #sugg .it.sg{margin-bottom:8px;padding:6px 8px;gap:8px}
+  #panel[data-state=peek] #sugg > :not(.cur):not(.sg-msg){display:none}
+  #panel[data-state=peek] #sugg .cur{touch-action:none;will-change:transform}
+  .sg-h{display:flex;align-items:center;gap:8px}
+  .sgDet{flex:none;border:1px solid var(--bd);background:var(--bg);border-radius:8px;padding:5px 9px;font:600 13px system-ui,sans-serif;color:var(--tx);cursor:pointer}
+  .sgDet.on{background:#e6f4f1;border-color:var(--c);color:var(--c)}
+  .vbtn.wide{width:100%;margin-top:8px;padding:10px;font-size:15px}
   .it .th{flex:none;width:46px;height:46px;border-radius:9px;object-fit:cover;background:#eee}
   .it.sg div small{white-space:nowrap}
   .vbtn{flex:none;border:none;background:var(--c);color:#fff;border-radius:9px;padding:8px 10px;font:600 13px system-ui,sans-serif;cursor:pointer;white-space:nowrap}
@@ -1768,7 +1774,9 @@ function placeMarker(p){
 }
 function showPlaces(){
   placeLayer.clearLayers();
-  const list = tab === 'sugg' && st.type !== 'boucle' && !dest ? suggPlaces : (selected && selected.places) || [];
+  const list = tab === 'sugg' && !dest
+    ? (st.type === 'boucle' ? ((suggTours[sugIdx] && suggTours[sugIdx].places) || []) : suggPlaces)
+    : (selected && selected.places) || [];
   placeLayer.addLayers(list.map(placeMarker));
 }
 // Mini-liste des suggestions (même format que la liste des parcours)
@@ -1787,7 +1795,7 @@ function miniCard(thumb, title, sub, right, onView, onThumb){
 function placeCard(p, withGo){
   const desc = (p.extract.match(/^.*?[.!?](\s|$)/) || [p.extract])[0].trim();
   return miniCard(p.thumb, p.title, 'à ' + fmtKm(p.dist) + ' · ' + desc, '',
-    () => { setDest(p.ll, p.title); keepSheetOnce = true; setTab('parcours'); generate(); },   // itinéraire vers ce lieu
+    () => viewPlace(p),
     () => openGallery([{ img:p.thumb, link:p.url, title:p.title, credit:p.extract + ' — Wikipédia' }], 0));
 }
 function tourCard(c){
@@ -1795,59 +1803,135 @@ function tourCard(c){
   return miniCard(c.places[0].thumb, 'Visite · ' + c.places.slice(0, 2).map(p => p.title).join(', ') + (n > 2 ? ' +' + (n - 2) : ''),
     n + ' lieu' + (n > 1 ? 'x' : '') + ' à voir · côté ' + dirOf(c.brg),
     km.toFixed(1) + ' km<small>≈ ' + fmtMin(km / speed() * 60) + '</small>',
-    () => { candidates = suggTours.slice(); lastGenKey = ''; userPicked = true; setTab('parcours'); select(c, false, true); },
+    () => viewTour(c),
     () => openGallery(c.places.map(x => ({ img:x.thumb, link:x.url, title:x.title, credit:x.extract + ' — Wikipédia' })), 0));
 }
 
+// Version détaillée (grande photo, description, étapes de la balade)
+function placeBig(p){
+  const d = document.createElement('div');
+  d.className = 'pc';
+  d.innerHTML = '<img loading="lazy" alt=""><div class="pcb"><b></b><span class="pcd"></span><p></p>' +
+    '<div class="pca"><button class="vbtn">Voir parcours</button><a target="_blank" rel="noopener">Wikipédia</a></div></div>';
+  d.querySelector('img').src = p.thumb;
+  d.querySelector('b').textContent = p.title;
+  d.querySelector('.pcd').textContent = 'à ' + fmtKm(p.dist) + ' à vol d\'oiseau';
+  d.querySelector('p').textContent = p.extract;
+  d.querySelector('a').href = p.url;
+  d.querySelector('img').onclick = () => openGallery([{ img:p.thumb, link:p.url, title:p.title, credit:p.extract + ' — Wikipédia' }], 0);
+  d.querySelector('.vbtn').onclick = () => viewPlace(p);
+  return d;
+}
+function tourBig(c){
+  const km = c.distance / 1000, d = document.createElement('div');
+  d.className = 'tc';
+  d.innerHTML = '<div class="tch"><div><b></b><small></small></div><span class="km">' + km.toFixed(1) + ' km<small>≈ ' +
+    fmtMin(km / speed() * 60) + '</small></span></div><div class="tcp"></div><div class="tcl"></div><button class="vbtn wide">Voir parcours</button>';
+  d.querySelector('b').textContent = 'Balade · ' + c.places.length + ' lieu' + (c.places.length > 1 ? 'x' : '') + ' à voir';
+  d.querySelector('small').textContent = 'côté ' + dirOf(c.brg);
+  const strip = d.querySelector('.tcp'), lines = d.querySelector('.tcl');
+  c.places.forEach((p, i) => {
+    const f = document.createElement('figure');
+    f.innerHTML = '<img loading="lazy" alt=""><figcaption></figcaption>';
+    f.querySelector('img').src = p.thumb;
+    f.querySelector('figcaption').textContent = (i + 1) + '. ' + p.title;
+    f.onclick = () => openGallery(c.places.map(x => ({ img:x.thumb, link:x.url, title:x.title, credit:x.extract + ' — Wikipédia' })), i);
+    strip.appendChild(f);
+    const l = document.createElement('p');
+    l.innerHTML = '<b></b> — <span></span>';
+    l.querySelector('b').textContent = (i + 1) + '. ' + p.title;
+    l.querySelector('span').textContent = (p.extract.match(/^.*?[.!?](\s|$)/) || [p.extract])[0].trim();
+    lines.appendChild(l);
+  });
+  d.querySelector('.vbtn').onclick = () => viewTour(c);
+  return d;
+}
+function viewPlace(p){ setDest(p.ll, p.title); keepSheetOnce = true; setTab('parcours'); generate(); }   // itinéraire vers ce lieu
+function viewTour(c){ candidates = suggTours.slice(); lastGenKey = ''; userPicked = true; setTab('parcours'); select(c, false, true); }
+
+/* --- Liste des suggestions : compacte ou détaillée ; tiroir replié = une suggestion à la fois --- */
+let sugDetail = !!st.sugDetail, sugIdx = 0, sugHead = '', sugBusy = '', sugMsg = '';
+const sugItems = () => st.type === 'boucle' ? suggTours : suggPlaces;
+const sugPeek = () => sheetReady && !WIDE.matches && sheetState === 'peek';
+function renderSugg(){
+  const box = $('sugg'), items = sugItems(), detail = sugDetail && !sugPeek();
+  const keepY = box.scrollTop;
+  box.innerHTML = '';
+  if(sugHead){
+    const h = document.createElement('div');
+    h.className = 'sg-h';
+    h.innerHTML = '<button class="sgDet' + (sugDetail ? ' on' : '') + '">' + (sugDetail ? '☰ Liste' : '▤ Détails') + '</button><span></span>';
+    h.querySelector('span').textContent = sugHead;
+    h.querySelector('button').onclick = () => { sugDetail = !sugDetail; st.sugDetail = sugDetail; store.set('st', st); renderSugg(); };
+    box.appendChild(h);
+  }
+  sugIdx = Math.min(sugIdx, Math.max(0, items.length - 1));
+  items.forEach((x, i) => {
+    const el = st.type === 'boucle' ? (detail ? tourBig(x) : tourCard(x)) : (detail ? placeBig(x) : placeCard(x));
+    if(i === sugIdx) el.classList.add('cur');
+    box.appendChild(el);
+  });
+  [sugBusy, sugMsg].filter(Boolean).forEach(t => { const p = document.createElement('p'); p.className = 'sg-msg'; p.textContent = t; box.appendChild(p); });
+  box.scrollTop = keepY;
+  if(tab === 'sugg') showPlaces();
+}
+// Suggestion mise en avant sur la carte (glissé gauche / droite tiroir replié)
+function focusSugg(){
+  const x = sugItems()[sugIdx];
+  if(!x) return;
+  showPlaces();
+  if(st.type === 'boucle') map.fitBounds(L.latLngBounds(x.geometry.coordinates.map(llOf)), { paddingTopLeft:[30, 80], paddingBottomRight:[70, $('panel').offsetHeight + 20] });
+  else map.setView(x.ll, Math.max(map.getZoom(), 15));
+}
+
 async function runSugg(){
-  const box = $('sugg');
-  if(!start){ box.innerHTML = '<p class="sg-msg">Place d\'abord ton départ (📍 ou touche la carte).</p>'; return; }
-  if(dest){ box.innerHTML = '<p class="sg-msg">Retire l\'arrivée choisie (✕) pour voir des suggestions autour de toi.</p>'; return; }
+  sugMsg = ''; sugBusy = '';
+  if(!start){ sugHead = ''; sugMsg = 'Place d\'abord ton départ (🎯 ou touche la carte).'; renderSugg(); return; }
+  if(dest){ sugHead = ''; sugMsg = 'Efface l\'arrivée choisie (🗑) pour voir des suggestions autour de toi.'; renderSugg(); return; }
   const target = targetMeters(), loop = st.type === 'boucle';
   const key = [start[0].toFixed(4), start[1].toFixed(4), st.mode, st.type, Math.round(target)].join('|');
-  if(key === suggKey){ showPlaces(); return; }
+  if(key === suggKey){ renderSugg(); return; }
   const run = ++suggRun;
-  suggKey = key; suggPlaces = []; suggTours = [];
+  suggKey = key; suggPlaces = []; suggTours = []; sugIdx = 0; sugHead = '';
   const radius = loop ? target * 0.42 : target / 1.3;
-  box.innerHTML = '<p class="sg-msg">🔎 Recherche des lieux à visiter à moins de ' + fmtKm(radius) + '…</p>';
+  sugBusy = '🔎 Recherche des lieux à visiter à moins de ' + fmtKm(radius) + '…';
+  renderSugg(); if(sheetReady && !WIDE.matches) setSheet(sheetState);
   let places = [];
   try{ places = await findPlaces(start, radius); }catch(e){}
   if(run !== suggRun) return;
-  if(!places.length){ box.innerHTML = '<p class="sg-msg">Aucun lieu à visiter trouvé dans ce rayon. Essaie une distance plus grande.</p>'; suggKey = ''; return; }
+  sugBusy = '';
+  if(!places.length){ sugMsg = 'Aucun lieu à visiter trouvé dans ce rayon. Essaie une distance plus grande.'; suggKey = ''; renderSugg(); return; }
 
   if(!loop){
-    // Aller simple : liste des lieux touristiques dans le rayon, du plus proche au plus loin
+    // Aller simple : lieux touristiques dans le rayon, du plus proche au plus loin
     suggPlaces = places.sort((a, b) => a.dist - b.dist);
-    box.innerHTML = '<p class="sg-h">' + places.length + ' lieu' + (places.length > 1 ? 'x' : '') + ' à visiter à moins de ' + fmtKm(radius) + '</p>';
-    places.forEach(p => box.appendChild(placeCard(p, true)));
-    showPlaces();
+    sugHead = places.length + ' lieu' + (places.length > 1 ? 'x' : '') + ' à visiter à moins de ' + fmtKm(radius);
+    renderSugg(); if(sheetReady && !WIDE.matches) setSheet(sheetState);
     return;
   }
   // Boucle : balades qui passent par des lieux à visiter
   const tours = planTours(places, target), base = PROFILES[st.mode];
-  box.innerHTML = '<p class="sg-h">Balades de ' + fmtKm(target) + ' avec des lieux à visiter</p><p class="sg-msg" id="sgWait">Calcul des balades… 0 / ' + tours.length + '</p>';
+  sugHead = 'Balades de ' + fmtKm(target) + ' avec des lieux à visiter';
   for(let i = 0; i < tours.length; i++){
     if(run !== suggRun) return;
-    const w = $('sgWait'); if(w) w.textContent = 'Calcul des balades… ' + (i + 1) + ' / ' + tours.length;
+    sugBusy = 'Calcul des balades… ' + (i + 1) + ' / ' + tours.length;
+    renderSugg(); if(sheetReady && !WIDE.matches) setSheet(sheetState);
     try{
       const c = await routeTour(base, tours[i], target);
       if(run !== suggRun) return;
-      if(c && !suggTours.some(o => similarity(c, o) > 0.7)){ suggTours.push(c); box.insertBefore(tourCard(c), $('sgWait')); }
+      if(c && !suggTours.some(o => similarity(c, o) > 0.7)) suggTours.push(c);
     }catch(e){ break; }
   }
-  const w = $('sgWait');
-  if(w) w.remove();
-  if(!suggTours.length){
-    box.insertAdjacentHTML('beforeend', '<p class="sg-msg">Pas de balade à ±' + fmtKm(tolerance(target)) + ' de ton objectif avec ces lieux. Essaie une autre distance.</p>');
-    suggKey = '';
-  }
+  sugBusy = '';
+  if(!suggTours.length){ sugMsg = 'Pas de balade à ±' + fmtKm(tolerance(target)) + ' de ton objectif avec ces lieux. Essaie une autre distance.'; suggKey = ''; }
+  renderSugg(); if(sheetReady && !WIDE.matches) setSheet(sheetState);
 }
 function setTab(t){
   tab = t;
   document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
   $('list').hidden = t !== 'parcours';
   $('sugg').hidden = t !== 'sugg';
-  if(t === 'sugg'){ runSugg(); if(!WIDE.matches && sheetReady && sheetState === 'peek') setSheet('half'); }
+  if(t === 'sugg') runSugg();
   showPlaces();
   if(sheetReady && !WIDE.matches) setSheet(sheetState);
 }
@@ -1859,7 +1943,8 @@ function sheetH(){
   const vh = window.innerHeight, first = $('list').querySelector('.it');
   // Replié : la ligne de résumé + la ligne d'info + le parcours sélectionné
   const top = $('tabs').getBoundingClientRect().bottom - $('panel').getBoundingClientRect().top;
-  const peek = Math.min(Math.round(vh * 0.6), Math.round(top + (first && tab === 'parcours' ? first.offsetHeight + 20 : 10)));
+  const cur = tab === 'parcours' ? first : ($('sugg').querySelector('.cur') || $('sugg').querySelector('.sg-msg'));
+  const peek = Math.min(Math.round(vh * 0.6), Math.round(top + (cur ? cur.offsetHeight + 24 : 10)));
   return { peek, half: Math.max(peek + 80, Math.round(vh * 0.58)), full: vh };
 }
 // Le bouton de localisation suit le haut du tiroir (masqué quand le tiroir prend presque tout l'écran)
@@ -1869,7 +1954,9 @@ function setSheetVar(px){
 }
 function setSheet(s){
   if(!sheetReady || WIDE.matches) return;
+  const wasPeek = sheetState === 'peek';
   sheetState = s;
+  if(tab === 'sugg' && sugDetail && wasPeek !== (s === 'peek')) renderSugg();
   const p = $('panel'), l = $('list');
   p.style.height = sheetH()[s] + 'px';
   setSheetVar(sheetH()[s]);
@@ -1910,13 +1997,14 @@ function dragMove(e){
     if(Math.max(Math.abs(dx), Math.abs(dy)) < 8) return;
     drag.moved = true;
     // Tiroir replié + geste horizontal sur la liste : on fait défiler les parcours (carrousel)
-    drag.axis = Math.abs(dx) > Math.abs(dy) && drag.el.id === 'list' && sheetState === 'peek' && candidates.length > 1 && pinnedCard() ? 'x' : 'y';
+    drag.card = drag.el.id === 'list' ? (candidates.length > 1 && pinnedCard()) : drag.el.id === 'sugg' ? (sugItems().length > 1 && $('sugg').querySelector('.cur')) : null;
+    drag.axis = Math.abs(dx) > Math.abs(dy) && sheetState === 'peek' && drag.card ? 'x' : 'y';
     if(drag.axis === 'y') $('panel').classList.add('dragging');
-    else pinnedCard().style.transition = 'none';
+    else drag.card.style.transition = 'none';
   }
   const now = performance.now(), dt = Math.max(1, now - drag.lastT);
   if(drag.axis === 'x'){
-    const card = pinnedCard();
+    const card = drag.card;
     if(card){ card.style.transform = 'translateX(' + dx + 'px)'; card.style.opacity = Math.max(.35, 1 - Math.abs(dx) / 500); }
     drag.vx = (e.clientX - drag.lastX) / dt;
   } else {
@@ -1946,18 +2034,20 @@ function dragEnd(e){
 }
 // Fin du glissé horizontal : parcours précédent (vers la droite) ou suivant (vers la gauche)
 function swipeEnd(d, dx){
-  const card = pinnedCard();
+  const card = d.card;
   if(!card) return;
+  const isSugg = d.el.id === 'sugg';
   const go = Math.abs(dx) > 70 || Math.abs(d.vx) > 0.5;
   card.style.transition = 'transform .18s ease, opacity .18s ease';
   if(!go){ card.style.transform = ''; card.style.opacity = ''; return; }   // pas assez loin : retour en place
-  const dir = dx < 0 ? 1 : -1, n = candidates.length;
-  const next = candidates[(candidates.indexOf(selected) + dir + n) % n];
+  const dir = dx < 0 ? 1 : -1, n = isSugg ? sugItems().length : candidates.length;
+  const next = isSugg ? null : candidates[(candidates.indexOf(selected) + dir + n) % n];
   card.style.transform = 'translateX(' + (dir > 0 ? '-110%' : '110%') + ')';
   card.style.opacity = '0';
   setTimeout(() => {
-    pick(next);
-    const nc = pinnedCard();   // le nouveau parcours arrive du côté opposé
+    if(isSugg){ sugIdx = (sugIdx + dir + n) % n; renderSugg(); setSheet('peek'); focusSugg(); }
+    else pick(next);
+    const nc = isSugg ? $('sugg').querySelector('.cur') : pinnedCard();   // le nouveau arrive du côté opposé
     if(nc){
       nc.style.transition = 'none';
       nc.style.transform = 'translateX(' + (dir > 0 ? '60%' : '-60%') + ')'; nc.style.opacity = '0';
