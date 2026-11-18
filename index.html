@@ -43,12 +43,36 @@
   .btns{display:flex;gap:8px;margin-top:16px}
   .btns button{flex:1;padding:11px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);font-size:15px}
   .btns .primary{border:none}
+  .leaflet-control-attribution{font-size:10px}
+  .leaflet-top.leaflet-left .leaflet-control-attribution{max-width:calc(100vw - 80px)}
+  #btnStyle{top:calc(120px + env(safe-area-inset-top))}
+  #styles{position:fixed;right:66px;top:calc(120px + env(safe-area-inset-top));z-index:1100;background:var(--bg);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.25);padding:6px;display:flex;flex-direction:column;gap:2px}
+  #styles.hidden{display:none}
+  #styles button{border:none;background:none;text-align:left;padding:9px 12px;border-radius:8px;font-size:15px;white-space:nowrap;color:var(--tx)}
+  #styles button.on{background:#e6f4f1;color:var(--c);font-weight:600}
+
+  /* Écran large (PC, tablette) ou téléphone en paysage : panneau sur le côté */
+  @media (min-width:800px), (orientation:landscape) and (max-height:520px){
+    #panel{top:calc(12px + env(safe-area-inset-top));bottom:auto;left:calc(12px + env(safe-area-inset-left));right:auto;width:340px;max-height:calc(100% - 24px);overflow-y:auto;border-radius:18px;padding:14px;box-shadow:0 2px 12px rgba(0,0,0,.2)}
+  }
+  /* Téléphone en paysage : panneau plus compact */
+  @media (orientation:landscape) and (max-height:520px){
+    #panel{width:300px;padding:10px}
+    .seg{margin-bottom:6px}
+    .seg button{padding:6px 4px;font-size:14px}
+    #val{font-size:17px;padding:5px 8px}
+    #hint{margin-bottom:6px}
+    .primary{padding:10px;font-size:16px}
+    #info{margin-top:6px}
+  }
 </style>
 </head>
 <body>
 <div id="map"></div>
 <button id="btnCfg" class="fab" title="Réglages">⚙️</button>
 <button id="btnLoc" class="fab" title="Ma position">📍</button>
+<button id="btnStyle" class="fab" title="Style de carte">🗺️</button>
+<div id="styles" class="hidden"></div>
 
 <div id="panel">
   <div class="seg" id="segMode">
@@ -109,10 +133,52 @@ let start = null, startMarker = null, endMarker = null, meMarker = null, meLL = 
 
 /* ---------- Carte ---------- */
 const map = L.map('map', { zoomControl:false }).setView([45.75, 4.85], 13);
-map.attributionControl.setPosition('topleft');
-L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom:19, attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · itinéraires FOSSGIS · <a href="https://www.openstreetmap.org/fixthemap">Signaler une erreur</a>'
-}).addTo(map);
+const OSM = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+const ATTR_END = ' · itinéraires FOSSGIS · <a href="https://www.openstreetmap.org/fixthemap">Signaler une erreur</a>';
+const STYLES = {
+  plan:      { label:'🗺️ Plan',      url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png', max:19, attr:OSM },
+  clair:     { label:'⬜ Clair',     url:'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', max:20, sub:'abcd', attr:OSM + ' © CARTO' },
+  sombre:    { label:'⬛ Sombre',    url:'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',  max:20, sub:'abcd', attr:OSM + ' © CARTO', dark:true },
+  satellite: { label:'🛰️ Satellite', url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', max:19, attr:'Imagerie © Esri · ' + OSM, dark:true },
+  relief:    { label:'⛰️ Relief',    url:'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', max:17, sub:'abc', attr:OSM + ' · © OpenTopoMap (CC-BY-SA)' },
+  velo:      { label:'🚲 Vélo',      url:'https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png', max:20, sub:'abc', attr:OSM + ' · CyclOSM' }
+};
+let tiles = null;
+const routeStyle = () => ({ color: STYLES[st.style].dark ? '#22d3ee' : '#0f766e', weight:5, opacity:.9 });
+
+function setStyle(k){
+  if(!STYLES[k]) k = 'plan';
+  st.style = k; store.set('st', st);
+  const s = STYLES[k];
+  if(tiles) map.removeLayer(tiles);
+  tiles = L.tileLayer(s.url, { maxZoom:s.max, subdomains:s.sub || 'abc', attribution:s.attr + ATTR_END }).addTo(map);
+  if(map.getZoom() > s.max) map.setZoom(s.max);
+  if(routeLayer) routeLayer.setStyle(routeStyle());
+  $('styles').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === k));
+}
+$('styles').innerHTML = Object.keys(STYLES).map(k => '<button data-v="' + k + '">' + STYLES[k].label + '</button>').join('');
+$('styles').querySelectorAll('button').forEach(b => b.onclick = () => { setStyle(b.dataset.v); $('styles').classList.add('hidden'); });
+$('btnStyle').onclick = e => { e.stopPropagation(); $('styles').classList.toggle('hidden'); };
+map.on('movestart', () => $('styles').classList.add('hidden'));
+setStyle(st.style || 'plan');
+
+/* ---------- Mise en page selon la taille de la fenêtre ---------- */
+const WIDE = window.matchMedia('(min-width:800px), (orientation:landscape) and (max-height:520px)');
+function fitRoute(){
+  if(!routeLayer) return;
+  const p = $('panel');
+  map.fitBounds(routeLayer.getBounds(), WIDE.matches
+    ? { paddingTopLeft:[p.offsetWidth + 40, 30], paddingBottomRight:[70, 30] }
+    : { paddingTopLeft:[30, 30], paddingBottomRight:[70, p.offsetHeight + 20] });
+}
+function applyLayout(){
+  map.attributionControl.setPosition(WIDE.matches ? 'bottomright' : 'topleft');
+  map.invalidateSize();
+  fitRoute();
+}
+let rsT = null;
+window.addEventListener('resize', () => { clearTimeout(rsT); rsT = setTimeout(applyLayout, 250); });
+applyLayout();
 
 const pin = color => L.divIcon({
   className:'', iconSize:[22,22], iconAnchor:[11,11],
@@ -125,7 +191,8 @@ function setStart(ll){
   else startMarker.setLatLng(start);
 }
 
-map.on('click', e => { setStart([e.latlng.lat, e.latlng.lng]); msg('Départ placé ici.'); });
+map.on('click', e => {
+  if(!$('styles').classList.contains('hidden')){ $('styles').classList.add('hidden'); return; } setStart([e.latlng.lat, e.latlng.lng]); msg('Départ placé ici.'); });
 
 /* ---------- Géolocalisation ---------- */
 if(navigator.geolocation){
@@ -295,17 +362,14 @@ async function generate(){
 function draw(rt){
   if(routeLayer) map.removeLayer(routeLayer);
   if(endMarker){ map.removeLayer(endMarker); endMarker = null; }
-  routeLayer = L.geoJSON(rt.geometry, { style:{ color:'#0f766e', weight:5, opacity:.85 } }).addTo(map);
+  routeLayer = L.geoJSON(rt.geometry, { style:routeStyle() }).addTo(map);
 
   const coords = rt.geometry.coordinates;
   if(st.type === 'aller'){
     const last = coords[coords.length - 1];
     endMarker = L.marker([last[1], last[0]], { icon:pin('#dc2626') }).addTo(map);
   }
-  map.fitBounds(routeLayer.getBounds(), {
-    paddingTopLeft:[30, 30],
-    paddingBottomRight:[30, $('panel').offsetHeight + 20]
-  });
+  fitRoute();
 
   const km = rt.distance / 1000;
   msg('<b>' + km.toFixed(1) + ' km</b> · ≈ ' + fmtMin(km / speed() * 60));
