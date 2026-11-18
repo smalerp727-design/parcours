@@ -8,6 +8,8 @@
 <title>Parcours</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css">
+<script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
 <style>
   :root{--c:#0f766e;--bg:#fff;--tx:#1f2937;--mu:#6b7280;--bd:#e5e7eb}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -42,19 +44,20 @@
   .card a{color:var(--c)}
   .btns{display:flex;gap:8px;margin-top:16px}
   .btns button{flex:1;padding:11px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);font-size:15px}
-  .btns .primary{border:none}
+  .btns .primary{border:none;background:var(--c);color:#fff;font-weight:600}
+  [hidden]{display:none!important}
   .leaflet-control-attribution{font-size:10px}
   .leaflet-top.leaflet-left .leaflet-control-attribution{max-width:calc(100vw - 80px)}
-  #btnStyle{top:calc(120px + env(safe-area-inset-top))}
-  #styles{position:fixed;right:66px;top:calc(120px + env(safe-area-inset-top));z-index:1100;background:var(--bg);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.25);padding:6px;display:flex;flex-direction:column;gap:2px}
-  #styles.hidden{display:none}
+  #styles{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
   /* Variantes claire et sombre obtenues en filtrant la carte OpenStreetMap */
   .tiles-clair{filter:grayscale(.9) brightness(1.08) contrast(.85)}
   .tiles-sombre{filter:invert(1) hue-rotate(180deg) brightness(.9) contrast(.9) grayscale(.3)}
   .leaflet-container{background:#ddd}
-  #btnPhoto{top:calc(174px + env(safe-area-inset-top))}
+  #btnPhoto{top:calc(120px + env(safe-area-inset-top))}
   #btnPhoto.off{opacity:.45}
-  .ph{width:26px;height:26px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;font-size:13px}
+  .ph{width:26px;height:26px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center}
+  .ph svg{width:14px;height:14px;display:block}
+  .ph b{color:#fff;font:700 8px/1 system-ui,sans-serif}
   .ph-wiki{background:#ea580c}
   .ph-pano{background:#2563eb}
   #viewer .card{max-width:680px;padding:12px}
@@ -62,8 +65,10 @@
   #vCap{font-size:14px;margin-top:8px;line-height:1.4}
   #vCap small{display:block;color:var(--mu);margin-top:2px}
   #vLink{flex:1;padding:11px;border-radius:10px;border:1px solid var(--bd);text-align:center;text-decoration:none;color:var(--c);font-size:15px}
-  #styles button{border:none;background:none;text-align:left;padding:9px 12px;border-radius:8px;font-size:15px;white-space:nowrap;color:var(--tx)}
-  #styles button.on{background:#e6f4f1;color:var(--c);font-weight:600}
+  #styles button{border:1px solid var(--bd);background:var(--bg);padding:9px 4px;border-radius:9px;font-size:14px;white-space:nowrap;color:var(--tx)}
+  #styles button.on{background:#e6f4f1;border-color:var(--c);color:var(--c);font-weight:600}
+  #vPano{width:100%;height:62vh;border-radius:10px;overflow:hidden;background:#111}
+  #vTip{font-size:12px;color:var(--mu);text-align:center;margin-top:4px}
 
   /* Écran large (PC, tablette) ou téléphone en paysage : panneau sur le côté */
   @media (min-width:800px), (orientation:landscape) and (max-height:520px){
@@ -85,13 +90,13 @@
 <div id="map"></div>
 <button id="btnCfg" class="fab" title="Réglages">⚙️</button>
 <button id="btnLoc" class="fab" title="Ma position">📍</button>
-<button id="btnStyle" class="fab" title="Style de carte">🗺️</button>
-<div id="styles" class="hidden"></div>
 <button id="btnPhoto" class="fab" title="Photos du parcours">📷</button>
 
 <div id="viewer" class="modal hidden">
   <div class="card">
     <img id="vImg" alt="">
+    <div id="vPano" hidden></div>
+    <div id="vTip" hidden>📱 Fais glisser pour regarder autour · pince pour zoomer</div>
     <div id="vCap"></div>
     <div class="btns">
       <a id="vLink" href="#" target="_blank" rel="noopener">Voir la source</a>
@@ -126,6 +131,8 @@
 <div id="cfg" class="modal hidden">
   <div class="card">
     <h2>Réglages</h2>
+    <label>Style de carte</label>
+    <div id="styles"></div>
     <label>Vitesses moyennes (km/h) — servent à convertir une durée en distance</label>
     <div class="speeds">
       <div><small>Marche</small><input id="spMarche" type="number" inputmode="decimal" step="0.5"></div>
@@ -183,9 +190,7 @@ function setStyle(k){
   $('styles').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === k));
 }
 $('styles').innerHTML = Object.keys(STYLES).map(k => '<button data-v="' + k + '">' + STYLES[k].label + '</button>').join('');
-$('styles').querySelectorAll('button').forEach(b => b.onclick = () => { setStyle(b.dataset.v); $('styles').classList.add('hidden'); });
-$('btnStyle').onclick = e => { e.stopPropagation(); $('styles').classList.toggle('hidden'); };
-map.on('movestart', () => $('styles').classList.add('hidden'));
+$('styles').querySelectorAll('button').forEach(b => b.onclick = () => setStyle(b.dataset.v));
 setStyle(st.style || 'plan');
 
 /* ---------- Mise en page selon la taille de la fenêtre ---------- */
@@ -218,7 +223,7 @@ function setStart(ll){
 }
 
 map.on('click', e => {
-  if(!$('styles').classList.contains('hidden')){ $('styles').classList.add('hidden'); return; } setStart([e.latlng.lat, e.latlng.lng]); msg('Départ placé ici.'); });
+  setStart([e.latlng.lat, e.latlng.lng]); msg('Départ placé ici.'); });
 
 /* ---------- Géolocalisation ---------- */
 if(navigator.geolocation){
@@ -479,9 +484,10 @@ async function panoPhotos(line, length){
   res.forEach(j => {
     const f = j && j.features && j.features[0]; if(!f || !f.assets) return;
     const c = f.geometry.coordinates, pr = f.properties || {};
+    const io = pr['pers:interior_orientation'] || {};
     const date = pr.datetime ? new Date(pr.datetime).toLocaleDateString('fr-FR', { month:'long', year:'numeric' }) : '';
     out.push({
-      src:'pano', ll:[c[1], c[0]],
+      src:'pano', ll:[c[1], c[0]], is360: io.field_of_view >= 360,
       img: (f.assets.sd || f.assets.thumb).href, link: (f.assets.hd || f.assets.sd).href,
       title: 'Vue sur le parcours' + (date ? ' (' + date + ')' : ''),
       credit: [pr['geovisio:producer'], pr.license].filter(Boolean).join(' · ') + ' · Panoramax'
@@ -490,17 +496,32 @@ async function panoPhotos(line, length){
   return out;
 }
 
+let pano = null;
+function closePano(){ if(pano){ try{ pano.destroy(); }catch(e){} pano = null; } $('vPano').hidden = true; $('vTip').hidden = true; }
+function flat(p){ closePano(); $('vImg').hidden = false; $('vImg').src = p.img; }
+
 function showPhoto(p){
-  $('vImg').src = p.img;
+  if(p.is360 && window.pannellum){
+    $('vImg').hidden = true; $('vImg').src = '';
+    $('vPano').hidden = false; $('vTip').hidden = false;
+    // Les 360° sont chargées en HD pour rester nettes quand on zoome
+    try{
+      pano = pannellum.viewer('vPano', { type:'equirectangular', panorama:p.link, autoLoad:true,
+        showFullscreenCtrl:true, compass:false, hfov:100, crossOrigin:'anonymous' });
+      pano.on('error', () => flat(p));   // si la 360° ne se charge pas : photo à plat
+    }catch(e){ flat(p); }
+  } else flat(p);
   $('vCap').innerHTML = '';
-  const t = document.createElement('div'); t.textContent = p.title;
+  const t = document.createElement('div'); t.textContent = (p.is360 ? '🌐 Photo 360° · ' : '') + p.title;
   const s = document.createElement('small'); s.textContent = p.credit;
   $('vCap').append(t, s);
   $('vLink').href = p.link;
   $('viewer').classList.remove('hidden');
 }
-$('vClose').onclick = () => { $('viewer').classList.add('hidden'); $('vImg').src = ''; };
+$('vClose').onclick = () => { $('viewer').classList.add('hidden'); $('vImg').src = ''; closePano(); };
 $('viewer').onclick = e => { if(e.target.id === 'viewer') $('vClose').onclick(); };
+
+const CAM = '<svg viewBox="0 0 24 24" fill="#fff"><path d="M9 4 7.2 6H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3.2L15 4H9zm3 4.5a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9zm0 2a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z"/></svg>';
 
 async function loadPhotos(rt){
   const run = ++photoRun;
@@ -517,7 +538,7 @@ async function loadPhotos(rt){
   const all = pano.concat(wiki);
   all.forEach(p => {
     L.marker(p.ll, { zIndexOffset:500, icon: L.divIcon({ className:'', iconSize:[26,26], iconAnchor:[13,13],
-      html:'<div class="ph ' + (p.src === 'wiki' ? 'ph-wiki">📷' : 'ph-pano">👁') + '</div>' }) })
+      html:'<div class="ph ' + (p.src === 'wiki' ? 'ph-wiki' : 'ph-pano') + '">' + (p.is360 ? '<b>360</b>' : CAM) + '</div>' }) })
       .on('click', () => showPhoto(p)).addTo(photoLayer);
   });
   $('info').innerHTML = base + ' · 📷 ' + (all.length ? all.length + ' photo' + (all.length > 1 ? 's' : '') : 'aucune photo');
