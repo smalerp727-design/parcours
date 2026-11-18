@@ -53,6 +53,8 @@
   #btnLoc{top:calc(66px + env(safe-area-inset-top))}
   #panel{position:fixed;left:0;right:0;bottom:0;z-index:1000;background:var(--bg);border-radius:18px 18px 0 0;box-shadow:0 -2px 12px rgba(0,0,0,.2);padding:0 14px env(safe-area-inset-bottom);display:flex;flex-direction:column;height:170px;max-height:100%;transition:height .28s cubic-bezier(.2,.8,.2,1)}
   #panel.dragging{transition:none}
+  #info .cnt{color:var(--mu)}
+  #list .it.pin{touch-action:none;will-change:transform}
   #panel[data-state=full]{border-radius:0;padding-top:env(safe-area-inset-top)}
   body[data-sheet=full] #search.floating{display:none}
   #grab{flex:none;height:22px;display:flex;align-items:center;justify-content:center;touch-action:none;cursor:grab}
@@ -787,7 +789,8 @@ function select(c, noFit){
     if(!noFit) setTimeout(fitRoute, 320);
   } else if(!noFit) fitRoute();
   const km = c.distance / 1000;
-  msg('<b>' + km.toFixed(1) + ' km</b> · ≈ ' + fmtMin(km / speed() * 60));
+  msg('<b>' + km.toFixed(1) + ' km</b> · ≈ ' + fmtMin(km / speed() * 60) +
+      (candidates.length > 1 ? ' · <span class="cnt">' + (candidates.indexOf(c) + 1) + '/' + candidates.length + '</span>' : ''));
   lastRoute = c;
   loadPhotos(c);
 }
@@ -1296,27 +1299,39 @@ let drag = null, swallowClick = false;
 function dragStart(e){
   if(WIDE.matches || (e.pointerType === 'mouse' && e.button !== 0)) return;
   if(e.currentTarget.id === 'list' && sheetState === 'full') return;   // plein écran : défilement normal
-  drag = { y:e.clientY, h:$('panel').offsetHeight, id:e.pointerId, el:e.currentTarget, moved:false, lastY:e.clientY, lastT:performance.now(), v:0 };
+  drag = { x:e.clientX, y:e.clientY, h:$('panel').offsetHeight, id:e.pointerId, el:e.currentTarget, moved:false, axis:null,
+           lastX:e.clientX, lastY:e.clientY, lastT:performance.now(), v:0, vx:0 };
 }
+function pinnedCard(){ return $('list').querySelector('.it.pin'); }
 function dragMove(e){
   if(!drag || e.pointerId !== drag.id) return;
-  const dy = e.clientY - drag.y;
+  const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
   if(!drag.moved){
-    if(Math.abs(dy) < 6) return;
+    if(Math.max(Math.abs(dx), Math.abs(dy)) < 8) return;
     drag.moved = true;
-    $('panel').classList.add('dragging');
+    // Tiroir replié + geste horizontal sur la liste : on fait défiler les parcours (carrousel)
+    drag.axis = Math.abs(dx) > Math.abs(dy) && drag.el.id === 'list' && sheetState === 'peek' && candidates.length > 1 && pinnedCard() ? 'x' : 'y';
+    if(drag.axis === 'y') $('panel').classList.add('dragging');
+    else pinnedCard().style.transition = 'none';
   }
-  const H = sheetH();
-  $('panel').style.height = Math.max(H.peek * 0.75, Math.min(H.full, drag.h - dy)) + 'px';
-  const now = performance.now();
-  drag.v = (e.clientY - drag.lastY) / Math.max(1, now - drag.lastT);
-  drag.lastY = e.clientY; drag.lastT = now;
+  const now = performance.now(), dt = Math.max(1, now - drag.lastT);
+  if(drag.axis === 'x'){
+    const card = pinnedCard();
+    if(card){ card.style.transform = 'translateX(' + dx + 'px)'; card.style.opacity = Math.max(.35, 1 - Math.abs(dx) / 500); }
+    drag.vx = (e.clientX - drag.lastX) / dt;
+  } else {
+    const H = sheetH();
+    $('panel').style.height = Math.max(H.peek * 0.75, Math.min(H.full, drag.h - dy)) + 'px';
+    drag.v = (e.clientY - drag.lastY) / dt;
+  }
+  drag.lastX = e.clientX; drag.lastY = e.clientY; drag.lastT = now;
 }
-function dragEnd(){
+function dragEnd(e){
   if(!drag) return;
   const d = drag; drag = null;
   if(!d.moved) return;
   swallowClick = true; setTimeout(() => { swallowClick = false; }, 60);
+  if(d.axis === 'x'){ swipeEnd(d, (e && e.clientX != null ? e.clientX : d.lastX) - d.x); return; }
   $('panel').classList.remove('dragging');
   const H = sheetH(), h = $('panel').offsetHeight, order = ['peek', 'half', 'full'];
   let s;
@@ -1324,6 +1339,30 @@ function dragEnd(){
   else if(d.v > 0.4) s = order.slice().reverse().find(k => H[k] < h - 10) || 'peek';   // lancé vers le bas
   else s = order.reduce((a, k) => Math.abs(H[k] - h) < Math.abs(H[a] - h) ? k : a, 'peek');
   setSheet(s);
+}
+// Fin du glissé horizontal : parcours précédent (vers la droite) ou suivant (vers la gauche)
+function swipeEnd(d, dx){
+  const card = pinnedCard();
+  if(!card) return;
+  const go = Math.abs(dx) > 70 || Math.abs(d.vx) > 0.5;
+  card.style.transition = 'transform .18s ease, opacity .18s ease';
+  if(!go){ card.style.transform = ''; card.style.opacity = ''; return; }   // pas assez loin : retour en place
+  const dir = dx < 0 ? 1 : -1, n = candidates.length;
+  const next = candidates[(candidates.indexOf(selected) + dir + n) % n];
+  card.style.transform = 'translateX(' + (dir > 0 ? '-110%' : '110%') + ')';
+  card.style.opacity = '0';
+  setTimeout(() => {
+    pick(next);
+    const nc = pinnedCard();   // le nouveau parcours arrive du côté opposé
+    if(nc){
+      nc.style.transition = 'none';
+      nc.style.transform = 'translateX(' + (dir > 0 ? '60%' : '-60%') + ')'; nc.style.opacity = '0';
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        nc.style.transition = 'transform .2s ease, opacity .2s ease';
+        nc.style.transform = ''; nc.style.opacity = '';
+      }));
+    }
+  }, 170);
 }
 ['grab', 'sumrow', 'list'].forEach(id => $(id).addEventListener('pointerdown', dragStart));
 // suivi du doigt sur toute la fenêtre (le doigt sort vite de la poignée)
