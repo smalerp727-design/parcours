@@ -51,6 +51,9 @@
   #sugg{flex:1 1 auto;min-height:0;overflow-y:auto;margin:8px -14px 0;padding:0 14px 14px;overscroll-behavior:contain}
   .sg-h{font-weight:700;font-size:15px;margin:4px 0 8px}
   #sugg .it.sg{margin-bottom:8px;padding:6px 8px;gap:8px}
+  #sugg .it.sg.cur,#sugg .pc.cur{border-color:var(--c);background:#e6f4f1;box-shadow:0 0 0 1px var(--c) inset}
+  #panel[data-state=peek] #sugg .it.sg.cur{background:var(--bg);box-shadow:none;border-color:var(--bd)}
+  .pc{cursor:pointer}
   #panel[data-state=peek] #sugg > :not(.cur):not(.sg-msg){display:none}
   #panel[data-state=peek] #sugg .cur{touch-action:none;will-change:transform}
   .sg-h{display:flex;align-items:center;gap:8px}
@@ -84,6 +87,7 @@
   .tc .primary{margin-top:8px;padding:10px;font-size:15px}
   .plc{width:46px !important;height:46px !important;position:relative}
   .plc span{position:absolute;right:-6px;top:-6px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:#f59e0b;color:#fff;font:700 12px/20px system-ui,sans-serif;text-align:center;border:2px solid #fff}
+  .pl.on{width:54px;height:54px;border-color:var(--c);border-width:4px}
   .pl{width:40px;height:40px;border-radius:50%;border:3px solid #f59e0b;background:#fff center/cover no-repeat;box-shadow:0 1px 5px rgba(0,0,0,.45)}
   .it{display:flex;gap:10px;align-items:center;text-align:left;width:100%;border:1px solid var(--bd);background:var(--bg);border-radius:11px;padding:8px 10px;color:var(--tx);font:inherit}
   .it.on{border-color:var(--c);background:#e6f4f1}
@@ -473,7 +477,7 @@ if(navigator.geolocation){
 
 $('btnLoc').onclick = () => {
   if(nav){ nav.follow = true; if(meLL) map.setView(meLL, 17); return; }
-  if(meLL){ setStart(meLL); map.setView(meLL, 15); msg('Départ = ta position actuelle.'); return; }
+  if(meLL){ setStart(meLL); centerVisible(meLL, 15); msg('Départ = ta position actuelle.'); return; }
   if(!navigator.geolocation) return;
   msg('Localisation en cours…');
   navigator.geolocation.getCurrentPosition(
@@ -1035,7 +1039,7 @@ async function searchPlaces(q){
     row.querySelector('b').textContent = lb.name;
     row.querySelector('small').textContent = [lb.sub, (km < 10 ? km.toFixed(1) : Math.round(km)) + ' km'].filter(Boolean).join(' · ');
     row.querySelector('[data-a=start]').onclick = () => {
-      setStart(ll); map.setView(ll, 15); closeSearch(); msg('Départ : ' + lb.name);
+      setStart(ll); centerVisible(ll, 15); closeSearch(); msg('Départ : ' + lb.name);
     };
     row.querySelector('[data-a=dest]').onclick = () => { setDest(ll, lb.name); closeSearch(); };
     box.appendChild(row);
@@ -1766,8 +1770,10 @@ async function routeTour(base, t, target){
 
 /* --- Affichage --- */
 function placeMarker(p){
-  const m = L.marker(p.ll, { zIndexOffset:650, icon:L.divIcon({ className:'', iconSize:[40,40], iconAnchor:[20,20],
-    html:'<div class="pl" style="background-image:url(' + p.thumb + ')"></div>' }) })
+  const on = tab === 'sugg' && st.type !== 'boucle' && suggPlaces[sugIdx] === p;   // suggestion choisie : plus grande
+  const s = on ? 54 : 40;
+  const m = L.marker(p.ll, { zIndexOffset:on ? 900 : 650, icon:L.divIcon({ className:'', iconSize:[s,s], iconAnchor:[s/2,s/2],
+    html:'<div class="pl' + (on ? ' on' : '') + '" style="background-image:url(' + p.thumb + ')"></div>' }) })
     .on('click', () => openGallery([{ img:p.thumb, link:p.url, title:p.title, credit:p.extract + ' — Wikipédia' }], 0));
   m.place = p;
   return m;
@@ -1780,7 +1786,7 @@ function showPlaces(){
   placeLayer.addLayers(list.map(placeMarker));
 }
 // Mini-liste des suggestions (même format que la liste des parcours)
-function miniCard(thumb, title, sub, right, onView, onThumb){
+function miniCard(thumb, title, sub, right, onView, onThumb, onSelect){
   const d = document.createElement('div');
   d.className = 'it sg';
   d.innerHTML = '<img class="th" loading="lazy" alt=""><div><b></b><small></small></div>' +
@@ -1789,14 +1795,16 @@ function miniCard(thumb, title, sub, right, onView, onThumb){
   d.querySelector('b').textContent = title;
   d.querySelector('small').textContent = sub;
   d.querySelector('.vbtn').onclick = e => { e.stopPropagation(); onView(); };
-  d.onclick = onThumb;
+  d.querySelector('img').onclick = e => { e.stopPropagation(); onThumb(); };
+  d.onclick = onSelect || onThumb;
   return d;
 }
 function placeCard(p, withGo){
   const desc = (p.extract.match(/^.*?[.!?](\s|$)/) || [p.extract])[0].trim();
   return miniCard(p.thumb, p.title, 'à ' + fmtKm(p.dist) + ' · ' + desc, '',
     () => viewPlace(p),
-    () => openGallery([{ img:p.thumb, link:p.url, title:p.title, credit:p.extract + ' — Wikipédia' }], 0));
+    () => openGallery([{ img:p.thumb, link:p.url, title:p.title, credit:p.extract + ' — Wikipédia' }], 0),
+    () => pickSugg(suggPlaces.indexOf(p)));
 }
 function tourCard(c){
   const km = c.distance / 1000, n = c.places.length;
@@ -1819,7 +1827,9 @@ function placeBig(p){
   d.querySelector('p').textContent = p.extract;
   d.querySelector('a').href = p.url;
   d.querySelector('img').onclick = () => openGallery([{ img:p.thumb, link:p.url, title:p.title, credit:p.extract + ' — Wikipédia' }], 0);
-  d.querySelector('.vbtn').onclick = () => viewPlace(p);
+  d.querySelector('.vbtn').onclick = e => { e.stopPropagation(); viewPlace(p); };
+  d.querySelector('a').onclick = e => e.stopPropagation();
+  d.onclick = () => pickSugg(suggPlaces.indexOf(p));
   return d;
 }
 function tourBig(c){
@@ -1868,6 +1878,7 @@ function renderSugg(){
   sugIdx = Math.min(sugIdx, Math.max(0, items.length - 1));
   items.forEach((x, i) => {
     const el = st.type === 'boucle' ? (detail ? tourBig(x) : tourCard(x)) : (detail ? placeBig(x) : placeCard(x));
+    el.dataset.i = i;
     if(i === sugIdx) el.classList.add('cur');
     box.appendChild(el);
   });
@@ -1875,13 +1886,31 @@ function renderSugg(){
   box.scrollTop = keepY;
   if(tab === 'sugg') showPlaces();
 }
+// Centre la carte sur ll dans la zone visible (au-dessus du tiroir sur téléphone, à droite du panneau sur PC)
+function centerVisible(ll, z){
+  const p = $('panel');
+  let dx = 0, dy = 0;
+  if(WIDE.matches) dx = -(p.offsetWidth + 12) / 2;
+  else dy = (p.offsetHeight - 70) / 2;
+  const pt = map.project(ll, z).add([dx, dy]);
+  map.setView(map.unproject(pt, z), z);
+}
 // Suggestion mise en avant sur la carte (glissé gauche / droite tiroir replié)
 function focusSugg(){
   const x = sugItems()[sugIdx];
   if(!x) return;
   showPlaces();
   if(st.type === 'boucle') map.fitBounds(L.latLngBounds(x.geometry.coordinates.map(llOf)), { paddingTopLeft:[30, 80], paddingBottomRight:[70, $('panel').offsetHeight + 20] });
-  else map.setView(x.ll, Math.max(map.getZoom(), 15));
+  else centerVisible(x.ll, Math.max(map.getZoom(), 15));
+}
+// Toucher une suggestion (liste agrandie, aller simple) : surlignée + centrée sur la carte
+function pickSugg(i){
+  sugIdx = i;
+  [...$('sugg').children].forEach(el => el.classList.toggle('cur', +el.dataset.i === i));
+  if(sheetReady && !WIDE.matches && sheetState === 'full'){   // plein écran : on libère un peu de carte, puis on centre
+    setSheet('half');
+    setTimeout(focusSugg, 320);
+  } else focusSugg();
 }
 
 async function runSugg(){
