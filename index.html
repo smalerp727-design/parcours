@@ -554,9 +554,17 @@ function scoreOf(c, target){
 // Calcule un parcours dans une direction donnée (3 essais max) :
 // on ajuste la taille si la distance s'écarte, on tourne un peu le parcours s'il contient des allers-retours
 // "learn" garde en mémoire le rapport demandé / obtenu : les parcours suivants visent juste du 1er coup
+// Écart maximum accepté par rapport à l'objectif : ±1,5 km (ou ±30 min),
+// et au plus ±30 % pour les petites distances (2 km → ±600 m)
+function tolerance(target){
+  const abs = st.unit === 'km' ? 1500 : 0.5 * speed() * 1000;
+  return Math.min(abs, 0.3 * target);
+}
+const fits = (c, target) => Math.abs(c.distance - target) <= tolerance(target);
+
 async function buildCandidate(base, kind, brg0, target, learn){
   let factor = learn.factor, brg = brg0, best = null;
-  for(let i = 0; i < 2; i++){
+  for(let i = 0; i < 3; i++){
     const req = target * factor;
     const pts = kind === 'boucle' ? loopPoints(start, req, brg) : [start, destPoint(start, req, brg)];
     const j = await route(base, pts);
@@ -564,14 +572,17 @@ async function buildCandidate(base, kind, brg0, target, learn){
     const coords = kind === 'boucle' ? cleanLoop(r.geometry.coordinates) : r.geometry.coordinates;
     const wp = j.waypoints || [];
     const c = makeCandidate(r, coords, { kind, brg:brg0, endName: kind === 'aller' && wp.length ? wp[wp.length-1].name : '' });
-    if(!best || scoreOf(c, target) < scoreOf(best, target)) best = c;
+    // On garde le meilleur essai, en privilégiant ceux qui respectent l'écart maximum
+    if(!best || (fits(c, target) && !fits(best, target)) ||
+       (fits(c, target) === fits(best, target) && scoreOf(c, target) < scoreOf(best, target))) best = c;
     if(c.distance) learn.factor = factor * target / c.distance;
     const err = Math.abs(c.distance - target) / target;
-    if(c.overlap > 0.08) brg += 25;                 // trop d'allers-retours : on décale le parcours
-    else if(err > 0.15) factor = learn.factor;
-    else break;                                     // distance à ±15 % et sans aller-retour : parfait
+    if(!fits(c, target)) factor = learn.factor;            // trop loin de l'objectif : on réajuste la taille
+    else if(c.overlap > 0.08){ if(i === 2) break; brg += 25; }   // allers-retours : on décale le parcours
+    else if(err > 0.1 && i === 0) factor = learn.factor;   // dans la marge mais améliorable : 1 essai de plus
+    else break;
   }
-  return best;
+  return best && fits(best, target) ? best : null;   // hors marge : parcours non proposé
 }
 
 /* ---------- Noms marquants (Wikipédia : parcs, quais, monuments…) ---------- */
@@ -756,7 +767,9 @@ async function generate(){
 
   // Même départ, même activité, même type : on garde les parcours déjà proposés (après les nouveaux)
   const key = [start[0].toFixed(5), start[1].toFixed(5), st.mode, st.type, dest ? dest.ll.join(',') : ''].join('|');
-  const keep = key === lastGenKey ? candidates.slice() : [];
+  // (sauf ceux qui ne respectent plus l'écart maximum si la distance a changé)
+  const keep = key === lastGenKey ? candidates.filter(c => dest || fits(c, target)) : [];
+  let outOfRange = 0;
   lastGenKey = key;
   let fresh = [];
   const show = () => { candidates = fresh.concat(keep); };
@@ -788,6 +801,7 @@ async function generate(){
       try{
         const c = await buildCandidate(base, st.type, off + k * 360 / N, target, learn);
         if(run !== genRun) return;
+        if(!c){ outOfRange++; continue; }   // impossible de respecter la distance dans cette direction
         if(!isNew(c)) continue;
         // Pendant le calcul : les nouveaux parcours s'ajoutent à la suite, sans réordonner,
         // et la sélection reste sur le 1er nouveau trouvé
@@ -811,7 +825,11 @@ async function generate(){
   show();
   candidates = candidates.slice(0, 40);
   $('btnGo').textContent = candidates.length ? '🔁 Autres parcours' : 'Générer un parcours';
-  if(!candidates.length){ msg(lastErr ? lastErr.message : 'Aucun parcours trouvé.', true); return; }
+  if(!candidates.length){
+    const t = tolerance(target);
+    msg(lastErr && !outOfRange ? lastErr.message : 'Aucun parcours trouvé à ±' + (st.unit === 'km' ? (t / 1000).toFixed(1).replace('.', ',') + ' km' : Math.round(t / speed() / 1000 * 60) + ' min') + ' de ton objectif ici : réessaie, ou change de départ ou de distance.', true);
+    return;
+  }
   if(userPicked && candidates.includes(selected)){ drawAll(); renderList(); }
   else select(candidates[0]);
   if(!fresh.length && keep.length) msg((lastErr ? lastErr.message + ' ' : '') + 'Pas de nouveau parcours différent cette fois : réessaie ou change de distance.', !!lastErr);
