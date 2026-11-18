@@ -9,6 +9,8 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
 <style>
   :root{--c:#0f766e;--bg:#fff;--tx:#1f2937;--mu:#6b7280;--bd:#e5e7eb}
@@ -61,6 +63,12 @@
   .ph-wiki{background:#ea580c}
   .ph-pano{background:#2563eb}
   #viewer .card{max-width:680px;padding:12px}
+  #vStage{position:relative}
+  .vNav{position:absolute;top:50%;transform:translateY(-50%);z-index:10;width:42px;height:42px;border-radius:50%;border:none;background:rgba(255,255,255,.9);box-shadow:0 1px 6px rgba(0,0,0,.4);font-size:24px;line-height:1;color:var(--tx)}
+  #vPrev{left:8px} #vNext{right:8px}
+  #vCount{position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:10;background:rgba(0,0,0,.6);color:#fff;font-size:13px;padding:3px 10px;border-radius:12px}
+  .clu{width:34px;height:34px;border-radius:50%;background:#0f766e;border:2px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.45);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font:700 13px/1 system-ui,sans-serif}
+  .clu svg{width:11px;height:11px;margin-bottom:1px}
   #vImg{display:block;width:100%;max-height:62vh;object-fit:contain;background:#111;border-radius:10px;min-height:120px}
   #vCap{font-size:14px;margin-top:8px;line-height:1.4}
   #vCap small{display:block;color:var(--mu);margin-top:2px}
@@ -94,8 +102,13 @@
 
 <div id="viewer" class="modal hidden">
   <div class="card">
-    <img id="vImg" alt="">
-    <div id="vPano" hidden></div>
+    <div id="vStage">
+      <img id="vImg" alt="">
+      <div id="vPano" hidden></div>
+      <button id="vPrev" class="vNav" title="Photo précédente">‹</button>
+      <button id="vNext" class="vNav" title="Photo suivante">›</button>
+      <div id="vCount"></div>
+    </div>
     <div id="vTip" hidden>📱 Fais glisser pour regarder autour · pince pour zoomer</div>
     <div id="vCap"></div>
     <div class="btns">
@@ -411,7 +424,17 @@ function draw(rt){
 /* ---------- Photos le long du parcours ---------- */
 // 🟠 Wikimedia Commons : photos géolocalisées (monuments, paysages…)
 // 🔵 Panoramax : vues depuis la rue / le chemin (équivalent libre de Street View)
-let photoLayer = L.layerGroup().addTo(map), photoRun = 0, lastRoute = null;
+let photoRun = 0, lastRoute = null;
+// Regroupement des photos proches en un seul badge, qui s'adapte au zoom
+const photoLayer = L.markerClusterGroup({
+  maxClusterRadius:45, zoomToBoundsOnClick:false, showCoverageOnHover:false, spiderfyOnMaxZoom:false,
+  iconCreateFunction: c => L.divIcon({ className:'', iconSize:[34,34], iconAnchor:[17,17],
+    html:'<div class="clu">' + CAM_SMALL + c.getChildCount() + '</div>' })
+}).addTo(map);
+photoLayer.on('clusterclick', e => {
+  const list = e.layer.getAllChildMarkers().map(m => m.photo).sort((a, b) => a.idx - b.idx);
+  openGallery(list, 0);
+});
 if(st.photos === undefined) st.photos = true;
 $('btnPhoto').classList.toggle('off', !st.photos);
 
@@ -466,7 +489,7 @@ async function wikiPhotos(line, length){
       out.push({
         src:'wiki', ll, img: ii.thumburl || ii.url, link: ii.descriptionurl,
         title: stripHtml(m.ObjectName && m.ObjectName.value) || pg.title.replace(/^File:|\.[a-z]+$/gi, ''),
-        credit: [stripHtml(m.Artist && m.Artist.value), m.LicenseShortName && m.LicenseShortName.value].filter(Boolean).join(' · ') + ' · Wikimedia Commons'
+        credit: [stripHtml(m.Artist && m.Artist.value), m.LicenseShortName && m.LicenseShortName.value, 'Wikimedia Commons'].filter(Boolean).join(' · ')
       });
     });
   });
@@ -490,7 +513,7 @@ async function panoPhotos(line, length){
       src:'pano', ll:[c[1], c[0]], is360: io.field_of_view >= 360,
       img: (f.assets.sd || f.assets.thumb).href, link: (f.assets.hd || f.assets.sd).href,
       title: 'Vue sur le parcours' + (date ? ' (' + date + ')' : ''),
-      credit: [pr['geovisio:producer'], pr.license].filter(Boolean).join(' · ') + ' · Panoramax'
+      credit: [pr['geovisio:producer'], pr.license, 'Panoramax'].filter(Boolean).join(' · ')
     });
   });
   return out;
@@ -500,7 +523,38 @@ let pano = null;
 function closePano(){ if(pano){ try{ pano.destroy(); }catch(e){} pano = null; } $('vPano').hidden = true; $('vTip').hidden = true; }
 function flat(p){ closePano(); $('vImg').hidden = false; $('vImg').src = p.img; }
 
+let gallery = [], gIdx = 0;
+function openGallery(list, i){
+  gallery = list; gIdx = i;
+  const many = list.length > 1;
+  $('vPrev').hidden = $('vNext').hidden = $('vCount').hidden = !many;
+  showPhoto(list[i]);
+}
+function step(d){
+  if(gallery.length < 2) return;
+  gIdx = (gIdx + d + gallery.length) % gallery.length;
+  showPhoto(gallery[gIdx]);
+}
+$('vPrev').onclick = e => { e.stopPropagation(); step(-1); };
+$('vNext').onclick = e => { e.stopPropagation(); step(1); };
+document.addEventListener('keydown', e => {
+  if($('viewer').classList.contains('hidden')) return;
+  if(e.key === 'ArrowLeft') step(-1);
+  else if(e.key === 'ArrowRight') step(1);
+  else if(e.key === 'Escape') $('vClose').onclick();
+});
+// Glisser à gauche / à droite sur une photo normale pour changer de photo
+let tx = null;
+$('vImg').addEventListener('touchstart', e => { tx = e.touches[0].clientX; }, { passive:true });
+$('vImg').addEventListener('touchend', e => {
+  if(tx === null) return;
+  const dx = e.changedTouches[0].clientX - tx; tx = null;
+  if(Math.abs(dx) > 50) step(dx < 0 ? 1 : -1);
+});
+
 function showPhoto(p){
+  closePano();
+  $('vCount').textContent = (gIdx + 1) + ' / ' + gallery.length;
   if(p.is360 && window.pannellum){
     $('vImg').hidden = true; $('vImg').src = '';
     $('vPano').hidden = false; $('vTip').hidden = false;
@@ -521,6 +575,7 @@ function showPhoto(p){
 $('vClose').onclick = () => { $('viewer').classList.add('hidden'); $('vImg').src = ''; closePano(); };
 $('viewer').onclick = e => { if(e.target.id === 'viewer') $('vClose').onclick(); };
 
+const CAM_SMALL = '<svg viewBox="0 0 24 24" fill="#fff"><path d="M9 4 7.2 6H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3.2L15 4H9zm3 4.5a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9z"/></svg>';
 const CAM = '<svg viewBox="0 0 24 24" fill="#fff"><path d="M9 4 7.2 6H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3.2L15 4H9zm3 4.5a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9zm0 2a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z"/></svg>';
 
 async function loadPhotos(rt){
@@ -536,11 +591,18 @@ async function loadPhotos(rt){
   ]);
   if(run !== photoRun) return;   // un autre parcours a été demandé entre-temps
   const all = pano.concat(wiki);
+  // Position de chaque photo le long du tracé, pour les faire défiler dans l'ordre du parcours
   all.forEach(p => {
-    L.marker(p.ll, { zIndexOffset:500, icon: L.divIcon({ className:'', iconSize:[26,26], iconAnchor:[13,13],
-      html:'<div class="ph ' + (p.src === 'wiki' ? 'ph-wiki' : 'ph-pano') + '">' + (p.is360 ? '<b>360</b>' : CAM) + '</div>' }) })
-      .on('click', () => showPhoto(p)).addTo(photoLayer);
+    let best = Infinity;
+    for(let i = 0; i < line.length; i++){ const d = hav(line[i], p.ll); if(d < best){ best = d; p.idx = i; } }
   });
+  const markers = all.map(p => {
+    const m = L.marker(p.ll, { zIndexOffset:500, icon: L.divIcon({ className:'', iconSize:[26,26], iconAnchor:[13,13],
+      html:'<div class="ph ' + (p.src === 'wiki' ? 'ph-wiki' : 'ph-pano') + '">' + (p.is360 ? '<b>360</b>' : CAM) + '</div>' }) });
+    m.photo = p;
+    return m.on('click', () => openGallery([p], 0));
+  });
+  photoLayer.addLayers(markers);
   $('info').innerHTML = base + ' · 📷 ' + (all.length ? all.length + ' photo' + (all.length > 1 ? 's' : '') : 'aucune photo');
 }
 
