@@ -108,11 +108,18 @@
   #vPano{width:100%;height:62vh;border-radius:10px;overflow:hidden;background:#111}
   #vTip{font-size:12px;color:var(--mu);text-align:center;margin-top:4px}
 
+  #pager{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}
+  #pager button{width:40px;height:34px;border:1px solid var(--bd);background:var(--bg);border-radius:9px;font-size:20px;line-height:1;color:var(--tx)}
+  #pager button:disabled{opacity:.35}
+  #pgTxt{font-size:13px;color:var(--mu)}
+
   /* Écran large (PC, tablette) ou téléphone en paysage : panneau sur le côté */
   @media (min-width:800px), (orientation:landscape) and (max-height:520px){
-    #list{flex-direction:column;overflow:visible;margin:8px 0 0;padding:0}
+    /* Le haut du panneau reste fixe, seule la liste défile */
+    #list{flex-direction:column;overflow-y:auto;margin:8px -4px 0;padding:0 4px;flex:1 1 auto;min-height:0}
+    #ctrl,#pager{flex:none}
     #list .it{flex:none}
-    #panel{top:calc(12px + env(safe-area-inset-top));bottom:auto;left:calc(12px + env(safe-area-inset-left));right:auto;width:340px;max-height:calc(100% - 24px);overflow-y:auto;border-radius:18px;padding:14px;box-shadow:0 2px 12px rgba(0,0,0,.2)}
+    #panel{top:calc(12px + env(safe-area-inset-top));bottom:auto;left:calc(12px + env(safe-area-inset-left));right:auto;width:340px;max-height:calc(100% - 24px);overflow:visible;display:flex;flex-direction:column;border-radius:18px;padding:14px;box-shadow:0 2px 12px rgba(0,0,0,.2)}
   }
   /* Téléphone en paysage : panneau plus compact */
   @media (orientation:landscape) and (max-height:520px){
@@ -151,6 +158,7 @@
 </div>
 
 <div id="panel">
+ <div id="ctrl">
   <div id="search">
     <input id="q" type="search" placeholder="Rechercher un lieu, une adresse…" autocomplete="off" enterkeyhint="search">
     <div id="sres" hidden></div>
@@ -176,7 +184,13 @@
   <div id="hint"></div>
   <button id="btnGo" class="primary">Générer un parcours</button>
   <div id="info"></div>
+  </div>
   <div id="list"></div>
+  <div id="pager" hidden>
+    <button id="pgPrev" title="Parcours précédents">‹</button>
+    <span id="pgTxt"></span>
+    <button id="pgNext" title="Parcours suivants">›</button>
+  </div>
 </div>
 
 <div id="cfg" class="modal hidden">
@@ -597,10 +611,23 @@ function subOf(c){
   return [n.length ? 'via ' + n.join(', ') : '', d].filter(Boolean).join(' — ');
 }
 
+const PAGE = 4;
+let page = 0;
+const pageCount = () => Math.max(1, Math.ceil(candidates.length / PAGE));
+const onPage = c => Math.floor(candidates.indexOf(c) / PAGE) === page;
+$('pgPrev').onclick = () => { if(page > 0){ page--; drawAll(); renderList(); } };
+$('pgNext').onclick = () => { if(page < pageCount() - 1){ page++; drawAll(); renderList(); } };
+
 function renderList(){
   const L_ = $('list');
   L_.innerHTML = '';
+  page = Math.min(page, pageCount() - 1);
+  $('pager').hidden = candidates.length <= PAGE;
+  $('pgTxt').textContent = 'Parcours ' + (page * PAGE + 1) + '–' + Math.min(candidates.length, (page + 1) * PAGE) + ' sur ' + candidates.length;
+  $('pgPrev').disabled = page === 0;
+  $('pgNext').disabled = page >= pageCount() - 1;
   candidates.forEach((c, i) => {
+    if(!onPage(c)) return;
     const km = c.distance / 1000;
     const b = document.createElement('button');
     b.className = 'it' + (c === selected ? ' on' : '');
@@ -622,13 +649,14 @@ function drawAll(){
   if(routeLayer){ map.removeLayer(routeLayer); routeLayer = null; }
   if(endMarker){ map.removeLayer(endMarker); endMarker = null; }
   candidates.forEach((c, i) => {
-    if(c === selected) return;
+    if(c === selected || !onPage(c)) return;   // seuls les parcours de la page affichée
     // Tracé gris visible + zone invisible plus large, pour qu'on puisse le toucher facilement au doigt
     L.geoJSON(c.geometry, { interactive:false, style:{ color:'#64748b', weight:4, opacity:.5 } }).addTo(altLayer);
     L.geoJSON(c.geometry, { bubblingMouseEvents:false, style:{ color:'#000', weight:24, opacity:0 } })
       .on('click', e => { L.DomEvent.stop(e); pick(c); }).addTo(altLayer);
   });
   candidates.forEach((c, i) => {   // numéro de chaque parcours sur la carte
+    if(c !== selected && !onPage(c)) return;
     const co = c.geometry.coordinates[Math.floor(c.geometry.coordinates.length * 0.4)];
     L.marker([co[1], co[0]], { zIndexOffset:300, icon:L.divIcon({ className:'', iconSize:[22,22], iconAnchor:[11,11],
       html:'<div class="rn' + (c === selected ? ' on' : '') + '">' + (i + 1) + '</div>' }) }).on('click', () => pick(c)).addTo(altLayer);
@@ -646,6 +674,7 @@ function pick(c){ userPicked = true; select(c); }
 
 function select(c, noFit){
   selected = c;
+  if(candidates.includes(c)) page = Math.floor(candidates.indexOf(c) / PAGE);   // on affiche la page du parcours choisi
   drawAll();
   renderList();
   if(!noFit) fitRoute();
@@ -663,7 +692,7 @@ async function generate(){
     if(target > 100000){ msg('Objectif limité à 100 km.', true); return; }
   }
   const run = ++genRun, base = PROFILES[st.mode];
-  candidates = []; selected = null; lastRoute = null; userPicked = false;
+  candidates = []; selected = null; lastRoute = null; userPicked = false; page = 0;
   photoRun++; photoLayer.clearLayers();
   drawAll(); renderList();
   $('btnGo').disabled = true;
