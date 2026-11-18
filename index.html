@@ -108,16 +108,14 @@
   #vPano{width:100%;height:62vh;border-radius:10px;overflow:hidden;background:#111}
   #vTip{font-size:12px;color:var(--mu);text-align:center;margin-top:4px}
 
-  #pager{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}
-  #pager button{width:40px;height:34px;border:1px solid var(--bd);background:var(--bg);border-radius:9px;font-size:20px;line-height:1;color:var(--tx)}
-  #pager button:disabled{opacity:.35}
-  #pgTxt{font-size:13px;color:var(--mu)}
 
   /* Écran large (PC, tablette) ou téléphone en paysage : panneau sur le côté */
   @media (min-width:800px), (orientation:landscape) and (max-height:520px){
     /* Le haut du panneau reste fixe, seule la liste défile */
     #list{flex-direction:column;overflow-y:auto;margin:8px -4px 0;padding:0 4px;flex:1 1 auto;min-height:0}
-    #ctrl,#pager{flex:none}
+    #ctrl{flex:none}
+    /* Parcours sélectionné épinglé en haut de la liste */
+    #list .it.pin{position:sticky;top:0;z-index:2;box-shadow:0 4px 10px -4px rgba(0,0,0,.25)}
     #list .it{flex:none}
     #panel{top:calc(12px + env(safe-area-inset-top));bottom:auto;left:calc(12px + env(safe-area-inset-left));right:auto;width:340px;max-height:calc(100% - 24px);overflow:visible;display:flex;flex-direction:column;border-radius:18px;padding:14px;box-shadow:0 2px 12px rgba(0,0,0,.2)}
   }
@@ -186,11 +184,7 @@
   <div id="info"></div>
   </div>
   <div id="list"></div>
-  <div id="pager" hidden>
-    <button id="pgPrev" title="Parcours précédents">‹</button>
-    <span id="pgTxt"></span>
-    <button id="pgNext" title="Parcours suivants">›</button>
-  </div>
+
 </div>
 
 <div id="cfg" class="modal hidden">
@@ -611,26 +605,31 @@ function subOf(c){
   return [n.length ? 'via ' + n.join(', ') : '', d].filter(Boolean).join(' — ');
 }
 
-const PAGE = 4;
-let page = 0;
-const pageCount = () => Math.max(1, Math.ceil(candidates.length / PAGE));
-const onPage = c => Math.floor(candidates.indexOf(c) / PAGE) === page;
-$('pgPrev').onclick = () => { if(page > 0){ page--; drawAll(); renderList(); } };
-$('pgNext').onclick = () => { if(page < pageCount() - 1){ page++; drawAll(); renderList(); } };
+/* --- Liste défilante : la carte n'affiche que les parcours visibles dans la liste --- */
+const visible = new Set();          // parcours dont la carte est visible dans la liste
+let syncQueued = false;
+let listObs = null;
+function makeObserver(topHidden){
+  // topHidden : hauteur cachée par le parcours épinglé (les cartes passées dessous ne comptent pas)
+  return new IntersectionObserver(entries => {
+    entries.forEach(e => { if(e.isIntersecting) visible.add(e.target._c); else visible.delete(e.target._c); });
+    queueSync();
+  }, { root: $('list'), threshold: 0.35, rootMargin: '-' + Math.round(topHidden) + 'px 0px 0px 0px' });
+}
+function queueSync(){ if(!syncQueued){ syncQueued = true; requestAnimationFrame(() => { syncQueued = false; syncMap(); }); } }
 
 function renderList(){
   const L_ = $('list');
+  const keepX = L_.scrollLeft, keepY = L_.scrollTop;
+  if(listObs) listObs.disconnect();
+  visible.clear();
   L_.innerHTML = '';
-  page = Math.min(page, pageCount() - 1);
-  $('pager').hidden = candidates.length <= PAGE;
-  $('pgTxt').textContent = 'Parcours ' + (page * PAGE + 1) + '–' + Math.min(candidates.length, (page + 1) * PAGE) + ' sur ' + candidates.length;
-  $('pgPrev').disabled = page === 0;
-  $('pgNext').disabled = page >= pageCount() - 1;
-  candidates.forEach((c, i) => {
-    if(!onPage(c)) return;
-    const km = c.distance / 1000;
+  // Le parcours sélectionné en premier (épinglé en haut), puis les autres dans l'ordre
+  const order = selected && candidates.includes(selected) ? [selected].concat(candidates.filter(c => c !== selected)) : candidates;
+  order.forEach(c => {
+    const i = candidates.indexOf(c), km = c.distance / 1000;
     const b = document.createElement('button');
-    b.className = 'it' + (c === selected ? ' on' : '');
+    b.className = 'it' + (c === selected ? ' on pin' : '');
     const tag = c.kind !== 'boucle' ? '' : c.overlap < 0.05
       ? '<span class="tag ok">✓ Sans aller-retour</span>'
       : '<span class="tag warn">↩︎ ' + Math.round(c.overlap * 100) + ' % en double</span>';
@@ -639,28 +638,49 @@ function renderList(){
     b.querySelector('b').textContent = titleOf(c, i);
     b.querySelector('div small').textContent = subOf(c);
     b.onclick = () => pick(c);
+    b._c = c;
     L_.appendChild(b);
-    if(c === selected) requestAnimationFrame(() => b.scrollIntoView({ block:'nearest', inline:'center', behavior:'smooth' }));
+  });
+  const pinned = L_.querySelector('.pin');
+  listObs = makeObserver(WIDE.matches && pinned ? pinned.offsetHeight + 6 : 0);
+  L_.querySelectorAll('.it:not(.pin)').forEach(b => listObs.observe(b));
+  L_.scrollLeft = keepX; L_.scrollTop = keepY;
+}
+
+// Tracés gris préparés une seule fois par parcours : les afficher / masquer est instantané
+function greyOf(c){
+  if(!c._grey){
+    c._grey = L.layerGroup([
+      L.geoJSON(c.geometry, { interactive:false, style:{ color:'#64748b', weight:4, opacity:.5 } }),
+      // zone invisible plus large, pour pouvoir toucher le tracé au doigt
+      L.geoJSON(c.geometry, { bubblingMouseEvents:false, style:{ color:'#000', weight:24, opacity:0 } })
+        .on('click', e => { L.DomEvent.stop(e); pick(c); })
+    ]);
+  }
+  return c._grey;
+}
+const shownGrey = new Set();
+let numLayer = L.layerGroup().addTo(map);
+function syncMap(){
+  const want = new Set(candidates.filter(c => c !== selected && visible.has(c)));
+  shownGrey.forEach(c => { if(!want.has(c)){ altLayer.removeLayer(greyOf(c)); shownGrey.delete(c); } });
+  want.forEach(c => { if(!shownGrey.has(c)){ altLayer.addLayer(greyOf(c)); shownGrey.add(c); } });
+  // Numéros sur la carte : parcours visibles + sélectionné
+  numLayer.clearLayers();
+  candidates.forEach((c, i) => {
+    if(c !== selected && !want.has(c)) return;
+    const co = c.geometry.coordinates[Math.floor(c.geometry.coordinates.length * 0.4)];
+    L.marker([co[1], co[0]], { zIndexOffset:300, icon:L.divIcon({ className:'', iconSize:[22,22], iconAnchor:[11,11],
+      html:'<div class="rn' + (c === selected ? ' on' : '') + '">' + (i + 1) + '</div>' }) }).on('click', () => pick(c)).addTo(numLayer);
   });
 }
 
 function drawAll(){
-  altLayer.clearLayers();
   if(routeLayer){ map.removeLayer(routeLayer); routeLayer = null; }
   if(endMarker){ map.removeLayer(endMarker); endMarker = null; }
-  candidates.forEach((c, i) => {
-    if(c === selected || !onPage(c)) return;   // seuls les parcours de la page affichée
-    // Tracé gris visible + zone invisible plus large, pour qu'on puisse le toucher facilement au doigt
-    L.geoJSON(c.geometry, { interactive:false, style:{ color:'#64748b', weight:4, opacity:.5 } }).addTo(altLayer);
-    L.geoJSON(c.geometry, { bubblingMouseEvents:false, style:{ color:'#000', weight:24, opacity:0 } })
-      .on('click', e => { L.DomEvent.stop(e); pick(c); }).addTo(altLayer);
-  });
-  candidates.forEach((c, i) => {   // numéro de chaque parcours sur la carte
-    if(c !== selected && !onPage(c)) return;
-    const co = c.geometry.coordinates[Math.floor(c.geometry.coordinates.length * 0.4)];
-    L.marker([co[1], co[0]], { zIndexOffset:300, icon:L.divIcon({ className:'', iconSize:[22,22], iconAnchor:[11,11],
-      html:'<div class="rn' + (c === selected ? ' on' : '') + '">' + (i + 1) + '</div>' }) }).on('click', () => pick(c)).addTo(altLayer);
-  });
+  // parcours retirés de la liste (nouvelle recherche) : on enlève leur tracé
+  shownGrey.forEach(c => { if(!candidates.includes(c) || c === selected){ altLayer.removeLayer(greyOf(c)); shownGrey.delete(c); } });
+  queueSync();
   if(!selected) return;
   routeLayer = L.geoJSON(selected.geometry, { bubblingMouseEvents:false, style:routeStyle() }).addTo(map);
   if(selected.kind !== 'boucle'){
@@ -674,9 +694,9 @@ function pick(c){ userPicked = true; select(c); }
 
 function select(c, noFit){
   selected = c;
-  if(candidates.includes(c)) page = Math.floor(candidates.indexOf(c) / PAGE);   // on affiche la page du parcours choisi
   drawAll();
   renderList();
+  if(!WIDE.matches) $('list').scrollLeft = 0;   // téléphone : on revient au début, où est le parcours choisi
   if(!noFit) fitRoute();
   const km = c.distance / 1000;
   msg('<b>' + km.toFixed(1) + ' km</b> · ≈ ' + fmtMin(km / speed() * 60));
@@ -701,7 +721,7 @@ async function generate(){
   let fresh = [];
   const show = () => { candidates = fresh.concat(keep); };
 
-  candidates = keep.slice(); selected = null; lastRoute = null; userPicked = false; page = 0;
+  candidates = keep.slice(); selected = null; lastRoute = null; userPicked = false;
   photoRun++; photoLayer.clearLayers();
   drawAll(); renderList();
   $('btnGo').disabled = true;
