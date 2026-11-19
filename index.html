@@ -190,23 +190,40 @@
   body.sheet-drag #btnLoc,body.sheet-drag #routeActs{transition:none}
   /* Survol à la souris : pré-sélection discrète, dans le même style que la sélection */
   .fab,.seg button,#tabs button,.it,.pc,.tc,.primary,.vbtn,#chip,.star,.sgDet,.pill,#styles button,.sr,.psr button,.pa button,.btns button,.sv button,#ctxMenu button,#vPrev,#vNext,#navStop,#navMaps,.step button{transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,filter .15s}
+  /* Règles de design communes :
+     - contour : 12–14 px d'arrondi, bordure #e5e7eb ;
+     - sélection : bordure verte (--c) + fond vert très clair ;
+     - pré-sélection (survol) : la même chose en plus pâle (bordure #9fd6cd + fond #f6fbfa) ;
+     - boutons pleins verts : légèrement plus lumineux au survol. */
+  :root{--hov-bd:#9fd6cd;--hov-bg:#f6fbfa;--sel-bg:#e6f4f1}
   @media (hover:hover){
     .fab:hover{background:#f3f4f6;box-shadow:0 3px 12px rgba(0,0,0,.3)}
     .seg button:not(.on):hover{background:rgba(255,255,255,.65);color:var(--tx)}
-    #tabs button:not(.on):hover{color:var(--tx);border-bottom-color:#9fd6cd}
-    .it:not(.on):hover,#sugg .it.sg:not(.cur):hover,.pc:not(.cur):hover,.tc:hover{border-color:#9fd6cd;background:#f6fbfa}
-    .primary:hover,.vbtn:hover,#go2:hover{filter:brightness(1.1)}
+    #tabs button:not(.on):hover{color:var(--tx);border-bottom-color:var(--hov-bd)}
+    /* cartes de liste et boutons à contour : même famille que la sélection */
+    .it:not(.on):hover,#sugg .it.sg:not(.cur):hover,.pc:not(.cur):hover,.tc:hover,
+    .sgDet:not(.on):hover,#styles button:not(.on):hover,#demoList button:not(.on):not(.back):hover,
+    .bzc button:not(.on):hover,.bzyn button:not(.on):hover,.pbtns button:hover,.cc button.sgDet:hover{border-color:var(--hov-bd);background:var(--hov-bg)}
+    #demoList button.back:hover{background:#fef3c7}
+    .sw:hover,.chk:hover{background:var(--hov-bg)}
+    .primary:hover,.vbtn:hover,#go2:hover,#navStop:hover{filter:brightness(1.1)}
     #chip:hover{background:#eceef1;border-color:#d1d5db}
     .star:hover{color:#f59e0b}
-    .sgDet:not(.on):hover,.pill:not(:has(input:checked)):hover,#styles button:not(.on):hover{border-color:#9fd6cd;background:#f6fbfa}
-    .sr:hover,.psr button:hover{background:#f6fbfa}
-    .pa button:hover,.btns button:not(.primary):hover,.sv button:hover,#navMaps:hover{background:#f3f4f6;border-color:#d1d5db}
+    .sr:hover,.psr button:hover,#ctxMenu button:hover{background:var(--hov-bg)}
+    .pa button:hover,.btns button:not(.primary):hover,.sv button:hover,#navMaps:hover,.step button:hover{background:#f3f4f6;border-color:#d1d5db}
+    input:not([type=checkbox]):hover,.step:hover,.sv input:hover{border-color:var(--hov-bd)}
     #vPrev:hover,#vNext:hover{background:#fff}
-    #navStop:hover{filter:brightness(1.1)}
     #btnHere.vis:hover,#btnClear.vis:not(.sure):hover{background:#f3f4f6}
     #btnStart.vis:hover{background:#0d6a62}
     .pr.step .grip:hover,.pr.step .pb:hover{filter:brightness(1.15)}
   }
+  @media (hover:hover){ .pill:not(:has(input:checked)):hover{border-color:var(--hov-bd);background:var(--hov-bg)} }   /* règle à part : :has() */
+  /* Champ actif : contour vert, comme une sélection */
+  input:not([type=checkbox]):focus{outline:none;border-color:var(--c) !important;box-shadow:0 0 0 3px rgba(15,118,110,.15)}
+  #q:focus{box-shadow:0 0 0 3px rgba(15,118,110,.15),0 2px 8px rgba(0,0,0,.25)}
+  .sw,.chk{border-radius:10px;padding:6px 8px;margin-left:-8px;margin-right:-8px;transition:background-color .15s}
+  #demoList button,.bzc button,.bzyn button,.pbtns button,.sw,input{transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s}
+
 
   /* Ligne de boutons du bas : apparitions en fondu et déplacements fluides (≈ 0,3 s) */
   #routeActs{--ease:cubic-bezier(.25,.8,.25,1);position:fixed;right:66px;bottom:calc(var(--sheet, 170px) + 14px);z-index:1000;display:flex;align-items:center;pointer-events:none;transition:bottom .28s var(--ease),opacity .3s var(--ease)}
@@ -295,7 +312,11 @@
   .modal{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom))}
   .modal.hidden{display:none}
   /* Toutes les fenêtres : jamais plus hautes que l'écran, contenu qui défile, boutons d'action toujours visibles en bas */
-  .card{background:var(--bg);border-radius:14px;padding:18px;width:100%;max-width:420px;max-height:100%;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+  .card{background:var(--bg);border-radius:14px;padding:18px;width:100%;max-width:420px;max-height:100%;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+    scrollbar-width:thin;scrollbar-color:rgba(0,0,0,.22) transparent;scrollbar-gutter:stable both-edges}
+  .card::-webkit-scrollbar{width:6px}
+  .card::-webkit-scrollbar-track{background:transparent;margin:14px 0}
+  .card::-webkit-scrollbar-thumb{background:rgba(0,0,0,.22);border-radius:3px}
   .card > .btns:last-child{position:sticky;bottom:-18px;z-index:3;background:var(--bg);margin:16px -18px -18px;padding:10px 18px 18px;box-shadow:0 -6px 12px -8px rgba(0,0,0,.18)}
   .card h2{margin:0 0 12px;font-size:19px}
   .card label{display:block;font-size:14px;margin:10px 0 4px;color:var(--mu)}
@@ -343,7 +364,7 @@
   #vVid{display:block;width:100%;max-height:62vh;background:#000;border-radius:10px}
   #vDel{flex:1;padding:11px;border-radius:10px;border:1px solid #fca5a5;background:#fff;color:#991b1b;font-size:15px}
   #vDel.sure{background:#fee2e2}
-  .card label.sw{display:flex;align-items:center;gap:10px;margin:8px 0;color:var(--tx);font-size:15px;cursor:pointer}
+  .card label.sw{display:flex;align-items:center;gap:10px;margin:2px -8px;color:var(--tx);font-size:15px;cursor:pointer}
   .sw input{width:20px;height:20px;flex:none;accent-color:var(--c)}
   .sw small{display:block;margin:0;font-size:12px}
   .ph{width:26px;height:26px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center}
