@@ -40,7 +40,7 @@
   #ctxMenu[hidden]{display:none}
   #ctxMenu button{border:none;background:none;text-align:left;padding:11px 12px;border-radius:8px;font:500 15px system-ui,sans-serif;color:var(--tx);cursor:pointer}
   #ctxMenu button:hover{background:#f3f4f6}
-  .card.plan{max-width:480px;max-height:92vh;overflow-y:auto}
+  .card.plan{max-width:480px}
   #planList{margin:4px 0 8px}
   .pr{position:relative;display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f1f1f1}
   .pr input{flex:1;min-width:0;font-size:15px;padding:8px 10px;border:1px solid var(--bd);border-radius:9px}
@@ -106,7 +106,7 @@
   .cctab td{padding:5px 0;border-bottom:1px solid #f3f4f6;vertical-align:top}
   .cctab td:first-child{color:var(--mu);padding-right:10px}
   .cctab td:last-child{text-align:right;font-weight:600}
-  .card.bz{max-width:520px;max-height:92vh;overflow-y:auto}
+  .card.bz{max-width:520px}
   .bzhd{display:flex;align-items:center;justify-content:space-between}
   .bzhd h2{margin:0}
   #bzClose{border:none;background:none;font-size:18px;cursor:pointer;color:var(--mu)}
@@ -292,9 +292,11 @@
   #info:empty{display:none}   /* pas d'information : la zone disparaît */
   #info b{font-size:18px}
   #info .err{color:#b91c1c}
-  .modal{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px}
+  .modal{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom))}
   .modal.hidden{display:none}
-  .card{background:var(--bg);border-radius:14px;padding:18px;width:100%;max-width:420px}
+  /* Toutes les fenêtres : jamais plus hautes que l'écran, contenu qui défile, boutons d'action toujours visibles en bas */
+  .card{background:var(--bg);border-radius:14px;padding:18px;width:100%;max-width:420px;max-height:100%;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+  .card > .btns:last-child{position:sticky;bottom:-18px;z-index:3;background:var(--bg);margin:16px -18px -18px;padding:10px 18px 18px;box-shadow:0 -6px 12px -8px rgba(0,0,0,.18)}
   .card h2{margin:0 0 12px;font-size:19px}
   .card label{display:block;font-size:14px;margin:10px 0 4px;color:var(--mu)}
   .card input{width:100%;font-size:16px;padding:9px 10px;border:1px solid var(--bd);border-radius:9px}
