@@ -111,15 +111,18 @@
   #btnCfg{top:calc(12px + env(safe-area-inset-top))}
   #btnLoc{top:auto;bottom:calc(var(--sheet, 170px) + 12px);transition:bottom .28s cubic-bezier(.2,.8,.2,1),opacity .2s}
   body.sheet-drag #btnLoc,body.sheet-drag #routeActs{transition:none}
-  #btnHere{position:fixed;left:12px;bottom:calc(var(--sheet, 170px) + 14px);z-index:1000;display:none;height:42px;border:none;border-radius:21px;padding:0 16px;background:#fff;color:var(--c);font:700 15px system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.3);cursor:pointer;transition:bottom .28s cubic-bezier(.2,.8,.2,1)}
+  #btnHere{display:none;height:42px;border:none;border-radius:21px;padding:0 16px;background:#fff;color:var(--c);font:700 15px system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.3);cursor:pointer;white-space:nowrap}
   body.show-here #btnHere{display:block}
   @media (max-width:430px){ body.has-routes #btnHere span{display:none} }   /* place pour Démarrer / Effacer */
-  body.sheet-tall #btnHere,body.nav #btnHere{display:none !important}
-  body.sheet-drag #btnHere{transition:none}
+  #routeActs #btnStart,#routeActs #btnClear{display:none}
+  body.has-routes #routeActs #btnStart,body.has-routes #routeActs #btnClear{display:flex}
+  /* Effacer en confirmation : Démarrer se réduit en rond ▶ au lieu d'être poussé */
+  #routeActs.confirm #btnStart{width:42px;padding:0;justify-content:center}
+  #routeActs.confirm #btnStart span{display:none}
   #routeActs{position:fixed;right:66px;bottom:calc(var(--sheet, 170px) + 14px);z-index:1000;display:none;gap:8px;align-items:center;transition:bottom .28s cubic-bezier(.2,.8,.2,1)}
-  body.has-routes #routeActs{display:flex}
+  body.has-routes #routeActs,body.show-here #routeActs{display:flex}
   body.sheet-tall #routeActs,body.nav #routeActs{display:none}
-  #btnStart{height:42px;border:none;border-radius:21px;padding:0 16px;background:var(--c);color:#fff;font:700 15px system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.3);cursor:pointer}
+  #btnStart{height:42px;border:none;border-radius:21px;padding:0 16px;align-items:center;gap:6px;white-space:nowrap;transition:width .2s,padding .2s;background:var(--c);color:#fff;font:700 15px system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.3);cursor:pointer}
   #btnClear{height:42px;min-width:42px;border:none;border-radius:21px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;gap:4px;padding:0 10px;cursor:pointer}
   #btnClear svg{width:22px;height:22px;fill:#b91c1c}
   #btnClear span{display:none;color:#b91c1c;font:700 14px system-ui,sans-serif}
@@ -264,8 +267,7 @@
   @media (min-width:800px), (orientation:landscape) and (max-height:520px){
     #btnLoc{bottom:calc(24px + env(safe-area-inset-bottom)) !important;opacity:1 !important;pointer-events:auto !important}
     #routeActs{bottom:calc(26px + env(safe-area-inset-bottom)) !important}
-    #btnHere{left:calc(50% + 182px);bottom:auto !important;top:16px;transform:translateX(-50%)}
-    body.sheet-tall.has-routes:not(.nav) #routeActs{display:flex}
+    body.sheet-tall.has-routes:not(.nav) #routeActs,body.sheet-tall.show-here:not(.nav) #routeActs{display:flex}
     #navbar{left:auto;right:12px;bottom:12px;width:420px;border-radius:18px}
     /* Le haut du panneau reste fixe, seule la liste défile */
     #list{flex-direction:column;overflow-y:auto;margin:8px -4px 0;padding:0 4px;flex:1 1 auto;min-height:0}
@@ -294,9 +296,9 @@
 <body>
 <div id="map"></div>
 <button id="btnCfg" class="fab" title="Réglages"><svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.48.48 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6a3.6 3.6 0 1 1 0-7.2 3.6 3.6 0 0 1 0 7.2z"/></svg></button>
-<button id="btnHere" title="Placer le départ au centre de la carte et chercher">🔍 <span>Rechercher </span>ici</button>
 <div id="routeActs">
-  <button id="btnStart" title="Suivre le parcours sélectionné">▶ Démarrer</button>
+  <button id="btnHere" title="Placer le départ au centre de la carte et chercher">🔍 <span>Rechercher </span>ici</button>
+  <button id="btnStart" title="Suivre le parcours sélectionné">▶<span> Démarrer</span></button>
   <button id="btnClear" title="Effacer tous les parcours de la liste"><svg viewBox="0 0 24 24"><path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg><span>Effacer ?</span></button>
 </div>
 <div id="navAlert" hidden></div>
@@ -1271,7 +1273,10 @@ function pumpElev(){
   while(elevBusy < 3 && elevQ.length){
     const c = elevQ.shift();
     elevBusy++;
-    elevationOf(c).catch(() => { c._evErr = true; }).finally(() => {
+    elevationOf(c).catch(() => {
+      if(!c._evRetry){ c._evRetry = true; setTimeout(() => { c._ev = false; needElev(c); }, 2000); }   // 2e essai
+      else c._evErr = true;
+    }).finally(() => {
       elevBusy--;
       if(candidates.includes(c) && !elevRender){   // un seul rafraîchissement pour plusieurs réponses
         elevRender = true;
@@ -1757,11 +1762,11 @@ function clearAll(){
 $('btnClear').onclick = () => {   // 1er appui : confirmation, 2e appui : effacer
   const b = $('btnClear');
   if(!b.classList.contains('sure')){
-    b.classList.add('sure');
-    clearTimeout(b._t); b._t = setTimeout(() => b.classList.remove('sure'), 3000);
+    b.classList.add('sure'); $('routeActs').classList.add('confirm');
+    clearTimeout(b._t); b._t = setTimeout(() => { b.classList.remove('sure'); $('routeActs').classList.remove('confirm'); }, 3000);
     return;
   }
-  b.classList.remove('sure');
+  b.classList.remove('sure'); $('routeActs').classList.remove('confirm');
   clearAll();
 };
 
