@@ -47,6 +47,10 @@
   .pr.ret span:last-child{flex:1;color:var(--mu);font-size:15px;padding:8px 2px}
   .pb{flex:none;width:26px;height:26px;border-radius:50%;background:#7c3aed;color:#fff;font:700 13px/26px system-ui,sans-serif;text-align:center}
   .pb.s{background:#16a34a} .pb.e{background:#dc2626}
+  .grip{flex:none;width:18px;margin-right:-4px;text-align:center;color:#9ca3af;font-size:18px;cursor:grab;touch-action:none;user-select:none}
+  .pr.step .pb{cursor:grab;touch-action:none;user-select:none}
+  .pr.step{transition:transform .2s cubic-bezier(.25,.8,.25,1);background:var(--bg)}
+  .pr.lift{transition:none;z-index:6;box-shadow:0 6px 18px rgba(0,0,0,.22);border-radius:10px;cursor:grabbing}
   .pa{display:flex;gap:2px}
   .pa button:disabled{opacity:.35;cursor:default}
   .pa button{width:30px;height:32px;border:1px solid var(--bd);background:var(--bg);border-radius:7px;font-size:13px;color:var(--tx);cursor:pointer;padding:0}
@@ -2033,14 +2037,18 @@ function planRow(kind, p, i){
   const row = document.createElement('div');
   row.className = 'pr';
   const badge = kind === 'start' ? '<span class="pb s">D</span>' : kind === 'end' ? '<span class="pb e">A</span>' : '<span class="pb">' + (i + 1) + '</span>';
-  row.innerHTML = badge + '<input autocomplete="off"><div class="pa"></div><div class="psr" hidden></div>';
+  row.innerHTML = (kind === 'step' ? '<span class="grip" title="Maintenir puis glisser pour déplacer">⠿</span>' : '') + badge +
+    '<input autocomplete="off"><div class="pa"></div><div class="psr" hidden></div>';
+  if(kind === 'step'){
+    row.classList.add('step');
+    // poignée : la pastille numérotée et l'icône ⠿
+    [row.querySelector('.grip'), row.querySelector('.pb')].forEach(el => el.addEventListener('pointerdown', e => stepDragStart(e, row, i)));
+  }
   const inp = row.querySelector('input'), acts = row.querySelector('.pa'), box = row.querySelector('.psr');
   inp.value = p ? p.name : '';
   inp.placeholder = kind === 'start' ? 'Départ' : kind === 'end' ? 'Arrivée' : 'Étape ' + (i + 1);
   const btn = (t, title, fn) => { const b = document.createElement('button'); b.textContent = t; b.title = title; b.onclick = fn; acts.appendChild(b); };
   if(kind === 'step'){
-    btn('▲', 'Monter', () => { if(i > 0){ const s = plan.steps; [s[i-1], s[i]] = [s[i], s[i-1]]; planChanged(); } });
-    btn('▼', 'Descendre', () => { const s = plan.steps; if(i < s.length - 1){ [s[i+1], s[i]] = [s[i], s[i+1]]; planChanged(); } });
     btn('✕', 'Retirer l\'étape', () => { plan.steps.splice(i, 1); planChanged(); });
   }
   if(kind === 'end') btn('⇅', 'Inverser départ et arrivée', () => { if(plan.end){ [plan.start, plan.end] = [plan.end, plan.start]; plan.steps.reverse(); planChanged(); } });
@@ -2084,6 +2092,53 @@ function planRow(kind, p, i){
   }
   return row;
 }
+/* --- Glisser-déposer des étapes : maintenir la poignée ⠿ puis glisser --- */
+let sdrag = null;
+function stepDragStart(e, row, i){
+  if(e.pointerType === 'mouse' && e.button !== 0) return;
+  e.preventDefault();
+  const t0 = { x:e.clientX, y:e.clientY, id:e.pointerId };
+  const cancel = () => { clearTimeout(timer); window.removeEventListener('pointerup', cancel); window.removeEventListener('pointercancel', cancel); };
+  window.addEventListener('pointerup', cancel); window.addEventListener('pointercancel', cancel);
+  const timer = setTimeout(() => {   // maintien ≈ 0,2 s : le glisser commence
+    cancel();
+    const rows = [...$('planList').querySelectorAll('.pr.step')];
+    sdrag = { row, from:i, to:i, y0:t0.y, id:t0.id, rows, h: row.offsetHeight,
+              centers: rows.map(r => r.offsetTop + r.offsetHeight / 2) };
+    row.classList.add('lift');
+    if(navigator.vibrate) try{ navigator.vibrate(25); }catch(_){}
+  }, 200);
+}
+window.addEventListener('pointermove', e => {
+  if(!sdrag || e.pointerId !== sdrag.id) return;
+  e.preventDefault();
+  const d = sdrag, dy = e.clientY - d.y0, me = d.centers[d.from] + dy;
+  d.row.style.transform = 'translateY(' + dy + 'px)';
+  // nouvelle place = nombre d'étapes dont le centre est au-dessus de l'étape déplacée
+  let to = 0;
+  d.centers.forEach((c, k) => { if(k !== d.from && c < me) to++; });
+  d.to = to;
+  d.rows.forEach((r, k) => {   // les autres étapes s'écartent pour lui faire de la place
+    if(k === d.from) return;
+    let s = 0;
+    if(d.from < to && k > d.from && k <= to) s = -d.h;
+    if(d.from > to && k < d.from && k >= to) s = d.h;
+    r.style.transform = s ? 'translateY(' + s + 'px)' : '';
+  });
+}, { passive:false });
+function stepDragEnd(){
+  if(!sdrag) return;
+  const d = sdrag; sdrag = null;
+  d.rows.forEach(r => { r.style.transform = ''; r.classList.remove('lift'); });
+  if(d.to !== d.from){
+    const [s] = plan.steps.splice(d.from, 1);
+    plan.steps.splice(d.to, 0, s);
+    planChanged();
+  }
+}
+window.addEventListener('pointerup', stepDragEnd);
+window.addEventListener('pointercancel', stepDragEnd);
+
 function renderPlan(){
   const list = $('planList');
   if(!list) return;
