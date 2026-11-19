@@ -195,7 +195,10 @@
   .btns button{flex:1;padding:11px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);font-size:15px}
   .btns .primary{border:none;background:var(--c);color:#fff;font-weight:600}
   [hidden]{display:none!important}
-  .leaflet-control-attribution{font-size:10px}
+  .leaflet-control-attribution{font-size:9px;line-height:1.3;padding:0 4px !important;background:rgba(255,255,255,.6) !important;color:#555}
+  .leaflet-control-attribution a{color:#555}
+  .credits{font-size:12px;color:var(--mu);line-height:1.5;margin-top:12px;border-top:1px solid #f1f1f1;padding-top:8px}
+  .credits a{color:var(--c)}
   .leaflet-top.leaflet-left .leaflet-control-attribution{max-width:calc(100vw - 80px)}
   #styles{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
   /* Variantes claire et sombre obtenues en filtrant la carte OpenStreetMap */
@@ -398,6 +401,10 @@
       <div><small>Course</small><input id="spCourse" type="number" inputmode="decimal" step="0.5"></div>
       <div><small>Vélo</small><input id="spVelo" type="number" inputmode="decimal" step="0.5"></div>
     </div>
+    <div class="credits"><b>Crédits</b> — Carte © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">contributeurs OpenStreetMap</a>
+      (<a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener">signaler une erreur</a>) · itinéraires FOSSGIS / OSRM ·
+      altitudes <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (Copernicus DEM) · lieux et photos Wikipédia, Wikimedia Commons, Panoramax ·
+      recherche Photon · fonds Esri, OpenTopoMap, CyclOSM · affichage Leaflet.</div>
     <div class="btns">
       <button id="cfgCancel">Annuler</button>
       <button id="cfgSave" class="primary">Enregistrer</button>
@@ -426,7 +433,8 @@ let start = null, startMarker = null, endMarker = null, meMarker = null, meLL = 
 /* ---------- Carte ---------- */
 const map = L.map('map', { zoomControl:false }).setView([45.75, 4.85], 13);
 const OSM = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
-const ATTR_END = ' · itinéraires FOSSGIS · altitudes <a href="https://open-meteo.com/">Open-Meteo</a> (Copernicus) · <a href="https://www.openstreetmap.org/fixthemap">Signaler une erreur</a>';
+const ATTR_END = '';   // les autres crédits sont dans Réglages → Crédits
+map.attributionControl.setPrefix(false);   // pas de logo Leaflet (non obligatoire)
 const STYLES = {
   plan:      { label:'🗺️ Plan',      url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png', max:19, attr:OSM },
   clair:     { label:'⬜ Clair',     url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png', max:19, attr:OSM, cls:'tiles-clair' },
