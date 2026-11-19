@@ -111,6 +111,11 @@
   #btnCfg{top:calc(12px + env(safe-area-inset-top))}
   #btnLoc{top:auto;bottom:calc(var(--sheet, 170px) + 12px);transition:bottom .28s cubic-bezier(.2,.8,.2,1),opacity .2s}
   body.sheet-drag #btnLoc,body.sheet-drag #routeActs{transition:none}
+  #btnHere{position:fixed;left:12px;bottom:calc(var(--sheet, 170px) + 14px);z-index:1000;display:none;height:42px;border:none;border-radius:21px;padding:0 16px;background:#fff;color:var(--c);font:700 15px system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.3);cursor:pointer;transition:bottom .28s cubic-bezier(.2,.8,.2,1)}
+  body.show-here #btnHere{display:block}
+  @media (max-width:430px){ body.has-routes #btnHere span{display:none} }   /* place pour Démarrer / Effacer */
+  body.sheet-tall #btnHere,body.nav #btnHere{display:none !important}
+  body.sheet-drag #btnHere{transition:none}
   #routeActs{position:fixed;right:66px;bottom:calc(var(--sheet, 170px) + 14px);z-index:1000;display:none;gap:8px;align-items:center;transition:bottom .28s cubic-bezier(.2,.8,.2,1)}
   body.has-routes #routeActs{display:flex}
   body.sheet-tall #routeActs,body.nav #routeActs{display:none}
@@ -259,6 +264,7 @@
   @media (min-width:800px), (orientation:landscape) and (max-height:520px){
     #btnLoc{bottom:calc(24px + env(safe-area-inset-bottom)) !important;opacity:1 !important;pointer-events:auto !important}
     #routeActs{bottom:calc(26px + env(safe-area-inset-bottom)) !important}
+    #btnHere{left:calc(50% + 182px);bottom:auto !important;top:16px;transform:translateX(-50%)}
     body.sheet-tall.has-routes:not(.nav) #routeActs{display:flex}
     #navbar{left:auto;right:12px;bottom:12px;width:420px;border-radius:18px}
     /* Le haut du panneau reste fixe, seule la liste défile */
@@ -288,6 +294,7 @@
 <body>
 <div id="map"></div>
 <button id="btnCfg" class="fab" title="Réglages"><svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.48.48 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6a3.6 3.6 0 1 1 0-7.2 3.6 3.6 0 0 1 0 7.2z"/></svg></button>
+<button id="btnHere" title="Placer le départ au centre de la carte et chercher">🔍 <span>Rechercher </span>ici</button>
 <div id="routeActs">
   <button id="btnStart" title="Suivre le parcours sélectionné">▶ Démarrer</button>
   <button id="btnClear" title="Effacer tous les parcours de la liste"><svg viewBox="0 0 24 24"><path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg><span>Effacer ?</span></button>
@@ -485,6 +492,7 @@ flashAttribution();
 /* ---------- Mise en page selon la taille de la fenêtre ---------- */
 const WIDE = window.matchMedia('(min-width:800px), (orientation:landscape) and (max-height:520px)');
 function fitRoute(){
+  if(typeof userMoved !== 'undefined'){ userMoved = false; document.body.classList.remove('show-here'); }
   if(!routeLayer) return;
   const p = $('panel');
   map.fitBounds(routeLayer.getBounds(), WIDE.matches
@@ -1817,6 +1825,35 @@ function navUpdate(ll){
   if(nav.follow) map.panTo(ll, { animate:true });
 }
 map.on('dragstart', () => { if(nav) nav.follow = false; });   // on déplace la carte : on arrête de suivre
+/* ---------- Bouton "Rechercher ici" : quand on a déplacé la carte loin du départ ---------- */
+var userMoved = false;   // var : utilisable dès le premier recadrage
+const mapEl = map.getContainer();
+map.on('dragstart', () => { userMoved = true; });
+['wheel', 'touchstart'].forEach(ev => mapEl.addEventListener(ev, e => { if(ev === 'wheel' || e.touches.length > 1) userMoved = true; }, { passive:true }));
+// Centre de la partie de carte visible (hors barre de recherche, tiroir ou panneau)
+function visibleCenter(){
+  const W = mapEl.clientWidth, H = mapEl.clientHeight, p = $('panel').getBoundingClientRect();
+  const pt = WIDE.matches ? L.point((p.right + W) / 2, H / 2) : L.point(W / 2, (70 + p.top) / 2);
+  return map.containerPointToLatLng(pt);
+}
+function checkHere(){
+  let show = false;
+  if(userMoved && !nav && start){
+    const c = map.latLngToContainerPoint(visibleCenter()), s = map.latLngToContainerPoint(start);
+    show = c.distanceTo(s) > Math.min(140, mapEl.clientWidth * 0.3);   // départ loin du centre de la vue
+  }
+  document.body.classList.toggle('show-here', show);
+}
+map.on('moveend', checkHere);
+$('btnHere').onclick = () => {
+  const c = visibleCenter();
+  userMoved = false;
+  document.body.classList.remove('show-here');
+  setStart([c.lat, c.lng]);
+  if(tab === 'sugg'){ suggKey = ''; runSugg(); }
+  else generate();
+};
+
 setInterval(() => { if(nav && !nav.done) navBar(); }, 30000);
 $('btnStart').onclick = startNav;
 $('navStop').onclick = stopNav;
@@ -2042,6 +2079,7 @@ function renderSugg(){
 }
 // Centre la carte sur ll dans la zone visible (au-dessus du tiroir sur téléphone, à droite du panneau sur PC)
 function centerVisible(ll, z){
+  userMoved = false; document.body.classList.remove('show-here');
   const p = $('panel');
   let dx = 0, dy = 0;
   if(WIDE.matches) dx = -(p.offsetWidth + 12) / 2;
