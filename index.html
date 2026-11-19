@@ -30,6 +30,33 @@
   #mic.on{background:#dc2626;animation:pulse 1.2s infinite}
   @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(220,38,38,.5)}100%{box-shadow:0 0 0 12px rgba(220,38,38,0)}}
   #search.has-mic #q{padding-right:44px}
+  #btnPlan{position:absolute;right:42px;top:0;height:38px;width:38px;border:none;background:none;border-radius:50%;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
+  #btnPlan svg{width:22px;height:22px;fill:var(--c)}
+  #q{padding-right:84px !important}
+  #search.floating #btnPlan{top:4px;right:44px}
+  #search:not(.has-mic) #btnPlan{right:4px}
+  #search:not(.has-mic) #q{padding-right:44px !important}
+  #ctxMenu{position:fixed;z-index:1500;background:#fff;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,.3);padding:6px;display:flex;flex-direction:column;min-width:210px}
+  #ctxMenu[hidden]{display:none}
+  #ctxMenu button{border:none;background:none;text-align:left;padding:11px 12px;border-radius:8px;font:500 15px system-ui,sans-serif;color:var(--tx);cursor:pointer}
+  #ctxMenu button:hover{background:#f3f4f6}
+  .card.plan{max-width:480px;max-height:92vh;overflow-y:auto}
+  #planList{margin:4px 0 8px}
+  .pr{position:relative;display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f1f1f1}
+  .pr input{flex:1;min-width:0;font-size:15px;padding:8px 10px;border:1px solid var(--bd);border-radius:9px}
+  .pr.ret span:last-child{flex:1;color:var(--mu);font-size:15px;padding:8px 2px}
+  .pb{flex:none;width:26px;height:26px;border-radius:50%;background:#7c3aed;color:#fff;font:700 13px/26px system-ui,sans-serif;text-align:center}
+  .pb.s{background:#16a34a} .pb.e{background:#dc2626}
+  .pa{display:flex;gap:2px}
+  .pa button{width:30px;height:32px;border:1px solid var(--bd);background:var(--bg);border-radius:7px;font-size:13px;color:var(--tx);cursor:pointer;padding:0}
+  .psr{position:absolute;left:34px;right:0;top:46px;z-index:5;background:#fff;border:1px solid var(--bd);border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.18);max-height:220px;overflow-y:auto}
+  .psr[hidden]{display:none}
+  .psr button{display:block;width:100%;text-align:left;border:none;background:none;padding:8px 10px;border-bottom:1px solid #f3f4f6;cursor:pointer}
+  .psr b{display:block;font-size:14px} .psr small{color:var(--mu);font-size:12px}
+  .pbtns{display:flex;gap:8px}
+  .pbtns button{flex:1;padding:9px;border:1px solid var(--bd);background:var(--bg);border-radius:9px;font-size:14px;color:var(--tx);cursor:pointer}
+  #planSum{text-align:center;font-size:15px;margin:12px 0 4px;min-height:20px}
+  .stp{width:26px;height:26px;border-radius:50%;background:#7c3aed;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);color:#fff;font:700 12px/22px system-ui,sans-serif;text-align:center}
   #search.floating #mic{top:4px;right:5px}
   #q{width:100%;font-size:15px;padding:9px 12px;border:1px solid var(--bd);border-radius:10px;margin-bottom:10px;background:#f9fafb}
   #sres{position:absolute;left:0;right:0;top:44px;z-index:5;background:var(--bg);border:1px solid var(--bd);border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.18);max-height:260px;overflow-y:auto}
@@ -336,6 +363,27 @@
   </div>
 </div>
 
+<div id="ctxMenu" hidden>
+  <button data-a="start">📍 Placer le départ ici</button>
+  <button data-a="dest">🏁 Arrivée ici</button>
+  <button data-a="step">➕ Ajouter une étape ici</button>
+</div>
+
+<div id="planModal" class="modal hidden">
+  <div class="card plan">
+    <h2>🧭 Itinéraire</h2>
+    <div class="seg" id="planType"><button data-v="aller">➡️ Départ → Arrivée</button><button data-v="boucle">🔄 Boucle</button></div>
+    <div id="planList"></div>
+    <div class="pbtns"><button id="planAdd">➕ Ajouter une étape</button><button id="planOpt">↻ Ordre le plus logique</button></div>
+    <div id="planSum"></div>
+    <div class="btns">
+      <button id="planReset">Vider</button>
+      <button id="planClose">Fermer</button>
+      <button id="planGo" class="primary">Voir sur la carte</button>
+    </div>
+  </div>
+</div>
+
 <div id="viewer" class="modal hidden">
   <div class="card">
     <div id="vStage">
@@ -365,6 +413,7 @@
  <div id="ctrl">
   <div id="search">
     <input id="q" type="search" placeholder="Rechercher un lieu, une adresse…" autocomplete="off" enterkeyhint="search">
+    <button id="btnPlan" title="Itinéraire avec étapes"><svg viewBox="0 0 24 24"><path d="M21.71 11.29l-9-9a1 1 0 0 0-1.42 0l-9 9a1 1 0 0 0 0 1.42l9 9a1 1 0 0 0 1.42 0l9-9a1 1 0 0 0 0-1.42zM14 14.5V12h-4v3H8v-4a1 1 0 0 1 1-1h5V7.5l3.5 3.5-3.5 3.5z"/></svg></button>
     <button id="mic" title="Recherche vocale" hidden><svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5.3-3a5.3 5.3 0 0 1-10.6 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-1.7z"/></svg></button>
     <div id="sres" hidden></div>
   </div>
@@ -451,7 +500,7 @@ let st  = store.get('st',  { mode:'course', type:'boucle', unit:'km', val:5 });
 let start = null, startMarker = null, endMarker = null, meMarker = null, meLL = null, routeLayer = null;
 
 /* ---------- Carte ---------- */
-const map = L.map('map', { zoomControl:false }).setView([45.75, 4.85], 13);
+const map = L.map('map', { zoomControl:false, tapHold:true }).setView([45.75, 4.85], 13);
 const OSM = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
 const ATTR_END = '';   // les autres crédits sont dans Réglages → Crédits
 map.attributionControl.setPrefix(false);   // pas de logo Leaflet (non obligatoire)
@@ -534,8 +583,7 @@ function setStart(ll){
   else startMarker.setLatLng(start);
 }
 
-map.on('click', e => {
-  setStart([e.latlng.lat, e.latlng.lng]); msg('Départ placé ici.'); });
+// (le départ se place avec un appui long / clic droit : voir le menu de la carte)
 
 /* ---------- Géolocalisation ---------- */
 if(navigator.geolocation){
@@ -546,10 +594,10 @@ if(navigator.geolocation){
     if(!start){ setStart(meLL); map.setView(meLL, 15); }
     if(nav) navUpdate(meLL);
   }, err => {
-    if(!start) msg('Position introuvable : touche la carte pour placer ton départ.', true);
+    if(!start) msg('Position introuvable : appui long sur la carte pour placer ton départ.', true);
   }, { enableHighAccuracy:true, maximumAge:5000 });
 } else {
-  msg('Géolocalisation indisponible : touche la carte pour placer ton départ.', true);
+  msg('Géolocalisation indisponible : appui long sur la carte pour placer ton départ.', true);
 }
 
 $('btnLoc').onclick = () => {
@@ -883,6 +931,7 @@ let candidates = [], selected = null, genRun = 0, userPicked = false, altLayer =
 
 function titleOf(c, i){
   if(c.savedName) return c.savedName;
+  if(c.plan) return '🧭 Itinéraire' + (c.planNames.length > 2 ? ' · ' + (c.planNames.length - 2) + ' étape' + (c.planNames.length > 3 ? 's' : '') : '');
   if(c.places) return 'Visite · ' + c.places.slice(0, 2).map(p => p.title).join(', ') + (c.places.length > 2 ? ' +' + (c.places.length - 2) : '');
   const top = c.lm[0] && c.lm[0].name;
   if(c.kind === 'dest') return (i === 0 ? 'Conseillé' : 'Variante ' + i) + (top ? ' · par ' + top : '');
@@ -892,6 +941,7 @@ function titleOf(c, i){
   return 'Vers ' + (/^[eo]/.test(d) ? 'l\'' : 'le ') + d;
 }
 function subOf(c){
+  if(c.plan) return c.planNames.join(' → ');
   if(c.places) return c.places.length + ' lieu' + (c.places.length > 1 ? 'x' : '') + ' à voir — côté ' + dirOf(c.brg);
   const more = c.lm.slice(1).map(l => l.name);
   const d = c.kind === 'dest' ? '' : 'côté ' + dirOf(c.brg);
@@ -1017,6 +1067,7 @@ function select(c, noFit, keepSize){
 
 let lastGenKey = '';
 async function generate(){
+  if(typeof endPlan === 'function') endPlan();
   if(!start){ msg('Position inconnue : touche la carte pour placer ton départ.', true); return; }
   const target = targetMeters();
   if(!dest){
@@ -1252,6 +1303,7 @@ function routeInfo(c){
 }
 function updateInfo(){   // met à jour la ligne d'info sans perdre le nombre de photos
   if(!selected) return;
+  if(selected.plan && $('planSum')) $('planSum').innerHTML = routeInfo(selected);
   const suf = ($('info').innerHTML.match(/ · 📷.*$/) || [''])[0];
   $('info').innerHTML = routeInfo(selected) + suf;
 }
@@ -1759,6 +1811,7 @@ $('btnGo').onclick = generate;
 
 /* ---------- Boutons "Démarrer" et "Effacer" (à côté de la localisation) ---------- */
 function clearAll(){
+  endPlan(); plan.steps = []; plan.end = null; plan.start = null; plan.cand = null;
   genRun++; suggRun++; lastGenKey = ''; suggKey = ''; suggTours = []; suggPlaces = [];
   clearDest();
   candidates = []; selected = null; lastRoute = null; userPicked = false;
@@ -1853,6 +1906,216 @@ function navUpdate(ll){
   if(nav.follow) map.panTo(ll, { animate:true });
 }
 map.on('dragstart', () => { if(nav) nav.follow = false; });   // on déplace la carte : on arrête de suivre
+
+/* ---------- Menu appui long (téléphone) / clic droit (PC) sur la carte ---------- */
+let ctxLL = null, ctxT = 0;
+function hideCtx(){ if(Date.now() - ctxT > 400) $('ctxMenu').hidden = true; }   // (le doigt qui se relève ne referme pas le menu)
+map.on('contextmenu', e => {
+  if(nav) return;
+  ctxLL = [e.latlng.lat, e.latlng.lng]; ctxT = Date.now();
+  const m = $('ctxMenu'), W = map.getContainer().clientWidth, H = map.getContainer().clientHeight;
+  m.hidden = false;
+  const x = Math.min(e.containerPoint.x, W - m.offsetWidth - 8), y = Math.min(e.containerPoint.y, H - m.offsetHeight - 8);
+  m.style.left = Math.max(8, x) + 'px'; m.style.top = Math.max(8, y) + 'px';
+});
+map.on('click movestart zoomstart', hideCtx);
+async function nameOf(ll){   // nom du lieu touché (rue, lieu-dit…)
+  try{
+    const j = await getJSON('https://photon.komoot.io/reverse?lang=fr&lat=' + ll[0].toFixed(5) + '&lon=' + ll[1].toFixed(5));
+    const f = j.features && j.features[0];
+    if(f) return placeLabel(f.properties || {}).name;
+  }catch(e){}
+  return 'Point sur la carte';
+}
+$('ctxMenu').onclick = async e => {
+  const a = e.target.closest('button') && e.target.closest('button').dataset.a;
+  if(!a || !ctxLL) return;
+  const ll = ctxLL; ctxT = 0; hideCtx();
+  if(a === 'start'){
+    setStart(ll); msg('Départ placé ici.');
+    if(plan.active){ plan.start = { ll, name:'Point sur la carte' }; planChanged(); nameOf(ll).then(n => { plan.start.name = n; renderPlan(); }); }
+  } else if(a === 'dest'){
+    if(plan.active){ plan.end = { ll, name:'Point sur la carte' }; if(st.type === 'boucle') document.querySelector('#segType [data-v=aller]').click(); planChanged(); nameOf(ll).then(n => { plan.end.name = n; renderPlan(); }); }
+    else { const n = await nameOf(ll); setDest(ll, n); generate(); }
+  } else if(a === 'step'){
+    const p = { ll, name:'Point sur la carte' };
+    addStep(p);
+    nameOf(ll).then(n => { p.name = n; renderPlan(); renderList(); });
+    msg('Étape ajoutée (' + plan.steps.length + ') — 🧭 dans la barre de recherche pour modifier l\'itinéraire.');
+  }
+};
+
+/* ---------- Itinéraire : départ, étapes, arrivée (ou retour au départ en boucle) ---------- */
+const plan = { active:false, start:null, steps:[], end:null, cand:null, run:0, timer:null };
+const loopPlan = () => st.type === 'boucle';
+// Longueur à vol d'oiseau d'un ordre d'étapes (pour choisir l'ordre le plus logique)
+function seqLen(steps){
+  const pts = [plan.start && plan.start.ll].concat(steps.map(s => s.ll), [loopPlan() ? plan.start && plan.start.ll : plan.end && plan.end.ll]).filter(Boolean);
+  let d = 0; for(let i = 1; i < pts.length; i++) d += hav(pts[i-1], pts[i]);
+  return d;
+}
+// Nouvelle étape : insérée à l'endroit qui rallonge le moins le trajet
+function insertBest(p){
+  let best = 0, bestLen = Infinity;
+  for(let i = 0; i <= plan.steps.length; i++){
+    const t = plan.steps.slice(); t.splice(i, 0, p);
+    const L_ = seqLen(t); if(L_ < bestLen){ bestLen = L_; best = i; }
+  }
+  plan.steps.splice(best, 0, p);
+}
+// Ordre optimal de toutes les étapes (toutes les combinaisons jusqu'à 7 étapes)
+function optimizeOrder(){
+  const s = plan.steps;
+  if(s.length < 2) return;
+  if(s.length > 7){ const all = s.slice(); plan.steps = []; all.forEach(insertBest); return; }
+  let best = s.slice(), bestLen = seqLen(s);
+  const perm = (arr, k) => {
+    if(k === arr.length){ const L_ = seqLen(arr); if(L_ < bestLen){ bestLen = L_; best = arr.slice(); } return; }
+    for(let i = k; i < arr.length; i++){ [arr[k], arr[i]] = [arr[i], arr[k]]; perm(arr, k + 1); [arr[k], arr[i]] = [arr[i], arr[k]]; }
+  };
+  perm(s.slice(), 0);
+  plan.steps = best;
+}
+function ensurePlan(){
+  if(!plan.start && start) plan.start = { ll:start, name:'Mon départ' };
+  plan.active = true;
+}
+function addStep(p){ ensurePlan(); insertBest(p); planChanged(); }
+
+function planPoints(){
+  if(!plan.start) return null;
+  const mid = plan.steps.filter(s => s.ll).map(s => s.ll);
+  if(loopPlan()) return mid.length ? [plan.start.ll].concat(mid, [plan.start.ll]) : null;
+  return plan.end ? [plan.start.ll].concat(mid, [plan.end.ll]) : null;
+}
+// Recalcul automatique (½ seconde après la dernière modification)
+function planChanged(){
+  plan.active = true;
+  if(plan.start) setStart(plan.start.ll);
+  renderPlan(); drawPlanMarks();
+  clearTimeout(plan.timer);
+  plan.timer = setTimeout(computePlan, 500);
+}
+async function computePlan(){
+  const pts = planPoints();
+  if(!pts){ $('planSum').textContent = loopPlan() ? 'Ajoute au moins une étape.' : 'Choisis une arrivée.'; return; }
+  const run = ++plan.run;
+  $('planSum').textContent = 'Calcul de l\'itinéraire…';
+  try{
+    const j = await route(PROFILES[st.mode], pts);
+    if(run !== plan.run) return;
+    const r = j.routes[0];
+    const c = makeCandidate(r, r.geometry.coordinates, { kind: loopPlan() ? 'boucle' : 'dest', brg:0, plan:true,
+      planNames: [plan.start.name].concat(plan.steps.map(s => s.name), [loopPlan() ? 'retour' : plan.end.name]) });
+    plan.cand = c;
+    genRun++; lastGenKey = ''; candidates = [c]; userPicked = true;
+    if(tab !== 'parcours') setTab('parcours');
+    select(c, false, true);
+    $('planSum').innerHTML = routeInfo(c);
+  }catch(e){ if(run === plan.run) $('planSum').textContent = e.message; }
+}
+const planLayer = L.layerGroup().addTo(map);
+function drawPlanMarks(){
+  planLayer.clearLayers();
+  if(!plan.active) return;
+  plan.steps.forEach((s, i) => {
+    if(!s.ll) return;
+    L.marker(s.ll, { zIndexOffset:700, icon:L.divIcon({ className:'', iconSize:[26,26], iconAnchor:[13,13], html:'<div class="stp">' + (i + 1) + '</div>' }) }).addTo(planLayer);
+  });
+  if(!loopPlan() && plan.end && plan.end.ll) L.marker(plan.end.ll, { icon:pin('#dc2626'), zIndexOffset:650 }).addTo(planLayer);
+}
+function endPlan(){ plan.active = false; planLayer.clearLayers(); }
+
+/* --- Fenêtre Itinéraire --- */
+let planSTimer = null, planSRun = 0;
+function planRow(kind, p, i){
+  const row = document.createElement('div');
+  row.className = 'pr';
+  const badge = kind === 'start' ? '<span class="pb s">D</span>' : kind === 'end' ? '<span class="pb e">A</span>' : '<span class="pb">' + (i + 1) + '</span>';
+  row.innerHTML = badge + '<input autocomplete="off"><div class="pa"></div><div class="psr" hidden></div>';
+  const inp = row.querySelector('input'), acts = row.querySelector('.pa'), box = row.querySelector('.psr');
+  inp.value = p ? p.name : '';
+  inp.placeholder = kind === 'start' ? 'Départ' : kind === 'end' ? 'Arrivée' : 'Étape ' + (i + 1);
+  const btn = (t, title, fn) => { const b = document.createElement('button'); b.textContent = t; b.title = title; b.onclick = fn; acts.appendChild(b); };
+  if(kind === 'step'){
+    btn('▲', 'Monter', () => { if(i > 0){ const s = plan.steps; [s[i-1], s[i]] = [s[i], s[i-1]]; planChanged(); } });
+    btn('▼', 'Descendre', () => { const s = plan.steps; if(i < s.length - 1){ [s[i+1], s[i]] = [s[i], s[i+1]]; planChanged(); } });
+    btn('✕', 'Retirer l\'étape', () => { plan.steps.splice(i, 1); planChanged(); });
+  }
+  if(kind === 'end') btn('⇅', 'Inverser départ et arrivée', () => { if(plan.end){ [plan.start, plan.end] = [plan.end, plan.start]; plan.steps.reverse(); planChanged(); } });
+  // Recherche du lieu de cette ligne
+  inp.oninput = () => {
+    clearTimeout(planSTimer);
+    const q = inp.value.trim();
+    if(q.length < 3){ box.hidden = true; return; }
+    planSTimer = setTimeout(async () => {
+      const run = ++planSRun, c = start || meLL || [map.getCenter().lat, map.getCenter().lng];
+      let j = null;
+      try{ j = await getJSON('https://photon.komoot.io/api/?lang=fr&limit=5&q=' + encodeURIComponent(q) + '&lat=' + c[0].toFixed(4) + '&lon=' + c[1].toFixed(4)); }catch(e){}
+      if(run !== planSRun) return;
+      box.innerHTML = '';
+      ((j && j.features) || []).forEach(f => {
+        const lb = placeLabel(f.properties || {}), ll = [f.geometry.coordinates[1], f.geometry.coordinates[0]];
+        const o = document.createElement('button');
+        o.innerHTML = '<b></b><small></small>';
+        o.querySelector('b').textContent = lb.name; o.querySelector('small').textContent = lb.sub;
+        o.onclick = () => choose({ ll, name:lb.name });
+        box.appendChild(o);
+      });
+      box.hidden = !box.children.length;
+    }, 300);
+  };
+  inp.onfocus = () => {   // raccourci "Ma position"
+    if(!meLL || inp.value) return;
+    box.innerHTML = '';
+    const o = document.createElement('button'); o.innerHTML = '<b>📍 Ma position</b>';
+    o.onclick = () => choose({ ll:meLL, name:'Ma position' });
+    box.appendChild(o); box.hidden = false;
+  };
+  inp.onblur = () => setTimeout(() => { box.hidden = true; }, 200);
+  function choose(pt){
+    box.hidden = true;
+    if(kind === 'start') plan.start = pt;
+    else if(kind === 'end') plan.end = pt;
+    else if(p && p.ll){ plan.steps[i] = pt; }                         // lieu modifié : on garde sa place
+    else { plan.steps.splice(i, 1); insertBest(pt); }                // nouvelle étape : à la place la plus logique
+    planChanged();
+  }
+  return row;
+}
+function renderPlan(){
+  const list = $('planList');
+  if(!list) return;
+  list.innerHTML = '';
+  $('planType').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === st.type));
+  list.appendChild(planRow('start', plan.start, 0));
+  plan.steps.forEach((s, i) => list.appendChild(planRow('step', s, i)));
+  if(loopPlan()){
+    const r = document.createElement('div'); r.className = 'pr ret';
+    r.innerHTML = '<span class="pb s">↩︎</span><span>Retour au départ</span>';
+    list.appendChild(r);
+  } else list.appendChild(planRow('end', plan.end, 0));
+}
+$('btnPlan').onclick = () => {
+  ensurePlan();
+  renderPlan(); drawPlanMarks();
+  $('planModal').classList.remove('hidden');
+  if(planPoints()) computePlan(); else $('planSum').textContent = loopPlan() ? 'Ajoute au moins une étape.' : 'Choisis une arrivée.';
+};
+$('planAdd').onclick = () => { plan.steps.push({ ll:null, name:'' }); renderPlan(); const ins = $('planList').querySelectorAll('.pr input'); ins[ins.length - (loopPlan() ? 1 : 2)].focus(); };
+$('planOpt').onclick = () => { optimizeOrder(); planChanged(); };
+$('planType').querySelectorAll('button').forEach(b => b.onclick = () => {
+  document.querySelector('#segType [data-v=' + b.dataset.v + ']').click();
+  planChanged();
+});
+$('planGo').onclick = () => { $('planModal').classList.add('hidden'); if(plan.cand) fitRoute(); };
+$('planClose').onclick = () => $('planModal').classList.add('hidden');
+$('planReset').onclick = () => {
+  plan.steps = []; plan.end = null; plan.start = start ? { ll:start, name:'Mon départ' } : null;
+  plan.cand = null; renderPlan(); drawPlanMarks();
+  $('planSum').textContent = loopPlan() ? 'Ajoute au moins une étape.' : 'Choisis une arrivée.';
+};
+
 /* ---------- Bouton "Rechercher ici" : quand on a déplacé la carte loin du départ ---------- */
 var userMoved = false;   // var : utilisable dès le premier recadrage
 const mapEl = map.getContainer();
