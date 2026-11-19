@@ -144,6 +144,26 @@
   #btnCfg{top:calc(12px + env(safe-area-inset-top))}
   #btnLoc{top:auto;bottom:calc(var(--sheet, 170px) + 12px);transition:bottom .28s cubic-bezier(.2,.8,.2,1),opacity .2s}
   body.sheet-drag #btnLoc,body.sheet-drag #routeActs{transition:none}
+  /* Survol à la souris : pré-sélection discrète, dans le même style que la sélection */
+  .fab,.seg button,#tabs button,.it,.pc,.tc,.primary,.vbtn,#chip,.star,.sgDet,.pill,#styles button,.sr,.psr button,.pa button,.btns button,.sv button,#ctxMenu button,#vPrev,#vNext,#navStop,#navMaps,.step button{transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,filter .15s}
+  @media (hover:hover){
+    .fab:hover{background:#f3f4f6;box-shadow:0 3px 12px rgba(0,0,0,.3)}
+    .seg button:not(.on):hover{background:rgba(255,255,255,.65);color:var(--tx)}
+    #tabs button:not(.on):hover{color:var(--tx);border-bottom-color:#9fd6cd}
+    .it:not(.on):hover,#sugg .it.sg:not(.cur):hover,.pc:not(.cur):hover,.tc:hover{border-color:#9fd6cd;background:#f6fbfa}
+    .primary:hover,.vbtn:hover,#go2:hover{filter:brightness(1.1)}
+    #chip:hover{background:#eceef1;border-color:#d1d5db}
+    .star:hover{color:#f59e0b}
+    .sgDet:not(.on):hover,.pill:not(:has(input:checked)):hover,#styles button:not(.on):hover{border-color:#9fd6cd;background:#f6fbfa}
+    .sr:hover,.psr button:hover{background:#f6fbfa}
+    .pa button:hover,.btns button:not(.primary):hover,.sv button:hover,#navMaps:hover{background:#f3f4f6;border-color:#d1d5db}
+    #vPrev:hover,#vNext:hover{background:#fff}
+    #navStop:hover{filter:brightness(1.1)}
+    #btnHere.vis:hover,#btnClear.vis:not(.sure):hover{background:#f3f4f6}
+    #btnStart.vis:hover{background:#0d6a62}
+    .pr.step .grip:hover,.pr.step .pb:hover{filter:brightness(1.15)}
+  }
+
   /* Ligne de boutons du bas : apparitions en fondu et déplacements fluides (≈ 0,3 s) */
   #routeActs{--ease:cubic-bezier(.25,.8,.25,1);position:fixed;right:66px;bottom:calc(var(--sheet, 170px) + 14px);z-index:1000;display:flex;align-items:center;pointer-events:none;transition:bottom .28s var(--ease),opacity .3s var(--ease)}
   body.sheet-tall #routeActs,body.nav #routeActs{opacity:0}
@@ -557,13 +577,18 @@ flashAttribution();
 
 /* ---------- Mise en page selon la taille de la fenêtre ---------- */
 const WIDE = window.matchMedia('(min-width:800px), (orientation:landscape) and (max-height:520px)');
+// Marges = ce qui recouvre la carte : barre de recherche, boutons ronds, tiroir (sa hauteur finale) ou panneau PC
+function visPad(){
+  const p = $('panel');
+  if(WIDE.matches) return { paddingTopLeft:[p.getBoundingClientRect().right + 24, 24], paddingBottomRight:[70, 76] };
+  const sheet = parseFloat(p.style.height) || p.offsetHeight;
+  return { paddingTopLeft:[20, 78], paddingBottomRight:[66, sheet + 64] };
+}
 function fitRoute(){
   if(typeof userMoved !== 'undefined'){ userMoved = false; document.body.classList.remove('show-here'); }
   if(!routeLayer) return;
-  const p = $('panel');
-  map.fitBounds(routeLayer.getBounds(), WIDE.matches
-    ? { paddingTopLeft:[p.offsetWidth + 40, 30], paddingBottomRight:[70, 30] }
-    : { paddingTopLeft:[30, 80], paddingBottomRight:[70, p.offsetHeight + 20] });
+  if(!WIDE.matches && typeof sheetState !== 'undefined' && sheetState === 'full') return;   // carte cachée
+  map.fitBounds(routeLayer.getBounds(), visPad());
 }
 function applyLayout(){
   const pos = WIDE.matches ? 'bottomright' : 'topleft';
@@ -2446,7 +2471,7 @@ function focusSugg(){
   const x = sugItems()[sugIdx];
   if(!x) return;
   showPlaces();
-  if(st.type === 'boucle') map.fitBounds(L.latLngBounds(x.geometry.coordinates.map(llOf)), { paddingTopLeft:[30, 80], paddingBottomRight:[70, $('panel').offsetHeight + 20] });
+  if(st.type === 'boucle') map.fitBounds(L.latLngBounds(x.geometry.coordinates.map(llOf)), visPad());
   else centerVisible(x.ll, Math.max(map.getZoom(), 15));
 }
 // Toucher une suggestion (liste agrandie, aller simple) : surlignée + centrée sur la carte
@@ -2527,10 +2552,12 @@ function setSheetVar(px){
   document.documentElement.style.setProperty('--sheet', Math.round(px) + 'px');
   document.body.classList.toggle('sheet-tall', px > window.innerHeight * 0.7);
 }
+let refitT = null;
 function setSheet(s){
   if(!sheetReady || WIDE.matches) return;
-  const wasPeek = sheetState === 'peek';
+  const wasPeek = sheetState === 'peek', prev = sheetState;
   sheetState = s;
+  if(prev !== s && s !== 'full' && selected && !nav && !userMoved){ clearTimeout(refitT); refitT = setTimeout(fitRoute, 320); }
   if(tab === 'sugg' && sugDetail && wasPeek !== (s === 'peek')) renderSugg();
   const p = $('panel'), l = $('list');
   p.style.height = sheetH()[s] + 'px';
