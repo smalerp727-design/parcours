@@ -63,7 +63,7 @@
   #panel[data-state=peek] #sugg > :not(.cur):not(.sg-msg){display:none}
   #panel[data-state=peek] #sugg .cur{touch-action:none;will-change:transform}
   .sg-h{display:flex;align-items:center;gap:8px}
-  .sgDet{flex:none;border:1px solid var(--bd);background:var(--bg);border-radius:8px;padding:5px 9px;font:600 13px system-ui,sans-serif;color:var(--tx);cursor:pointer}
+  .sgDet{flex:none;order:2;margin-left:auto;border:1px solid var(--bd);background:var(--bg);border-radius:8px;padding:5px 9px;font:600 13px system-ui,sans-serif;color:var(--tx);cursor:pointer}
   .sgDet.on{background:#e6f4f1;border-color:var(--c);color:var(--c)}
   .vbtn.wide{width:100%;margin-top:8px;padding:10px;font-size:15px}
   .it .th{flex:none;width:46px;height:46px;border-radius:9px;object-fit:cover;background:#eee}
@@ -156,14 +156,25 @@
   #search.floating #q{margin:0;height:46px;border-radius:23px;border:none;box-shadow:0 2px 8px rgba(0,0,0,.25);background:#fff;padding:0 18px}
   #search.floating #sres{top:52px}
   .leaflet-top.leaflet-left{top:calc(62px + env(safe-area-inset-top))}
-  .seg{display:flex;background:#f3f4f6;border-radius:10px;padding:3px;margin-bottom:10px}
-  .seg button{flex:1;border:none;background:none;padding:9px 4px;border-radius:8px;font-size:15px;color:var(--mu)}
+  .seg{display:flex;background:#f3f4f6;border-radius:10px;padding:3px;margin-bottom:8px}
+  .seg button{flex:1;border:none;background:none;padding:7px 4px;border-radius:8px;font-size:14px;color:var(--mu)}
+  .row1{display:flex;gap:8px;margin-bottom:8px}
+  .row1 .seg{margin:0}
+  #segMode button{padding:5px 10px;font-size:19px}
+  #segType{flex:1}
   .seg button.on{background:var(--bg);color:var(--tx);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.15)}
   .row{display:flex;gap:10px;align-items:center;margin-bottom:6px}
-  .row .seg{margin:0;flex:0 0 120px}
-  #val{flex:1;min-width:0;font-size:20px;padding:8px 10px;border:1px solid var(--bd);border-radius:10px;text-align:center}
-  #unitLbl{width:34px;color:var(--mu)}
-  #hint{font-size:13px;color:var(--mu);text-align:center;margin-bottom:10px;min-height:16px}
+  .row .seg{margin:0;flex:0 0 96px}
+  .step{flex:1;min-width:0;display:flex;align-items:center;border:1px solid var(--bd);border-radius:10px;overflow:hidden;background:var(--bg)}
+  .step button{flex:none;width:40px;height:38px;border:none;background:#f3f4f6;font-size:20px;color:var(--tx);cursor:pointer}
+  #val{flex:1;min-width:0;font-size:18px;padding:6px 0;border:none;text-align:center;background:none;-moz-appearance:textfield;appearance:textfield}
+  #val::-webkit-outer-spin-button,#val::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  #unitLbl{color:var(--mu);font-size:14px;padding-right:8px}
+  #hintRow{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;min-height:20px}
+  #hint{font-size:13px;color:var(--mu)}
+  .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--bd);border-radius:16px;padding:3px 10px;font-size:13px;cursor:pointer;color:var(--tx)}
+  .pill input{width:16px;height:16px;margin:0;accent-color:var(--c)}
+  .pill:has(input:checked){border-color:var(--c);background:#e6f4f1;color:var(--c)}
   .primary{width:100%;border:none;background:var(--c);color:#fff;font-size:17px;font-weight:600;padding:13px;border-radius:12px}
   .primary:disabled{opacity:.6}
   #info{flex:none;margin-top:8px;text-align:center;font-size:14px;min-height:18px}
@@ -261,7 +272,7 @@
     #panel{width:300px;padding:10px}
     .seg{margin-bottom:6px}
     .seg button{padding:6px 4px;font-size:14px}
-    #val{font-size:17px;padding:5px 8px}
+    #val{font-size:17px;padding:4px 0}
     #hint{margin-bottom:6px}
     .primary{padding:10px;font-size:16px}
     #info{margin-top:6px}
@@ -335,25 +346,33 @@
     <button id="mic" title="Recherche vocale" hidden><svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5.3-3a5.3 5.3 0 0 1-10.6 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-1.7z"/></svg></button>
     <div id="sres" hidden></div>
   </div>
-  <div class="seg" id="segMode">
-    <button data-v="marche">🚶 Marche</button>
-    <button data-v="course">🏃 Course</button>
-    <button data-v="velo">🚴 Vélo</button>
+  <div class="row1">
+    <div class="seg" id="segMode">
+      <button data-v="marche" title="Marche">🚶</button>
+      <button data-v="course" title="Course">🏃</button>
+      <button data-v="velo" title="Vélo">🚴</button>
+    </div>
+    <div class="seg" id="segType">
+      <button data-v="boucle">🔄 Boucle</button>
+      <button data-v="aller">➡️ Aller</button>
+    </div>
   </div>
-  <div class="seg" id="segType">
-    <button data-v="boucle">🔄 Boucle</button>
-    <button data-v="aller">➡️ Aller simple</button>
-  </div>
-  <label id="retRow" class="chk" hidden><input type="checkbox" id="optRet"><span>Afficher le retour<small>distance, temps et dénivelé comptés aller + retour</small></span></label>
   <div class="row" id="valRow">
     <div class="seg" id="segUnit">
       <button data-v="km">km</button>
       <button data-v="min">min</button>
     </div>
-    <input id="val" type="number" inputmode="decimal" min="0" step="any">
-    <span id="unitLbl">km</span>
+    <div class="step">
+      <button id="vMinus" title="Moins">−</button>
+      <input id="val" type="number" inputmode="decimal" min="0" step="any">
+      <span id="unitLbl">km</span>
+      <button id="vPlus" title="Plus">+</button>
+    </div>
   </div>
-  <div id="hint"></div>
+  <div id="hintRow">
+    <span id="hint"></span>
+    <label id="retRow" class="pill" hidden title="Distance, temps et dénivelé comptés aller + retour"><input type="checkbox" id="optRet">↩︎ Compter le retour</label>
+  </div>
   <button id="btnGo" class="primary">Générer un parcours</button>
   </div>
   <div id="destChip" hidden><span id="destName"></span><button id="destClear" title="Retirer l'arrivée">✕ Retirer</button></div>
@@ -521,6 +540,16 @@ seg('segUnit', 'unit', old => {
   $('unitLbl').textContent = st.unit;
 });
 $('val').value = st.val;
+// − / + : pas de 0,5 km (moins de 5 km), 1 km au-delà, 5 min en minutes
+function stepVal(dir){
+  let v = parseFloat($('val').value) || 0;
+  const s = st.unit === 'min' ? 5 : ((dir > 0 ? v : v - 0.01) < 5 ? 0.5 : 1);
+  v = Math.max(s, Math.round((v + dir * s) / s) * s);
+  $('val').value = +v.toFixed(1);
+  $('val').oninput();
+}
+$('vMinus').onclick = () => stepVal(-1);
+$('vPlus').onclick = () => stepVal(1);
 $('unitLbl').textContent = st.unit;
 $('val').oninput = () => { st.val = parseFloat($('val').value) || 0; store.set('st', st); hint(); };
 
