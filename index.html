@@ -197,6 +197,8 @@
   [hidden]{display:none!important}
   .leaflet-control-attribution{font-size:9px;line-height:1.3;padding:0 4px !important;background:rgba(255,255,255,.6) !important;color:#555}
   .leaflet-control-attribution a{color:#555}
+  .leaflet-control-attribution{transition:opacity .5s}
+  .attr-gone .leaflet-control-attribution{opacity:0;pointer-events:none}
   .credits{font-size:12px;color:var(--mu);line-height:1.5;margin-top:12px;border-top:1px solid #f1f1f1;padding-top:8px}
   .credits a{color:var(--c)}
   .leaflet-top.leaflet-left .leaflet-control-attribution{max-width:calc(100vw - 80px)}
@@ -401,7 +403,7 @@
       <div><small>Course</small><input id="spCourse" type="number" inputmode="decimal" step="0.5"></div>
       <div><small>Vélo</small><input id="spVelo" type="number" inputmode="decimal" step="0.5"></div>
     </div>
-    <div class="credits"><b>Crédits</b> — Carte © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">contributeurs OpenStreetMap</a>
+    <div class="credits"><b>À propos de PARS-COURS</b><br>Carte et données © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">contributeurs OpenStreetMap</a>, licence ODbL
       (<a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener">signaler une erreur</a>) · itinéraires FOSSGIS / OSRM ·
       altitudes <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (Copernicus DEM) · lieux et photos Wikipédia, Wikimedia Commons, Panoramax ·
       recherche Photon · fonds Esri, OpenTopoMap, CyclOSM · affichage Leaflet.</div>
@@ -446,19 +448,39 @@ const STYLES = {
 let tiles = null;
 const routeStyle = () => ({ color: STYLES[st.style].dark ? '#22d3ee' : '#0f766e', weight:5, opacity:.9 });
 
+// Recalcule la mention à partir des calques réellement affichés (évite les doublons de Leaflet)
+function resetAttr(){
+  const ac = map.attributionControl;
+  ac._attributions = {};
+  map.eachLayer(l => { const a = l.getAttribution && l.getAttribution(); if(a) ac.addAttribution(a); });
+}
 function setStyle(k){
   if(!STYLES[k]) k = 'plan';
   st.style = k; store.set('st', st);
   const s = STYLES[k];
   if(tiles) map.removeLayer(tiles);
   tiles = L.tileLayer(s.url, { maxZoom:s.max, subdomains:s.sub || 'abc', className:s.cls || '', attribution:s.attr + ATTR_END }).addTo(map);
+  resetAttr();
   if(map.getZoom() > s.max) map.setZoom(s.max);
   if(routeLayer) routeLayer.setStyle(routeStyle());
+  if(attrTimer !== undefined && map.attributionControl) flashAttribution();   // nouveau fond = nouvelle mention, affichée 5 s
   $('styles').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === k));
 }
 $('styles').innerHTML = Object.keys(STYLES).map(k => '<button data-v="' + k + '">' + STYLES[k].label + '</button>').join('');
 $('styles').querySelectorAll('button').forEach(b => b.onclick = () => setStyle(b.dataset.v));
 setStyle(st.style || 'plan');
+
+// Mention "© OpenStreetMap" : visible au démarrage (et à chaque changement de fond de carte),
+// puis repliée après 5 secondes ou dès qu'on touche la carte. Crédits complets : Réglages → À propos.
+var attrTimer = null;   // var : utilisable dès le premier setStyle
+function flashAttribution(){
+  const el = map.getContainer();   // (la mention elle-même est recréée quand on la déplace)
+  el.classList.remove('attr-gone');
+  clearTimeout(attrTimer);
+  attrTimer = setTimeout(() => el.classList.add('attr-gone'), 5000);
+  map.once('movestart zoomstart click', () => { clearTimeout(attrTimer); el.classList.add('attr-gone'); });
+}
+flashAttribution();
 
 /* ---------- Mise en page selon la taille de la fenêtre ---------- */
 const WIDE = window.matchMedia('(min-width:800px), (orientation:landscape) and (max-height:520px)');
@@ -470,7 +492,8 @@ function fitRoute(){
     : { paddingTopLeft:[30, 80], paddingBottomRight:[70, p.offsetHeight + 20] });
 }
 function applyLayout(){
-  map.attributionControl.setPosition(WIDE.matches ? 'bottomright' : 'topleft');
+  const pos = WIDE.matches ? 'bottomright' : 'topleft';
+  if(map.attributionControl.getPosition() !== pos){ map.attributionControl.setPosition(pos); resetAttr(); }
   placeSearch();
   if(WIDE.matches){ $('panel').style.height = ''; [$('list'), $('sugg')].forEach(el => { el.style.overflowY = el.style.touchAction = ''; }); }
   else setSheet(sheetState);
