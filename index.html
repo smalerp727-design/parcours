@@ -129,7 +129,7 @@
   .kpi b{font-size:17px}
   .chh{font-size:12px !important;color:var(--mu);margin:10px 0 2px !important}
   .chart{width:100%;height:auto;display:block}
-  .chart text{font:10px system-ui,sans-serif;fill:#6b7280}
+  .chart text{font:11px system-ui,sans-serif;fill:#6b7280}
   .ins{list-style:none;padding:0;margin:6px 0 0}
   .ins li{display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px solid #f3f4f6}
   .ins li:last-child{border-bottom:none}
@@ -144,6 +144,46 @@
   .wk.cur{background:var(--sel-bg);border-radius:8px;padding:7px 6px;margin:0 -6px}
   .wk.cur b{color:var(--c)}
   .wk.past{opacity:.55}
+  .cch .cct{min-width:0}
+  .cch > button, .cch > .ccsub{flex:none}
+  .kpi:last-child:nth-child(odd){grid-column:1 / -1}
+  .kpi small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sbt{display:flex;gap:4px}
+  .sbt .sgDet{padding:4px 8px}
+  .wk{cursor:pointer;border-radius:8px;transition:background .15s}
+  .wkd{margin:0 0 6px;padding:2px 8px;border-left:3px solid var(--c);background:#fafafa;border-radius:0 8px 8px 0}
+  .sessbar{display:flex;align-items:center;gap:10px;margin:8px 0 0;padding:8px 10px;border:1px solid #9fd6cd;background:var(--sel-bg);border-radius:12px;flex:none}
+  .sessbar > div{flex:1;min-width:0}
+  .sessbar b{display:block;font-size:14px}
+  .sessbar small{display:block;color:var(--mu);font-size:12px}
+  #panel[data-state=peek] .sessbar{display:none}
+  .evoR{width:100%;accent-color:var(--c);margin:10px 0 4px}
+  .evoQ{flex-wrap:wrap;gap:6px;margin-bottom:6px}
+  .evoQ button{padding:5px 10px;font-size:13px}
+  .evoTab{font-size:13px;margin-top:4px}
+  .evoTab .eh, .evoTab .er{display:grid;grid-template-columns:1.3fr 1fr 1fr .9fr;gap:6px;align-items:baseline;padding:6px 4px;border-bottom:1px solid #f3f4f6}
+  .evoTab .eh b{font-size:11px;color:var(--mu);font-weight:600}
+  .evoTab .er{cursor:pointer;border-radius:8px;transition:background .15s}
+  .evoTab .er span{color:#374151}
+  .evoTab .er span i{display:block;font-style:normal}
+  .evoTab .er span small{display:block;font-size:11px;color:var(--mu)}
+  .evoTab .er b, .evoTab .er em, .evoTab .eh b{text-align:right}
+  .evoTab .er em{font-style:normal;font-weight:600;color:var(--mu)}
+  .evoTab .er em.up{color:#0f766e}
+  .evoTab .er em.down{color:#b45309}
+  .evoTab .er.on{background:var(--sel-bg)}
+  .evoTab .er.on span{color:var(--c);font-weight:600}
+  .progs{display:flex;flex-direction:column;gap:6px;margin:4px 0 8px}
+  .prog{display:block;width:100%;text-align:left;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:8px 10px;font:inherit;color:inherit;cursor:pointer;transition:border-color .15s, background .15s}
+  .prog b{display:block;font-size:14px}
+  .prog span{display:block;font-size:13px;font-weight:600;color:#374151}
+  .prog small{display:block;font-size:12px;color:var(--mu)}
+  .prog.on{border-color:var(--c);background:var(--sel-bg)}
+  .hsh{margin-top:4px}
+  .hsh .chh{margin:0 !important}
+  .ses.hs .sd{line-height:1.05;padding-top:6px;height:30px;font-size:13px;color:#374151}
+  .ses.hs .sd i{display:block;font-style:normal;font-size:10px;font-weight:600;color:var(--mu)}
+  @media (hover:hover){ .wk:not(.cur):hover, .evoTab .er:not(.on):hover{background:var(--hov-bg)} .prog:not(.on):hover{border-color:var(--hov-bd);background:var(--hov-bg)} }
   .bzc.rpe{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
   .bzc.rpe button{min-width:0;padding:7px 0}
   @media (hover:hover){ .ses:not(.ok):hover{background:var(--hov-bg)} }
@@ -601,6 +641,7 @@
   <div id="destChip" hidden><span id="destName"></span><button id="destClear" title="Retirer l'arrivée">✕ Retirer</button></div>
   <div id="info"></div>
   <div id="tabs"><button data-t="parcours" class="on">🗺️ Parcours</button><button data-t="sugg">✨ Suggestions</button><button data-t="coach">💪 Coach</button></div>
+  <div id="sessBar" class="sessbar" hidden></div>
   <div id="list"></div>
   <div id="sugg" hidden></div>
   <div id="coach" hidden></div>
@@ -1974,6 +2015,7 @@ function clearAll(){
   endPlan(); plan.steps = []; plan.end = null; plan.start = null; plan.cand = null;
   genRun++; suggRun++; lastGenKey = ''; suggKey = ''; suggTours = []; suggPlaces = [];
   clearDest();
+  hideTrace(); pendingSess = null; renderSessBar();
   candidates = []; selected = null; lastRoute = null; userPicked = false;
   photoRun++; photoLayer.clearLayers();
   drawAll(); renderList(); showPlaces();
@@ -2032,7 +2074,14 @@ function startNav(){
   map.setView(meLL || nav.line[0], 17);
 }
 function stopNav(){
-  const ride = nav && { dist:nav.arc[nav.idx] / 1000, duree:Math.round((Date.now() - nav.t0) / 60000), act:st.mode };
+  let ride = null;
+  if(nav){
+    const line = nav.line.slice(0, nav.idx + 1), step = Math.max(1, Math.ceil(line.length / 80));
+    let name = null; try{ name = titleOf(nav.c, candidates.indexOf(nav.c)); }catch(e){}
+    ride = { dist:nav.arc[nav.idx] / 1000, duree:Math.round((Date.now() - nav.t0) / 60000), act:st.mode, parcours:name,
+      trace:line.filter((p, k) => k % step === 0 || k === line.length - 1).map(p => [+(p.lat ?? p[0]).toFixed(5), +(p.lng ?? p[1]).toFixed(5)]) };
+    if(pendingSess && pendingSess.act === st.mode) ride.type = pendingSess.type;
+  }
   nav = null;
   document.body.classList.remove('nav');
   if(doneLine){ map.removeLayer(doneLine); doneLine = null; }
@@ -2040,7 +2089,7 @@ function stopNav(){
   $('navAlert').hidden = true;
   if(sheetReady && !WIDE.matches) setSheet('peek');
   fitRoute();
-  if(coach && ride && ride.dist > 0.3 && ride.duree >= 3) openLog({ act:ride.act, duree:ride.duree, dist:ride.dist, fromNav:true });   // suivi du Coach
+  if(coach && ride && ride.dist > 0.3 && ride.duree >= 3) openLog(Object.assign(ride, { fromNav:true }));   // suivi du Coach
 }
 function navBar(main){
   const el = Math.round((Date.now() - nav.t0) / 60000), done = nav.arc[nav.idx], left = Math.max(0, nav.total - done);
@@ -2663,6 +2712,7 @@ function setTab(t){
   $('list').hidden = t !== 'parcours';
   $('sugg').hidden = t !== 'sugg';
   $('coach').hidden = t !== 'coach';
+  if(typeof renderSessBar === 'function') renderSessBar();
   if(t === 'sugg') runSugg();
   if(t === 'coach') renderCoach();
   showPlaces();
@@ -2894,8 +2944,16 @@ function finishBilan(){
   const prev = coach && !coach.demo ? coach : null;
   bz.log = prev ? prev.log || [] : bz.log || [];
   bz.poids = prev ? prev.poids || [] : bz.poids || [];
+  bz.programmes = prev ? prev.programmes || [] : bz.programmes || [];
+  bz.mesures = prev ? prev.mesures || [] : bz.mesures || [];
+  const nb = bilan(bz);
+  if(nb.vma) bz.mesures.push({ date:bz.date, vma:Math.round(nb.vma * 10) / 10 });
   // nouvel objectif (ou premier bilan) : le programme repart de cette semaine
-  if(!prev || !prev.debut || prev.objectif.type !== bz.objectif.type || JSON.stringify(prev.objectif) !== JSON.stringify(bz.objectif)) bz.debut = new Date().toISOString();
+  if(!prev || !prev.debut || prev.objectif.type !== bz.objectif.type || JSON.stringify(prev.objectif) !== JSON.stringify(bz.objectif)){
+    // l'ancien programme passe dans l'historique (s'il a duré au moins une semaine)
+    if(prev && prev.debut && Date.now() - tOf(prev.debut) > WEEKMS) bz.programmes.push({ objectif:prev.objectif, debut:planMeta(prev).debut.toISOString(), fin:new Date().toISOString(), activite:prev.activite, profil:prev.profil, test:prev.test });
+    bz.debut = new Date().toISOString();
+  }
   if(!prev || prev.profil.poids !== bz.profil.poids) bz.poids.push({ date:new Date().toISOString(), kg:bz.profil.poids });
   coach = bz; saveCoach();
   $('bilanModal').classList.add('hidden');
@@ -3154,7 +3212,7 @@ function adaptOf(c, meta){
 function vmaNow(c){
   const b = bilan(c);
   if(!b.vma) return null;
-  const ef = logsOf(c).filter(l => l.act === 'course' && l.dist && l.duree && ['ef', 'long', undefined].includes(l.type) && (l.rpe || 5) <= 6).map(l => l.dist / (l.duree / 60));
+  const ef = logsOf(c).filter(l => tOf(l.date) >= planMeta(c).debut.getTime() && l.act === 'course' && l.dist && l.duree && ['ef', 'long', undefined].includes(l.type) && (l.rpe || 5) <= 6).map(l => l.dist / (l.duree / 60));
   if(ef.length < 4) return b.vma;
   const k = Math.min(3, Math.floor(ef.length / 2));
   const avg = a => a.reduce((x, y) => x + y, 0) / a.length;
@@ -3196,7 +3254,7 @@ function insights(c, S){
     else if(S.ratio > 1.5) add('⚠️', 'Charge des 7 derniers jours ' + Math.round((S.ratio - 1) * 100) + ' % au-dessus de ta moyenne : risque de blessure ou de fatigue. Prévois quelques jours plus légers.');
     else if(S.ratio > 1.3) add('🟡', 'Charge en nette hausse (+' + Math.round((S.ratio - 1) * 100) + ' % par rapport à ta moyenne) : reste attentif(ve) à la fatigue et au sommeil.');
     else if(S.ratio < 0.7 && S.meta.cur > 1) add('🟡', 'Charge en baisse (' + Math.round((1 - S.ratio) * 100) + ' % sous ta moyenne) : la forme se maintient mais ne progresse pas.');
-    else add('✅', 'Charge d\'entraînement bien dosée (variation de ' + Math.round((S.ratio - 1) * 100) + ' % par rapport à ta moyenne).');
+    else add('✅', 'Charge d\'entraînement bien dosée (' + (S.ratio >= 1 ? '+' : '') + Math.round((S.ratio - 1) * 100) + ' % par rapport à ta moyenne).');
   }
   const rp = S.logs.slice(-6).filter(l => l.rpe);
   if(rp.length >= 3){ const m = rp.reduce((a, l) => a + l.rpe, 0) / rp.length; if(m >= 7.5) add('⚠️', 'Ressenti moyen élevé (' + r1(m) + '/10) sur tes dernières séances : ralentis en endurance, tu dois pouvoir parler.'); }
@@ -3206,19 +3264,21 @@ function insights(c, S){
   if(o.type === 'poids' && pts.length >= 2){
     const sl = trendKgWeek(pts.slice(-6)), cur = pts[pts.length - 1].kg;
     if(sl != null && sl < -0.05){
-      const wk = (cur - o.poids) / -sl, when = new Date(Date.now() + wk * WEEKMS);
-      add(sl < -1 ? '⚠️' : '✅', 'Tendance : ' + r1(sl) + ' kg/semaine' + (sl < -1 ? ' (trop rapide, risque de fonte musculaire).' : '.') + ' À ce rythme, ' + r1(o.poids) + ' kg vers le ' + fmtD(when) + (o.date ? (when <= new Date(o.date) ? ' ✓ dans les temps.' : ' (objectif le ' + fmtD(o.date) + ').') : '.'));
+      const wk = (cur - o.poids) / -sl, early = Date.now() + wk / 1.3 * WEEKMS, late = Date.now() + wk / 0.7 * WEEKMS, dl = o.date ? tOf(o.date) : null;
+      add(sl < -1 ? '⚠️' : late <= (dl || Infinity) ? '✅' : '🎯', 'Tendance : ' + r1(sl) + ' kg/semaine' + (sl < -1 ? ' (trop rapide, risque de fonte musculaire).' : '.') + ' À ce rythme, ' + r1(o.poids) + ' kg probablement entre le ' + fmtD(early) + ' et le ' + fmtD(late) +
+        (dl ? (late <= dl ? ' ✓ dans les temps.' : early <= dl ? ' : l\'échéance du ' + fmtD(dl) + ' est dans la marge.' : ' (objectif le ' + fmtD(dl) + ' : un peu juste).') : '.'));
     } else add('🟡', 'Poids stable ces dernières semaines : augmente un peu la durée des séances d\'endurance et surveille l\'alimentation (léger déficit de 300 à 500 kcal/jour).');
   }
   if(o.type === 'course' && o.dist){
     const v = vmaNow(c);
     if(v){
-      const now = raceTime(v, o.dist), wl = Math.max(0, (new Date(o.date || Date.now()) - Date.now()) / WEEKMS);
-      const fut = raceTime(v * (1 + 0.004 * wl * (S.adh4 ?? 0.8)), o.dist);
-      add(o.temps && fut <= o.temps ? '✅' : '🎯', 'Temps estimé sur ' + r1(o.dist) + ' km : ' + hm(now) + ' aujourd\'hui → ' + hm(fut) + ' le jour J' + (o.temps ? ' (objectif ' + hm(o.temps) + (fut <= o.temps ? ' : atteignable ✓).' : ' : encore ' + hm(fut - o.temps) + ' à gagner).') : '.'));
+      const wl = Math.max(0, (new Date(o.date || Date.now()) - Date.now()) / WEEKMS), a = S.adh4 ?? 0.8;
+      const [n0, n1] = raceBand(v, o.dist, 0, a), [f0, f1] = raceBand(v, o.dist, wl, a);
+      const verdict = !o.temps ? '.' : f1 <= o.temps ? ' : objectif ' + hm(o.temps) + ' atteignable ✓' : f0 <= o.temps ? ' : objectif ' + hm(o.temps) + ' dans la marge, la régularité fera la différence.' : ' : objectif ' + hm(o.temps) + ' encore hors de portée (' + rng(o.temps - f0, o.temps - f1, x => hm(-x)) + ' à gagner).';
+      add(o.temps && f1 <= o.temps ? '✅' : '🎯', 'Sur ' + r1(o.dist) + ' km, tu serais aujourd\'hui entre ' + hm(n0) + ' et ' + hm(n1) + ' ; le jour J, plutôt entre ' + hm(f0) + ' et ' + hm(f1) + verdict);
     } else add('💡', 'Fais le test de terrain pour obtenir une estimation de ton temps de course.');
   }
-  const mainL = S.logs.filter(l => l.act === mainAct(c) && l.dist && ['ef', 'long', undefined].includes(l.type));
+  const mainL = S.logs.filter(l => tOf(l.date) >= S.meta.debut.getTime() && l.act === mainAct(c) && l.dist && ['ef', 'long', undefined].includes(l.type));
   if(['vitesse', 'course', 'forme', 'poids'].includes(o.type) && mainL.length >= 4){
     const sp = l => l.dist / (l.duree / 60), k = Math.min(3, Math.floor(mainL.length / 2));
     const a = mainL.slice(0, k).reduce((x, l) => x + sp(l), 0) / k, z = mainL.slice(-k).reduce((x, l) => x + sp(l), 0) / k;
@@ -3237,60 +3297,307 @@ function insights(c, S){
 }
 
 /* --- Graphiques (SVG, aux couleurs de l'appli) --- */
+// Fourchette lisible : « 1 h 41 – 1 h 48 », ou une seule valeur si les deux bornes se confondent
+function rng(a, b, f){ const lo = f(Math.min(a, b)), hi = f(Math.max(a, b)); return lo === hi ? lo : lo + ' – ' + hi; }
 function barChart(data){
-  const W = 320, H = 120, pad = 18, bw = (W - pad) / data.length, max = Math.max(30, ...data.map(d => Math.max(d.plan, d.done || 0)));
-  let s = '<svg viewBox="0 0 ' + W + ' ' + (H + 16) + '" class="chart" role="img" aria-label="Volume par semaine">';
+  const W = 320, H = 110, top = 16, l = 30, bw = (W - l) / data.length, max = Math.max(30, ...data.map(d => Math.max(d.plan, d.done || 0)));
+  const Y = v => top + H - v / max * H;
+  let s = '<svg viewBox="0 0 ' + W + ' ' + (top + H + 16) + '" class="chart" role="img" aria-label="Volume par semaine">';
+  [0, 0.5, 1].forEach(f => { s += '<line x1="' + l + '" x2="' + W + '" y1="' + Y(max * f) + '" y2="' + Y(max * f) + '" stroke="#f1f1f1"/><text x="' + (l - 4) + '" y="' + (Y(max * f) + 4) + '" text-anchor="end">' + Math.round(max * f) + '</text>'; });
   data.forEach((d, i) => {
-    const x = pad + i * bw + 4, w = bw - 8, hp = d.plan / max * H, hd = (d.done || 0) / max * H;
-    s += '<rect x="' + x + '" y="' + (H - hp) + '" width="' + w + '" height="' + hp + '" rx="4" fill="none" stroke="#9fd6cd" stroke-dasharray="3 2"/>';
-    if(d.done != null) s += '<rect x="' + (x + 3) + '" y="' + (H - hd) + '" width="' + (w - 6) + '" height="' + hd + '" rx="3" fill="' + (d.cur ? '#14b8a6' : '#0f766e') + '"/>';
-    s += '<text x="' + (x + w / 2) + '" y="' + (H + 12) + '" text-anchor="middle">' + d.label + '</text>';
+    const x = l + i * bw + 4, w = bw - 8, hp = d.plan / max * H, hd = (d.done || 0) / max * H;
+    s += '<rect x="' + x + '" y="' + (top + H - hp) + '" width="' + w + '" height="' + hp + '" rx="4" fill="none" stroke="#9fd6cd" stroke-dasharray="3 2"/>';
+    if(d.done != null) s += '<rect x="' + (x + 3) + '" y="' + (top + H - hd) + '" width="' + (w - 6) + '" height="' + hd + '" rx="3" fill="' + (d.cur ? '#14b8a6' : '#0f766e') + '"/>';
+    s += '<text x="' + (x + w / 2) + '" y="' + (top + H + 13) + '" text-anchor="middle"' + (d.cur ? ' font-weight="700" fill="#0f766e"' : '') + '>' + d.label + '</text>';
   });
-  return s + '<text x="0" y="10">' + Math.round(max) + '\'</text></svg>';
+  return s + '<text x="0" y="10">min</text></svg>';
 }
+// Courbes : séries (traits / points), bandes de marge (fourchette), zones (périodes de programme), repère vertical
 function lineChart(series, opt){
-  const W = 320, H = 120, l = 30, all = series.flatMap(s => s.pts);
+  const W = 320, H = 110, top = 8, l = 46, r = 8;
+  const bands = opt.bands || [], zones = opt.zones || [];
+  const all = series.flatMap(s => s.pts).concat(bands.flatMap(b => b.pts.flatMap(p => [[p[0], p[1]], [p[0], p[2]]])));
   if(all.length < 2) return '';
-  const xs = all.map(p => p[0]), ys = all.concat(opt.target != null ? [[0, opt.target]] : []).map(p => p[1]);
-  const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys) - 0.5, y1 = Math.max(...ys) + 0.5;
-  const X = x => l + (x - x0) / (x1 - x0 || 1) * (W - l - 6), Y = y => 6 + (1 - (y - y0) / (y1 - y0 || 1)) * (H - 12);
-  let s = '<svg viewBox="0 0 ' + W + ' ' + (H + 16) + '" class="chart" role="img" aria-label="' + opt.title + '">';
-  if(opt.target != null) s += '<line x1="' + l + '" x2="' + W + '" y1="' + Y(opt.target) + '" y2="' + Y(opt.target) + '" stroke="#f59e0b" stroke-dasharray="4 3"/><text x="' + (l + 2) + '" y="' + (Y(opt.target) - 3) + '" fill="#b45309">objectif</text>';
-  series.forEach(se => {
-    if(se.pts.length < 2 && !se.dots) return;
-    s += '<polyline fill="none" stroke="' + se.color + '" stroke-width="2.2"' + (se.dash ? ' stroke-dasharray="5 4"' : '') + ' points="' + se.pts.map(p => X(p[0]) + ',' + Y(p[1])).join(' ') + '"/>';
-    if(se.dots) se.pts.forEach(p => { s += '<circle cx="' + X(p[0]) + '" cy="' + Y(p[1]) + '" r="3" fill="' + se.color + '"/>'; });
+  const xs = all.map(p => p[0]).concat(opt.marker != null ? [opt.marker] : []);
+  const ys = all.map(p => p[1]).concat(opt.target != null ? [opt.target] : []);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs), sp = Math.max(...ys) - Math.min(...ys) || 1;
+  const y0 = Math.min(...ys) - sp * 0.08, y1 = Math.max(...ys) + sp * 0.08;
+  const X = x => l + (x - x0) / (x1 - x0 || 1) * (W - l - r), Y = y => top + (1 - (y - y0) / (y1 - y0 || 1)) * H;
+  let s = '<svg viewBox="0 0 ' + W + ' ' + (top + H + 18) + '" class="chart" role="img" aria-label="' + opt.title + '">';
+  zones.forEach(z => { const a = X(Math.max(x0, z.x0)), b = X(Math.min(x1, z.x1)); if(b > a) s += '<rect x="' + a + '" y="' + top + '" width="' + (b - a) + '" height="' + H + '" fill="' + (z.cur ? '#e6f4f1' : '#f3f4f6') + '"/>'; });
+  [y0 + (y1 - y0) * 0.08, (y0 + y1) / 2, y1 - (y1 - y0) * 0.08].forEach(v => { s += '<line x1="' + l + '" x2="' + (W - r) + '" y1="' + Y(v) + '" y2="' + Y(v) + '" stroke="#ececec"/><text x="' + (l - 5) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + opt.fmt(v) + '</text>'; });
+  bands.forEach(b => {
+    if(b.pts.length < 2) return;
+    s += '<polygon fill="' + b.color + '" fill-opacity=".18" stroke="none" points="' + b.pts.map(p => X(p[0]) + ',' + Y(p[1])).concat(b.pts.slice().reverse().map(p => X(p[0]) + ',' + Y(p[2]))).join(' ') + '"/>';
   });
-  s += '<text x="0" y="12">' + opt.fmt(y1) + '</text><text x="0" y="' + H + '">' + opt.fmt(y0) + '</text>';
-  s += '<text x="' + l + '" y="' + (H + 14) + '">' + fmtD(x0) + '</text><text x="' + W + '" y="' + (H + 14) + '" text-anchor="end">' + fmtD(x1) + '</text>';
+  if(opt.target != null) s += '<line x1="' + l + '" x2="' + (W - r) + '" y1="' + Y(opt.target) + '" y2="' + Y(opt.target) + '" stroke="#f59e0b" stroke-dasharray="4 3"/><text x="' + (W - r) + '" y="' + (Y(opt.target) + (Y(opt.target) < top + 14 ? 12 : -4)) + '" text-anchor="end" fill="#b45309">objectif</text>';
+  series.forEach(se => {
+    if(se.pts.length >= 2) s += '<polyline fill="none" stroke="' + se.color + '" stroke-width="2.2" stroke-linejoin="round"' + (se.dash ? ' stroke-dasharray="5 4"' : '') + ' points="' + se.pts.map(p => X(p[0]) + ',' + Y(p[1])).join(' ') + '"/>';
+    if(se.dots) se.pts.forEach(p => { s += '<circle cx="' + X(p[0]) + '" cy="' + Y(p[1]) + '" r="2.6" fill="' + se.color + '"/>'; });
+  });
+  if(opt.marker != null) s += '<line x1="' + X(opt.marker) + '" x2="' + X(opt.marker) + '" y1="' + top + '" y2="' + (top + H) + '" stroke="#111827" stroke-width="1.4"/><circle cx="' + X(opt.marker) + '" cy="' + top + '" r="3.5" fill="#111827"/>';
+  s += '<text x="' + l + '" y="' + (top + H + 15) + '">' + fmtD(x0) + '</text><text x="' + (W - r) + '" y="' + (top + H + 15) + '" text-anchor="end">' + fmtD(x1) + '</text>';
   return s + '</svg>';
+}
+// Marge de projection du poids : rythme actuel ±30 %
+function kgBand(last, sl, target){
+  const fast = sl * 1.3, slow = sl * 0.7, wEnd = Math.min(52, (last[1] - target) / -slow), pts = [];
+  for(let k = 0; k <= 8; k++){ const w = wEnd * k / 8; pts.push([last[0] + w * WEEKMS, Math.max(target, last[1] + fast * w), Math.max(target, last[1] + slow * w)]); }
+  return pts;
+}
+// Marge du temps de course : estimation ±3 %, progression de 0,2 à 0,6 % / semaine selon la régularité
+function raceBand(v, d, weeks, adh){
+  const lo = raceTime(v * 1.03 * (1 + 0.006 * weeks * adh), d), hi = raceTime(v * 0.97 * (1 + 0.002 * weeks * adh), d);
+  return [lo, hi];
 }
 function goalChart(c, S){
   const o = c.objectif, p = c.profil;
   if(o.type === 'poids'){
-    const pts = (c.poids || []).slice().sort((a, b) => a.date.localeCompare(b.date)).map(x => [new Date(x.date).getTime(), x.kg]);
     const t0 = S.meta.debut.getTime(), tEnd = o.date ? new Date(o.date).getTime() : t0 + S.meta.weeks * WEEKMS;
-    const proj = [[t0, p.poids], [tEnd, o.poids]];
-    const sl = trendKgWeek((c.poids || []).slice(-6)), last = pts[pts.length - 1];
-    const series = [{ pts:proj, color:'#9fd6cd', dash:true }];
+    const pts = (c.poids || []).filter(x => new Date(x.date).getTime() >= t0 - WEEKMS).sort((a, b) => a.date.localeCompare(b.date)).map(x => [new Date(x.date).getTime(), x.kg]);
+    const series = [{ pts:[[t0, p.poids], [tEnd, o.poids]], color:'#9fd6cd', dash:true }];
     if(pts.length) series.push({ pts, color:'#0f766e', dots:true });
-    if(last && sl && sl < -0.05){ const wk = (last[1] - o.poids) / -sl; series.push({ pts:[last, [last[0] + wk * WEEKMS, o.poids]], color:'#14b8a6', dash:true }); }
-    return { title:'⚖️ Poids : prévu (pointillés) et réel', svg:lineChart(series, { title:'Poids', target:o.poids, fmt:v => r1(v) + ' kg' }) };
+    const sl = trendKgWeek((c.poids || []).slice(-6)), last = pts[pts.length - 1], bands = [];
+    if(last && sl && sl < -0.05) bands.push({ pts:kgBand(last, sl, o.poids), color:'#14b8a6' });
+    return { title:'⚖️ Poids : réel, prévu (pointillés) et marge de projection', svg:lineChart(series, { title:'Poids', target:o.poids, bands, fmt:v => r1(v) + ' kg' }) };
   }
   if(o.type === 'course' && o.dist && bilan(c).vma){
-    const v0 = bilan(c).vma, v = vmaNow(c), t0 = S.meta.debut.getTime(), now = Date.now(), tEnd = o.date ? new Date(o.date).getTime() : t0 + S.meta.weeks * WEEKMS;
-    const wl = Math.max(0, (tEnd - now) / WEEKMS);
-    const series = [
-      { pts:[[t0, raceTime(v0, o.dist)], [now, raceTime(v, o.dist)]], color:'#0f766e', dots:true },
-      { pts:[[now, raceTime(v, o.dist)], [tEnd, raceTime(v * (1 + 0.004 * wl * (S.adh4 ?? 0.8)), o.dist)]], color:'#14b8a6', dash:true }
-    ];
-    return { title:'⏱️ Temps estimé sur ' + r1(o.dist) + ' km', svg:lineChart(series, { title:'Temps estimé', target:o.temps || null, fmt:v => hm(v) }) };
+    const v = vmaNow(c), t0 = S.meta.debut.getTime(), now = Date.now(), tEnd = o.date ? new Date(o.date).getTime() : t0 + S.meta.weeks * WEEKMS;
+    const a = S.adh4 ?? 0.8, hist = vmaHist(c).filter(x => x[0] >= t0 - 4 * WEEKMS);
+    const band = [];
+    for(let k = 0; k <= 8; k++){ const t = now + (tEnd - now) * k / 8, [lo, hi] = raceBand(v, o.dist, (t - now) / WEEKMS, a); band.push([t, lo, hi]); }
+    const series = [{ pts:hist.map(x => [x[0], raceTime(x[1], o.dist)]).concat([[now, raceTime(v, o.dist)]]), color:'#0f766e', dots:true }];
+    return { title:'⏱️ Temps sur ' + r1(o.dist) + ' km : estimé et marge d\'évolution', svg:lineChart(series, { title:'Temps estimé', target:o.temps || null, bands:[{ pts:band, color:'#14b8a6' }], fmt:v => hm(v) }) };
   }
   return null;
 }
 
+/* --- Historique : programmes passés, séances (durée, parcours, distance), évolution physique --- */
+const TYPE_LBL = { ef:'Endurance', long:'Sortie longue', vma:'Fractionné', seuil:'Seuil', specifique:'Allure course' };
+const tOf = d => new Date(d).getTime();
+// VMA dans le temps : mesures enregistrées à chaque bilan, puis l'estimation actuelle
+function vmaHist(c){
+  const h = (c.mesures || []).filter(m => m.vma).map(m => [tOf(m.date), m.vma]);
+  const b = bilan(c);
+  if(b.vma && !h.some(x => Math.abs(x[0] - tOf(c.date)) < DAYMS)) h.push([tOf(c.date), b.vma]);
+  return h.sort((a, x) => a[0] - x[0]);
+}
+function interp(pts, t){
+  if(!pts.length) return null;
+  if(t <= pts[0][0]) return pts[0][1];
+  for(let i = 1; i < pts.length; i++) if(t <= pts[i][0]){ const [a, va] = pts[i - 1], [b, vb] = pts[i]; return va + (vb - va) * (t - a) / (b - a || 1); }
+  return pts[pts.length - 1][1];
+}
+const speedOf = l => l.dist && l.duree ? l.dist / (l.duree / 60) : null;
+// Coach « tel qu'il était » pendant un programme archivé (pour recalculer ses séances prévues)
+function progCoach(c, p){
+  return Object.assign({}, c, { objectif:Object.assign({}, p.objectif, { date:p.fin }), debut:p.debut, activite:p.activite || c.activite, profil:p.profil || c.profil, test:p.test === undefined ? c.test : p.test });
+}
+function progStats(c, p){
+  const pc = progCoach(c, p), meta = planMeta(pc);
+  meta.weeks = clamp(Math.round((tOf(p.fin) - meta.debut.getTime()) / WEEKMS), 1, 40);
+  let prev = 0, done = 0, logs = [];
+  for(let w = 0; w < meta.weeks; w++){ const pl = weekPlan(pc, w, meta), l = logsWeek(c, meta, w); matchWeek(pl, l); prev += pl.length; done += pl.filter(s => s.done).length; logs = logs.concat(l); }
+  const kg = (c.poids || []).filter(x => tOf(x.date) >= meta.debut.getTime() - 3 * DAYMS && tOf(x.date) <= tOf(p.fin) + 3 * DAYMS).sort((a, b) => a.date.localeCompare(b.date));
+  const res = [];
+  if(kg.length >= 2) res.push((kg[kg.length - 1].kg - kg[0].kg > 0 ? '+' : '') + r1(kg[kg.length - 1].kg - kg[0].kg) + ' kg');
+  const vh = vmaHist(c), v0 = interp(vh, meta.debut.getTime()), v1 = interp(vh, tOf(p.fin));
+  if(v0 && v1 && Math.abs(v1 - v0) > 0.05) res.push('VMA ' + (v1 > v0 ? '+' : '') + r1(v1 - v0) + ' km/h');
+  if(p.objectif.type === 'endur'){ const best = Math.max(0, ...logs.map(l => l.duree)); res.push('plus longue : ' + hm(best)); }
+  res.push(r1(logs.reduce((a, l) => a + (l.dist || 0), 0)) + ' km au total');
+  return { meta, prev, done, logs, res };
+}
+function progTitle(p){
+  const o = p.objectif;
+  return { poids:'Perte de poids', forme:'Remise en forme', endur:'Endurance' + (o.duree ? ' · ' + hm(o.duree) : ''), course:'Course' + (o.dist ? ' · ' + r1(o.dist) + ' km' : ''), vitesse:'Vitesse', regul:'Régularité' + (o.min ? ' · ' + o.min + ' min/sem.' : '') }[o.type] || OBJ[o.type];
+}
+// État physique et activité à une date donnée (moyenne des 4 semaines précédentes pour l'activité)
+function stateAt(c, t){
+  const kgPts = (c.poids || []).map(x => [tOf(x.date), x.kg]).sort((a, b) => a[0] - b[0]);
+  const kg = kgPts.length ? interp(kgPts, t) : c.profil.poids;
+  const vh = vmaHist(c), now = Date.now();
+  let vma = vh.length ? interp(vh, t) : null;
+  if(vma && t >= now - DAYMS) vma = vmaNow(c) || vma;
+  const win = logsOf(c).filter(l => tOf(l.date) > t - 28 * DAYMS && tOf(l.date) <= t);
+  const main = mainAct(c), ef = win.filter(l => l.act === main && ['ef', 'long', undefined].includes(l.type)).map(speedOf).filter(Boolean);
+  return {
+    kg, imc: kg / Math.pow(c.profil.taille / 100, 2), vma, vo2: vma ? vma * 3.5 : null,
+    vit: ef.length ? ef.reduce((a, x) => a + x, 0) / ef.length : null,
+    vol: win.reduce((a, l) => a + l.duree, 0) / 4, nb: win.length / 4, km: win.reduce((a, l) => a + (l.dist || 0), 0) / 4
+  };
+}
+// Indicateurs suivis (unité dans le libellé pour garder des colonnes étroites)
+const EVO_METRICS = [
+  { k:'kg', lbl:'Poids', u:'kg', fmt:r1, lowGood:true },
+  { k:'imc', lbl:'IMC', u:'', fmt:r1, lowGood:true },
+  { k:'vma', lbl:'VMA', u:'km/h', fmt:r1 },
+  { k:'vo2', lbl:'VO2max', u:'ml/kg/min', fmt:v => String(Math.round(v)) },
+  { k:'vit', lbl:'Vitesse endurance', u:'km/h', fmt:r1 },
+  { k:'vol', lbl:'Activité', u:'par sem.', fmt:hm },
+  { k:'nb', lbl:'Séances', u:'par sem.', fmt:r1 },
+  { k:'km', lbl:'Distance', u:'km / sem.', fmt:r1 }
+];
+let evoT = null, evoK = null, histProg = null, histAll = false;
+function histStart(c){
+  const ds = logsOf(c).map(l => tOf(l.date)).concat((c.poids || []).map(x => tOf(x.date)), (c.programmes || []).map(p => tOf(p.debut)), [tOf(c.date)]);
+  return Math.min(...ds);
+}
+function renderEvo(card){
+  const c = coach, now = Date.now(), t0 = histStart(c);
+  if(evoT == null || evoT > now) evoT = planMeta(c).debut.getTime();   // par défaut : début du programme en cours
+  const A = stateAt(c, evoT), B = stateAt(c, now);
+  const weighed = (c.poids || []).length > 1;   // sans pesées, le poids n'évolue pas : on ne l'affiche pas
+  const avail = EVO_METRICS.filter(m => A[m.k] != null && B[m.k] != null && !(m.k === 'vo2' && A.vma == null) && (weighed || !['kg', 'imc'].includes(m.k)));
+  if(!avail.some(m => m.k === evoK)) evoK = avail.some(m => m.k === 'kg') && (c.poids || []).length > 1 ? 'kg' : avail.some(m => m.k === 'vma') ? 'vma' : 'vit';
+  const isNow = now - evoT < DAYMS;
+  card.querySelector('.evoD').textContent = isNow ? 'Aujourd\'hui' : fmtD(evoT) + ' ' + new Date(evoT).getFullYear();
+  const tb = card.querySelector('.evoTab');
+  tb.innerHTML = '<div class="eh"><span></span><b>' + (isNow ? 'Aujourd\'hui' : 'Le ' + fmtD(evoT)) + '</b><b>Aujourd\'hui</b><b>Écart</b></div>';
+  avail.forEach(m => {
+    const d = B[m.k] - A[m.k], good = m.lowGood ? d < 0 : d > 0, small = Math.abs(d) < Math.abs(A[m.k]) * 0.01;
+    const r = document.createElement('div'); r.className = 'er' + (m.k === evoK ? ' on' : '');
+    r.innerHTML = '<span><i></i><small></small></span><b></b><b></b><em></em>';
+    r.querySelector('i').textContent = m.lbl; r.querySelector('small').textContent = m.u;
+    r.children[1].textContent = m.fmt(A[m.k]); r.children[2].textContent = m.fmt(B[m.k]);
+    r.children[3].textContent = isNow || small ? '=' : (d > 0 ? '+' : '–') + m.fmt(Math.abs(d));
+    r.children[3].className = isNow || small ? '' : good ? 'up' : 'down';
+    r.title = 'Afficher la courbe';
+    r.onclick = () => { evoK = m.k; renderEvo(card); };
+    tb.appendChild(r);
+  });
+  // Courbe de l'indicateur choisi sur tout l'historique, programmes en fond, repère à la date choisie
+  const m = EVO_METRICS.find(x => x.k === evoK), pts = [];
+  if(evoK === 'kg') (c.poids || []).forEach(x => pts.push([tOf(x.date), x.kg]));
+  else if(evoK === 'imc') (c.poids || []).forEach(x => pts.push([tOf(x.date), x.kg / Math.pow(c.profil.taille / 100, 2)]));
+  else if(evoK === 'vma' || evoK === 'vo2') vmaHist(c).concat([[now, vmaNow(c)]]).forEach(x => pts.push([x[0], evoK === 'vo2' ? x[1] * 3.5 : x[1]]));
+  else for(let t = wkStart(t0).getTime() + 4 * WEEKMS; t <= now + WEEKMS; t += 2 * WEEKMS){ const s = stateAt(c, Math.min(t, now)); if(s[evoK] != null) pts.push([Math.min(t, now), s[evoK]]); }
+  pts.sort((a, b) => a[0] - b[0]);
+  const zones = (c.programmes || []).map(p => ({ x0:tOf(p.debut), x1:tOf(p.fin) })).concat([{ x0:planMeta(c).debut.getTime(), x1:now, cur:true }]);
+  card.querySelector('.evoC').innerHTML = '<p class="chh">' + m.lbl + (m.u ? ' (' + m.u + ')' : '') + ' — programmes en fond, repère à la date choisie</p>' + lineChart([{ pts, color:'#0f766e', dots:pts.length < 30 }], { title:m.lbl, fmt:m.fmt, zones, marker:evoT });
+}
+function renderHistory(box){
+  const c = coach, now = Date.now(), cur = { objectif:c.objectif, debut:planMeta(c).debut.toISOString(), fin:new Date(now).toISOString(), cur:true };
+  const progs = [cur].concat((c.programmes || []).slice().sort((a, b) => b.debut.localeCompare(a.debut)));
+
+  // Évolution physique à une date choisie
+  const ev = document.createElement('div'); ev.className = 'cc evo';
+  const t0 = histStart(c);
+  ev.innerHTML = '<div class="cch"><b class="cct">🧬 Évolution physique</b><span class="ccsub evoD"></span></div>' +
+    '<input type="range" class="evoR" aria-label="Date"><div class="bzc evoQ"></div><div class="evoTab"></div><div class="evoC"></div>';
+  const R = ev.querySelector('.evoR');
+  R.min = t0; R.max = now; R.step = DAYMS; R.value = evoT == null ? tOf(cur.debut) : evoT;
+  R.oninput = () => { evoT = +R.value; ev.querySelectorAll('.evoQ button').forEach(b => b.classList.remove('on')); renderEvo(ev); };
+  const quick = [['Aujourd\'hui', now]];
+  progs.slice(1).forEach((p, i) => { const n = progs.length - 1 - i; quick.push(['Début P' + n, tOf(p.debut)], ['Fin P' + n, tOf(p.fin)]); });
+  quick.push(['Début actuel', tOf(cur.debut)]);
+  quick.sort((a, b) => a[1] - b[1]).forEach(([lbl, t]) => {
+    const b = document.createElement('button'); b.type = 'button'; b.textContent = lbl;
+    b.classList.toggle('on', Math.abs((evoT == null ? tOf(cur.debut) : evoT) - t) < DAYMS);
+    b.onclick = () => { evoT = t; R.value = t; ev.querySelectorAll('.evoQ button').forEach(x => x.classList.toggle('on', x === b)); renderEvo(ev); };
+    ev.querySelector('.evoQ').appendChild(b);
+  });
+  box.appendChild(ev);
+  renderEvo(ev);
+
+  // Programmes (en cours + terminés) et séances réalisées
+  const hc = document.createElement('div'); hc.className = 'cc';
+  hc.innerHTML = '<b class="cct">📚 Historique</b><p class="chh">Programmes — touche-en un pour voir ses séances</p><div class="progs"></div><div class="cch hsh"><p class="chh"></p><button class="sgDet">Tout voir</button></div><div class="hss"></div>';
+  progs.forEach((p, i) => {
+    const s = progStats(c, p), n = progs.length - i, key = p.cur ? 'cur' : p.debut;
+    const r = document.createElement('button'); r.type = 'button'; r.className = 'prog' + (histProg === key ? ' on' : '');
+    r.innerHTML = '<b></b><span></span><small></small>';
+    r.querySelector('b').textContent = (p.cur ? 'En cours' : 'P' + (n)) + ' · ' + progTitle(p);
+    r.querySelector('span').textContent = fmtD(p.debut) + (p.cur ? ' → aujourd\'hui' : ' → ' + fmtD(p.fin)) + ' · ' + s.done + ' / ' + s.prev + ' séances' + (s.prev ? ' (' + Math.round(s.done / s.prev * 100) + ' %)' : '');
+    r.querySelector('small').textContent = s.res.join(' · ');
+    r.onclick = () => { histProg = histProg === key ? null : key; histAll = false; if(histProg) evoT = p.cur ? now : tOf(p.fin); renderCoach(); };
+    hc.querySelector('.progs').appendChild(r);
+  });
+  let logs = logsOf(c).slice().reverse();
+  const sel = progs.find(p => (p.cur ? 'cur' : p.debut) === histProg);
+  if(sel){ const a = sel.cur ? tOf(cur.debut) : wkStart(sel.debut).getTime(), b = tOf(sel.fin) + DAYMS; logs = logs.filter(l => tOf(l.date) >= a && tOf(l.date) < b); }
+  const tot = logs.reduce((a, l) => a + (l.dist || 0), 0), dur = logs.reduce((a, l) => a + l.duree, 0);
+  hc.querySelector('.hsh .chh').textContent = (sel ? (sel.cur ? 'Programme en cours' : progTitle(sel)) : 'Toutes les séances') + ' : ' + logs.length + ' séance' + (logs.length > 1 ? 's' : '') + ' · ' + hm(dur) + ' · ' + r1(tot) + ' km';
+  const more = hc.querySelector('.hsh button');
+  more.hidden = logs.length <= 6; more.textContent = histAll ? 'Réduire' : 'Tout voir';
+  more.onclick = () => { histAll = !histAll; renderCoach(); };
+  (histAll ? logs : logs.slice(0, 6)).forEach(l => {
+    const d = new Date(l.date), sp = speedOf(l), r = document.createElement('div'); r.className = 'ses hs';
+    r.innerHTML = '<span class="sd">' + d.getDate() + '<i>' + d.toLocaleDateString('fr-FR', { month:'short' }).replace('.', '') + '</i></span><div><b></b><small></small></div><span class="sm"></span>';
+    r.querySelector('b').textContent = ICO[l.act] + ' ' + (l.parcours || TYPE_LBL[l.type] || 'Séance');
+    r.querySelector('small').textContent = [TYPE_LBL[l.type] || 'Séance', hm(l.duree), l.dist ? r1(l.dist) + ' km' : '', sp ? (l.act === 'course' ? allure(sp) : r1(sp) + ' km/h') : '', l.dplus ? 'D+ ' + l.dplus + ' m' : '', l.rpe ? 'effort ' + l.rpe + '/10' : ''].filter(Boolean).join(' · ');
+    if(l.dist){ const b = document.createElement('button'); b.className = 'sgDet'; b.textContent = 'Voir'; b.title = 'Voir le parcours sur la carte'; b.onclick = () => showTrace(l); r.querySelector('.sm').appendChild(b); }
+    hc.querySelector('.hss').appendChild(r);
+  });
+  if(!logs.length) hc.querySelector('.hss').innerHTML = '<p class="ccsub">Aucune séance enregistrée pour l\'instant.</p>';
+  box.appendChild(hc);
+}
+
+/* --- Tracé d'une séance passée sur la carte --- */
+var histLayer = null;
+function hashStr(s){ let h = 0; for(const ch of s) h = Math.imul(h ^ ch.charCodeAt(0), 2654435761); return h >>> 0; }
+function traceOf(l){
+  if(l.trace && l.trace.length > 1) return l.trace;
+  // Profils de test : boucle fictive de la bonne longueur autour du départ
+  const R = seeded(hashStr(l.date)), ctr = start || [map.getCenter().lat, map.getCenter().lng];
+  const rad = l.dist / (2 * Math.PI) / 1.15, ang0 = R() * 2 * Math.PI, pts = [];
+  const off = [Math.cos(ang0) * rad, Math.sin(ang0) * rad], ph = [R() * 6, R() * 6];
+  for(let k = 0; k <= 48; k++){
+    const a = ang0 + Math.PI + k / 48 * 2 * Math.PI, rr = rad * (1 + 0.18 * Math.sin(3 * a + ph[0]) + 0.1 * Math.sin(5 * a + ph[1]));
+    const dx = off[0] + Math.cos(a) * rr, dy = off[1] + Math.sin(a) * rr;
+    pts.push([ctr[0] + dy / 111, ctr[1] + dx / (111 * Math.cos(ctr[0] * Math.PI / 180))]);
+  }
+  return pts;
+}
+function showTrace(l){
+  if(histLayer){ map.removeLayer(histLayer); histLayer = null; }
+  const pts = traceOf(l);
+  histLayer = L.featureGroup([
+    L.polyline(pts, { color:'#ffffff', weight:9, opacity:.9, interactive:false }),
+    L.polyline(pts, { color:'#7c3aed', weight:5, opacity:.95, interactive:false }),
+    L.circleMarker(pts[0], { radius:7, color:'#fff', weight:3, fillColor:'#7c3aed', fillOpacity:1, interactive:false })
+  ]).addTo(map);
+  if(!WIDE.matches && sheetReady) setSheet('half');
+  setTimeout(() => map.fitBounds(histLayer.getBounds(), visPad()), WIDE.matches ? 0 : 320);
+  msg('🗺️ ' + (l.parcours || 'Séance') + ' · ' + fmtD(l.date) + ' · ' + r1(l.dist) + ' km en ' + hm(l.duree) + (l.trace ? '' : ' (tracé fictif du profil de test)'));
+}
+function hideTrace(){ if(histLayer){ map.removeLayer(histLayer); histLayer = null; } }
+
+/* --- Séance du programme → liste de parcours adaptés --- */
+var pendingSess = null;
+function sessSpeed(c, s){
+  const recent = logsOf(c).filter(l => l.act === s.act && ['ef', 'long', undefined].includes(l.type) && tOf(l.date) > Date.now() - 42 * DAYMS).map(speedOf).filter(Boolean);
+  let v = recent.length >= 2 ? recent.reduce((a, x) => a + x, 0) / recent.length : null;
+  if(!v && s.act === 'course' && vmaNow(c)) v = vmaNow(c) * 0.675;
+  v = v || cfg.speeds[s.act] || 5;
+  if(!['ef', 'long'].includes(s.type)) v *= 1.06;   // fractionné : un peu plus de distance (échauffement compris)
+  return v;
+}
+function sessParcours(s){
+  const v = sessSpeed(coach, s), km = Math.max(1, Math.round(v * s.duree / 60 * 2) / 2);
+  const click = (seg, val) => { const b = document.querySelector('#' + seg + ' [data-v="' + val + '"]'); if(b) b.click(); };
+  if(st.mode !== s.act) click('segMode', s.act);
+  if(st.type !== 'boucle') click('segType', 'boucle');
+  if(st.unit !== 'km') click('segUnit', 'km');
+  st.val = km; store.set('st', st); setVal(km); if(typeof hint === 'function') hint();
+  pendingSess = { act:s.act, type:s.type, label:s.label, duree:s.duree, km, v };
+  renderSessBar();
+  hideTrace();
+  setTab('parcours');
+  generate();
+}
+function renderSessBar(){
+  const bar = $('sessBar');
+  if(!pendingSess){ bar.hidden = true; return; }
+  const s = pendingSess;
+  bar.hidden = tab !== 'parcours';
+  bar.innerHTML = '<span>🎯</span><div><b></b><small></small></div><button class="sgDet" title="Ne plus suivre cette séance">✕</button>';
+  bar.querySelector('b').textContent = 'Séance : ' + ICO[s.act] + ' ' + s.label;
+  bar.querySelector('small').textContent = 'Parcours ≈ ' + r1(s.km) + ' km pour ' + hm(s.duree) + ' à ' + (s.act === 'course' ? allure(s.v) : r1(s.v) + ' km/h') + (['ef', 'long'].includes(s.type) ? '' : ' · plutôt plat pour les fractions');
+  bar.querySelector('button').onclick = () => { pendingSess = null; renderSessBar(); };
+}
+
 /* --- Affichage dans l'onglet Coach --- */
-let progAll = false;
+let progAll = false, weekOpen = null;
 function renderProgram(box){
   const c = coach, S = coachStats(c), o = c.objectif, p = c.profil, meta = S.meta;
   // Progression vers l'objectif (dans la carte Objectif)
@@ -3304,7 +3611,7 @@ function renderProgram(box){
   const ws = new Date(meta.debut.getTime() + meta.cur * WEEKMS), today = (new Date().getDay() + 6) % 7;
   const wk = document.createElement('div'); wk.className = 'cc';
   const done = S.plan.filter(s => s.done).length;
-  wk.innerHTML = '<div class="cch"><b class="cct">📅 Cette semaine</b><span class="ccsub">' + done + ' / ' + S.plan.length + ' séances · ' + hm(S.plan.reduce((a, s) => a + s.duree, 0)) + '</span></div><div class="sess"></div>' +
+  wk.innerHTML = '<div class="cch"><b class="cct">📅 Cette semaine</b><span class="ccsub">' + done + ' / ' + S.plan.length + ' séance' + (S.plan.length > 1 ? 's' : '') + ' · ' + hm(S.plan.reduce((a, s) => a + s.duree, 0)) + '</span></div><div class="sess"></div>' +
     '<div class="bzrow ccacts"><button class="sgDet" id="ccLog">➕ Séance libre</button><button class="sgDet" id="ccKg">⚖️ Pesée</button></div>';
   S.plan.forEach(s => {
     const r = document.createElement('div');
@@ -3314,7 +3621,12 @@ function renderProgram(box){
     r.querySelector('small').textContent = s.detail;
     const right = r.querySelector('.sm');
     if(s.done){ right.innerHTML = '<span class="sok">✓</span><small></small>'; right.querySelector('small').textContent = hm(s.done.duree) + (s.done.dist ? ' · ' + r1(s.done.dist) + ' km' : ''); }
-    else { right.innerHTML = '<span>' + hm(s.duree) + '</span><button class="sgDet">Fait</button>'; right.querySelector('button').onclick = () => openLog({ act:s.act, duree:s.duree, type:s.type, date:new Date(ws.getTime() + s.day * DAYMS + 12 * 3600e3) }); }
+    else {
+      right.innerHTML = '<span>' + hm(s.duree) + '</span><span class="sbt"><button class="sgDet" title="Trouver un parcours pour cette séance">🗺️</button><button class="sgDet">Fait</button></span>';
+      const [bp, bf] = right.querySelectorAll('button');
+      bp.onclick = () => sessParcours(s);
+      bf.onclick = () => openLog({ act:s.act, duree:s.duree, type:s.type, date:new Date(ws.getTime() + s.day * DAYMS + 12 * 3600e3) });
+    }
     wk.querySelector('.sess').appendChild(r);
   });
   S.extra.forEach(l => { const r = document.createElement('div'); r.className = 'ses ok'; r.innerHTML = '<span class="sd">+</span><div><b></b><small></small></div><span class="sm"><span class="sok">✓</span></span>'; r.querySelector('b').textContent = ICO[l.act] + ' Séance en plus'; r.querySelector('small').textContent = hm(l.duree) + (l.dist ? ' · ' + r1(l.dist) + ' km' : ''); wk.querySelector('.sess').appendChild(r); });
@@ -3325,14 +3637,14 @@ function renderProgram(box){
   // Suivi : indicateurs + graphiques
   const kp = document.createElement('div'); kp.className = 'cc';
   const tiles = [
-    ['Séances (semaine)', done + ' / ' + S.plan.length],
-    ['Régularité (4 sem.)', S.adh4 == null ? '—' : Math.round(S.adh4 * 100) + ' %'],
-    ['Charge 7 j / moyenne', S.ratio == null ? '—' : (S.ratio >= 1 ? '+' : '') + Math.round((S.ratio - 1) * 100) + ' %'],
-    ['Dépense 7 j (sport)', S.kcal7 + ' kcal']
+    ['Séances semaine', done + ' / ' + S.plan.length],
+    ['Régularité 4 sem.', S.adh4 == null ? '—' : Math.round(S.adh4 * 100) + ' %'],
+    ['Charge vs moyenne', S.ratio == null ? '—' : (S.ratio >= 1 ? '+' : '') + Math.round((S.ratio - 1) * 100) + ' %'],
+    ['Dépense sport 7 j', S.kcal7 + ' kcal']
   ];
-  if(o.type === 'poids' && pts.length){ const sl = trendKgWeek(pts.slice(-6)); tiles.push(['Tendance poids', sl == null ? '—' : (sl > 0 ? '+' : '') + r1(sl) + ' kg/sem.']); }
-  if(o.type === 'course' && vmaNow(c)) tiles.push(['VMA actuelle', r1(vmaNow(c)) + ' km/h']);
-  kp.innerHTML = '<b class="cct">📈 Suivi</b><div class="kpis"></div><p class="chh">Volume par semaine (min) — prévu en pointillés, fait en vert</p>';
+  if(o.type === 'poids' && pts.length){ const sl = trendKgWeek(pts.slice(-6)); tiles.push(['Tendance poids', sl == null ? '—' : (sl < 0 ? '−' + r1(-sl * 0.7) + ' à −' + r1(-sl * 1.3) : '+' + r1(sl * 0.7) + ' à ' + r1(sl * 1.3)) + ' kg/sem.']); }
+  if(o.type === 'course' && vmaNow(c)) tiles.push(['VMA estimée', rng(vmaNow(c) * 0.97, vmaNow(c) * 1.03, r1) + ' km/h']);
+  kp.innerHTML = '<b class="cct">📈 Suivi</b><div class="kpis"></div><p class="chh">Volume par semaine — prévu en pointillés, fait en vert</p>';
   tiles.forEach(([k, v]) => { const t = document.createElement('div'); t.className = 'kpi'; t.innerHTML = '<small></small><b></b>'; t.querySelector('small').textContent = k; t.querySelector('b').textContent = v; kp.querySelector('.kpis').appendChild(t); });
   kp.insertAdjacentHTML('beforeend', barChart(S.weeksVol.map(x => ({ label:'S' + (x.w + 1), plan:x.plan, done:x.done, cur:x.w === meta.cur }))));
   const g = goalChart(c, S);
@@ -3347,17 +3659,31 @@ function renderProgram(box){
 
   // Programme complet
   const pr = document.createElement('div'); pr.className = 'cc';
-  pr.innerHTML = '<div class="cch"><b class="cct">🗓️ Programme (' + meta.weeks + ' semaines)</b><button class="sgDet">' + (progAll ? 'Réduire' : 'Tout voir') + '</button></div><div class="weeks"></div>';
+  pr.innerHTML = '<div class="cch"><b class="cct">🗓️ Programme · ' + meta.weeks + ' sem.</b><button class="sgDet">' + (progAll ? 'Réduire' : 'Tout voir') + '</button></div><div class="weeks"></div>';
   const from = progAll ? 0 : meta.cur, to = progAll ? meta.weeks : Math.min(meta.weeks, meta.cur + 3);
   for(let w = from; w < to; w++){
     const pl = weekPlan(c, w, meta, w >= meta.cur ? S.ad : null), d = new Date(meta.debut.getTime() + w * WEEKMS);
     const r = document.createElement('div'); r.className = 'wk' + (w === meta.cur ? ' cur' : w < meta.cur ? ' past' : '');
     r.innerHTML = '<b>S' + (w + 1) + '</b><span>' + fmtD(d) + ' · ' + phaseOf(c, w, meta) + ((w + 1) % 4 === 0 ? ' (allégée)' : '') + '</span><em>' + hm(pl.reduce((a, s) => a + s.duree, 0)) + '</em><small></small>';
     r.querySelector('small').textContent = pl.map(s => ICO[s.act] + ' ' + s.label).join(' · ');
+    r.title = 'Voir les séances';
+    r.onclick = () => { weekOpen = weekOpen === w ? null : w; renderCoach(); };
     pr.querySelector('.weeks').appendChild(r);
+    if(weekOpen === w){   // détail : chaque séance avec ses consignes et la recherche de parcours
+      const dt = document.createElement('div'); dt.className = 'wkd';
+      pl.forEach(s => {
+        const x = document.createElement('div'); x.className = 'ses';
+        x.innerHTML = '<span class="sd">' + JOURS[s.day] + '</span><div><b></b><small></small></div><span class="sm"><span>' + hm(s.duree) + '</span><button class="sgDet">🗺️ Parcours</button></span>';
+        x.querySelector('b').textContent = ICO[s.act] + ' ' + s.label; x.querySelector('small').textContent = s.detail;
+        x.querySelector('button').onclick = () => sessParcours(s);
+        dt.appendChild(x);
+      });
+      pr.querySelector('.weeks').appendChild(dt);
+    }
   }
   pr.querySelector('button').onclick = () => { progAll = !progAll; renderCoach(); };
   box.appendChild(pr);
+  renderHistory(box);   // évolution physique + programmes passés + séances
 }
 
 /* --- Saisie d'une séance / d'une pesée --- */
@@ -3404,43 +3730,82 @@ $('logSave').onclick = () => {
     (coach.poids = coach.poids || []).push({ date:new Date(lz.date).toISOString(), kg:lz.kg });
   } else {
     if(!(lz.duree > 0)){ $('logErr').textContent = 'Indique la durée.'; return; }
-    (coach.log = coach.log || []).push({ date:new Date(lz.date).toISOString(), act:lz.act, type:lz.type || 'ef', duree:lz.duree, dist:lz.dist, dplus:lz.dplus, fc:lz.fc, rpe:lz.rpe });
+    const e = { date:new Date(lz.date).toISOString(), act:lz.act, type:lz.type || 'ef', duree:lz.duree, dist:lz.dist, dplus:lz.dplus, fc:lz.fc, rpe:lz.rpe };
+    if(lz.parcours) e.parcours = lz.parcours;
+    if(lz.trace) e.trace = lz.trace;
+    (coach.log = coach.log || []).push(e);
+    if(lz.fromNav) pendingSess = null, renderSessBar();
   }
   saveCoach(); $('logModal').classList.add('hidden'); renderCoach();
   msg(lz.mode === 'kg' ? '⚖️ Pesée enregistrée.' : '✓ Séance enregistrée dans ton suivi.');
 };
 
-/* --- Historique fictif pour les profils de test (4 semaines) --- */
+/* --- Historique fictif pour les profils de test : programmes terminés + programme en cours (4 semaines) --- */
 function seeded(seed){ return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
-const DEMO_BEHAV = [   // régularité, ressenti en plus, progression / semaine, surcharge la dernière semaine
-  { adh:0.88, rpe:0, gain:0.012, kg:-0.55 }, { adh:0.93, rpe:0, gain:0.01, kg:-0.25 }, { adh:1, rpe:1.4, gain:0.006, over:true },
-  { adh:0.4, rpe:0.6, gain:0.002, kg:-0.05 }, { adh:0.8, rpe:0.3, gain:0.02, longer:true }
+const PARCOURS = {   // noms génériques (aucun lieu réel)
+  marche:['Boucle du parc', 'Tour du lac', 'Bords de rivière', 'Chemin des vignes', 'Coulée verte', 'Promenade des quais'],
+  course:['Boucle du parc', 'Circuit du stade', 'Bords de rivière', 'Tour du lac', 'Chemin forestier', 'Boucle des collines'],
+  velo:['Piste cyclable', 'Route des étangs', 'Boucle des collines', 'Voie verte', 'Tour du plateau', 'Route des crêtes']
+};
+// Comportement des profils : programme en cours, puis programmes passés (du plus récent au plus ancien)
+const DEMO_BEHAV = [
+  { adh:0.88, rpe:0, gain:0.012, kg:-0.55, past:[ { objectif:{ type:'regul', min:120 }, weeks:8, gap:3, adh:0.8, kg:[76, 73.4], v:[0.95, 0.99] } ] },
+  { adh:0.93, rpe:0, gain:0.01, kg:-0.25, past:[ { objectif:{ type:'course', dist:10, temps:52 }, weeks:10, gap:3, adh:0.9, kg:[84.6, 83], v:[0.95, 0.99] }, { objectif:{ type:'forme' }, weeks:6, gap:4, adh:0.75, kg:[86.5, 85.2], v:[0.92, 0.94] } ] },
+  { adh:1, rpe:1.4, gain:0.006, over:true, past:[ { objectif:{ type:'endur', duree:150 }, weeks:8, gap:2, adh:0.95, v:[0.95, 0.99] } ] },
+  { adh:0.4, rpe:0.6, gain:0.002, kg:-0.05, past:[ { objectif:{ type:'regul', min:90 }, weeks:6, gap:5, adh:0.5, kg:[90.2, 89.3], v:[0.97, 0.98] } ] },
+  { adh:0.8, rpe:0.3, gain:0.02, longer:true, past:[ { objectif:{ type:'endur', duree:30 }, weeks:8, gap:3, adh:0.85, v:[0.88, 0.95] } ] }
 ];
-function genDemo(c, i){
-  const R = seeded(1234 + i * 97), B = DEMO_BEHAV[i];
-  c.debut = new Date(wkStart(Date.now()).getTime() - 4 * WEEKMS).toISOString();
-  c.log = []; c.poids = [];
-  const meta = planMeta(c), b = bilan(c), now = Date.now();
-  const base = { course:b.vma ? b.vma * 0.66 : 9, velo:22, marche:5.1 };
-  for(let w = 0; w <= meta.cur; w++){
-    const plan = weekPlan(c, w, meta);
-    if(B.over && w === meta.cur - 1) plan.push(Object.assign({}, plan[plan.length - 1], { day:6, duree:plan[plan.length - 1].duree + 30 }), Object.assign({}, plan[0], { day:3 }));
+// Séances fictives d'une période : suit le programme semaine par semaine, avec la régularité du profil
+function genPeriod(c, pc, meta, n, R, B, vf, toNow){
+  const b = bilan(c), now = Date.now(), base = { course:b.vma ? b.vma * 0.66 : 9, velo:22, marche:5.1 };
+  for(let w = 0; w < n; w++){
+    const plan = weekPlan(pc, w, meta);
+    if(B.over && toNow && w === meta.cur - 1) plan.push(Object.assign({}, plan[plan.length - 1], { day:6, duree:plan[plan.length - 1].duree + 30 }), Object.assign({}, plan[0], { day:3 }));
     plan.forEach(s => {
-      const t = meta.debut.getTime() + w * WEEKMS + s.day * DAYMS + 18 * 3600e3;
+      const t = meta.debut.getTime() + w * WEEKMS + s.day * DAYMS + (17 + Math.floor(R() * 3)) * 3600e3;
       if(t > now || R() > B.adh) return;
-      const intense = !['ef', 'long'].includes(s.type);
+      const intense = !['ef', 'long'].includes(s.type), f = vf(w);
       const dur = Math.round(s.duree * (0.9 + R() * 0.2) * (B.longer && s.type === 'long' ? 1 + w * 0.12 : 1));
-      const v = base[s.act] * (1 + B.gain * w) * (intense ? 1.12 : s.type === 'long' ? 0.96 : 1) * (0.97 + R() * 0.06);
-      const rpe = clamp(Math.round((intense ? 7.2 : s.type === 'long' ? 5.6 : 4.4) + B.rpe + (R() - 0.5) * 1.6 + (B.over && w >= meta.cur - 1 ? 1 : 0)), 1, 10);
-      const dist = Math.round(v * dur / 60 * 10) / 10;
-      c.log.push({ date:new Date(t).toISOString(), act:s.act, type:s.type, duree:dur, dist, dplus:Math.round(dist * (4 + R() * 12)), fc:Math.round(b.fcmax * (intense ? 0.84 : 0.7) + (R() - 0.5) * 8), rpe });
+      const v = base[s.act] * f * (intense ? 1.12 : s.type === 'long' ? 0.96 : 1) * (0.97 + R() * 0.06);
+      const rpe = clamp(Math.round((intense ? 7.2 : s.type === 'long' ? 5.6 : 4.4) + B.rpe + (R() - 0.5) * 1.6 + (B.over && toNow && w >= meta.cur - 1 ? 1 : 0)), 1, 10);
+      const dist = Math.round(v * dur / 60 * 10) / 10, names = PARCOURS[s.act];
+      c.log.push({ date:new Date(t).toISOString(), act:s.act, type:s.type, duree:dur, dist, dplus:Math.round(dist * (4 + R() * 12)), fc:Math.round(b.fcmax * (intense ? 0.84 : 0.7) + (R() - 0.5) * 8), rpe, parcours:names[Math.floor(R() * names.length)] });
     });
   }
+}
+function genDemo(c, i){
+  const R = seeded(1234 + i * 97), B = DEMO_BEHAV[i], b = bilan(c);
+  const curStart = wkStart(Date.now()).getTime() - 4 * WEEKMS;
+  c.debut = new Date(curStart).toISOString();
+  c.log = []; c.poids = []; c.programmes = []; c.mesures = [];
+  // Programmes terminés, placés avant le programme en cours
+  let end = curStart, kgNext = c.profil.poids;
+  B.past.forEach(p => {
+    end -= p.gap * WEEKMS;
+    const deb = end - p.weeks * WEEKMS;
+    const prog = { objectif:p.objectif, debut:new Date(deb).toISOString(), fin:new Date(end - DAYMS).toISOString(), activite:c.activite };
+    c.programmes.push(prog);
+    const pc = progCoach(c, prog), meta = planMeta(pc);
+    meta.weeks = p.weeks;
+    genPeriod(c, pc, meta, p.weeks, R, Object.assign({}, B, { adh:p.adh, over:false, longer:B.longer }), w => p.v[0] + (p.v[1] - p.v[0]) * w / p.weeks, false);
+    if(b.vma){ c.mesures.push({ date:prog.debut, vma:Math.round(b.vma * p.v[0] * 10) / 10 }, { date:prog.fin, vma:Math.round(b.vma * p.v[1] * 10) / 10 }); }
+    if(p.kg){   // pesées pendant le programme, puis reprise légère jusqu'au suivant
+      for(let k = 0; k <= p.weeks; k++) c.poids.push({ date:new Date(deb + k * WEEKMS + 8 * 3600e3).toISOString(), kg:Math.round((p.kg[0] + (p.kg[1] - p.kg[0]) * k / p.weeks + (R() - 0.5) * 0.5) * 10) / 10 });
+      const mid = end + p.gap * WEEKMS / 2;
+      c.poids.push({ date:new Date(mid).toISOString(), kg:Math.round((p.kg[1] + kgNext) / 2 * 10) / 10 });
+      kgNext = p.kg[0];
+    }
+    end = deb;
+  });
+  c.date = new Date(curStart).toISOString();   // bilan du programme en cours
+  const meta = planMeta(c);
+  genPeriod(c, c, meta, meta.cur + 1, R, B, w => 1 + B.gain * w, true);
   if(B.kg != null) for(let k = 0; k <= 8; k++){
-    const t = meta.debut.getTime() + k * 3.5 * DAYMS + 8 * 3600e3;
-    if(t > now) break;
+    const t = curStart + k * 3.5 * DAYMS + 8 * 3600e3;
+    if(t > Date.now()) break;
     c.poids.push({ date:new Date(t).toISOString(), kg:Math.round((c.profil.poids + B.kg * k / 2 + (R() - 0.5) * 0.6) * 10) / 10 });
   }
+  c.programmes.sort((a, x) => a.debut.localeCompare(x.debut));
 }
 
 renderCoach();
