@@ -54,9 +54,10 @@
   .pa{display:flex;gap:2px}
   .pa button:disabled{opacity:.35;cursor:default}
   .pa button{width:30px;height:32px;border:1px solid var(--bd);background:var(--bg);border-radius:7px;font-size:13px;color:var(--tx);cursor:pointer;padding:0}
-  .psr{position:absolute;left:34px;right:0;top:46px;z-index:5;background:#fff;border:1px solid var(--bd);border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.18);max-height:220px;overflow-y:auto}
+  .pr{flex-wrap:wrap}
+  .psr{flex:0 0 calc(100% - 34px);min-width:0;box-sizing:border-box;margin:4px 0 2px 34px;z-index:5;background:#fff;border:1px solid var(--bd);border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.18);max-height:220px;overflow-y:auto}
   .psr[hidden]{display:none}
-  .psr button{display:block;width:100%;text-align:left;border:none;background:none;padding:8px 10px;border-bottom:1px solid #f3f4f6;cursor:pointer}
+  .psr button{display:block;width:100% !important;max-width:none !important;height:auto !important;text-align:left;border:none;background:none;padding:8px 10px;border-bottom:1px solid #f3f4f6;cursor:pointer}
   .psr b{display:block;font-size:14px} .psr small{color:var(--mu);font-size:12px}
   .pbtns{display:flex;gap:8px}
   .pbtns button{flex:1;padding:9px;border:1px solid var(--bd);background:var(--bg);border-radius:9px;font-size:14px;color:var(--tx);cursor:pointer}
@@ -2068,20 +2069,22 @@ function planRow(kind, p, i){
         const o = document.createElement('button');
         o.innerHTML = '<b></b><small></small>';
         o.querySelector('b').textContent = lb.name; o.querySelector('small').textContent = lb.sub;
-        o.onclick = () => choose({ ll, name:lb.name });
+        o.addEventListener('pointerdown', e => { e.preventDefault(); choose({ ll, name:lb.name }); });
         box.appendChild(o);
       });
       box.hidden = !box.children.length;
+      if(!box.hidden) box.scrollIntoView({ block:'nearest' });
     }, 300);
   };
   inp.onfocus = () => {   // raccourci "Ma position"
     if(!meLL || inp.value) return;
     box.innerHTML = '';
     const o = document.createElement('button'); o.innerHTML = '<b>📍 Ma position</b>';
-    o.onclick = () => choose({ ll:meLL, name:'Ma position' });
+    o.addEventListener('pointerdown', ev => { ev.preventDefault(); choose({ ll:meLL, name:'Ma position' }); });
     box.appendChild(o); box.hidden = false;
   };
-  inp.onblur = () => setTimeout(() => { box.hidden = true; }, 200);
+  inp.onblur = () => setTimeout(() => { box.hidden = true; }, 300);
+  inp.onkeydown = e => { if(e.key === 'Enter'){ e.preventDefault(); const f = box.querySelector('button'); if(f && !box.hidden) f.dispatchEvent(new PointerEvent('pointerdown', { bubbles:true, cancelable:true })); } };
   function choose(pt){
     box.hidden = true;
     if(kind === 'start') plan.start = pt;
