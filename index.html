@@ -48,6 +48,7 @@
   .pb{flex:none;width:26px;height:26px;border-radius:50%;background:#7c3aed;color:#fff;font:700 13px/26px system-ui,sans-serif;text-align:center}
   .pb.s{background:#16a34a} .pb.e{background:#dc2626}
   .pa{display:flex;gap:2px}
+  .pa button:disabled{opacity:.35;cursor:default}
   .pa button{width:30px;height:32px;border:1px solid var(--bd);background:var(--bg);border-radius:7px;font-size:13px;color:var(--tx);cursor:pointer;padding:0}
   .psr{position:absolute;left:34px;right:0;top:46px;z-index:5;background:#fff;border:1px solid var(--bd);border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.18);max-height:220px;overflow-y:auto}
   .psr[hidden]{display:none}
@@ -374,7 +375,7 @@
     <h2>🧭 Itinéraire</h2>
     <div class="seg" id="planType"><button data-v="aller">➡️ Départ → Arrivée</button><button data-v="boucle">🔄 Boucle</button></div>
     <div id="planList"></div>
-    <div class="pbtns"><button id="planAdd">➕ Ajouter une étape</button><button id="planOpt">↻ Ordre le plus logique</button></div>
+    <div class="pbtns"><button id="planAdd">➕ Ajouter une étape</button><button id="planOpt">↻ Tri par distance</button></div>
     <div id="planSum"></div>
     <div class="btns">
       <button id="planReset">Vider</button>
@@ -2092,7 +2093,10 @@ function renderPlan(){
   plan.steps.forEach((s, i) => list.appendChild(planRow('step', s, i)));
   if(loopPlan()){
     const r = document.createElement('div'); r.className = 'pr ret';
-    r.innerHTML = '<span class="pb s">↩︎</span><span>Retour au départ</span>';
+    r.innerHTML = '<span class="pb s">↩︎</span><span>Retour au départ</span><div class="pa"><button title="Inverser le sens de la boucle">⇅</button></div>';
+    // Boucle : faire le tour dans l'autre sens = étapes dans l'ordre inverse
+    r.querySelector('button').onclick = () => { if(plan.steps.length > 1){ plan.steps.reverse(); planChanged(); } };
+    r.querySelector('button').disabled = plan.steps.length < 2;
     list.appendChild(r);
   } else list.appendChild(planRow('end', plan.end, 0));
 }
