@@ -364,7 +364,7 @@
     </div>
     <div class="step">
       <button id="vMinus" title="Moins">−</button>
-      <input id="val" type="number" inputmode="decimal" min="0" step="any">
+      <input id="val" type="text" inputmode="decimal" autocomplete="off">
       <span id="unitLbl">km</span>
       <button id="vPlus" title="Plus">+</button>
     </div>
@@ -532,29 +532,45 @@ const speed = () => cfg.speeds[st.mode] || 5;
 
 seg('segMode', 'mode');
 seg('segType', 'type', () => { if(st.type === 'boucle') clearDest(); syncRet(); });
+// Valeur saisie : km (nombre) ou durée affichée en heures et minutes ("1 h 30")
+function parseDur(s){
+  s = String(s).trim().toLowerCase().replace(',', '.');
+  let m = s.match(/^(\d+(?:\.\d+)?)\s*(?:h|:)\s*(\d{1,2})?\s*(?:min|mn|m)?$/);
+  if(m) return Math.round(parseFloat(m[1]) * 60 + (m[2] ? parseInt(m[2], 10) : 0));
+  m = s.match(/^(\d+(?:\.\d+)?)\s*(?:min|mn|m)?$/);
+  return m ? Math.round(parseFloat(m[1])) : 0;
+}
+function getVal(){ return st.unit === 'min' ? parseDur($('val').value) : (parseFloat(String($('val').value).replace(',', '.')) || 0); }
+function setVal(v){
+  if(st.unit === 'min'){ $('val').value = fmtMin(v); $('val').inputMode = 'text'; }
+  else { $('val').value = v; $('val').inputMode = 'decimal'; }
+  $('unitLbl').hidden = st.unit === 'min';   // "1 h 30" se suffit à lui-même
+}
 seg('segUnit', 'unit', old => {
   if(old === st.unit) return;
-  const v = parseFloat($('val').value) || 0;
-  $('val').value = st.unit === 'min' ? Math.round(v / speed() * 60) : Math.round(v * speed() / 60 * 10) / 10;
-  st.val = parseFloat($('val').value);
+  const prevUnit = st.unit; st.unit = old; const v = getVal(); st.unit = prevUnit;
+  st.val = st.unit === 'min' ? Math.round(v / speed() * 60 / 5) * 5 || 5 : Math.round(v * speed() / 60 * 10) / 10;
   $('unitLbl').textContent = st.unit;
+  setVal(st.val);
 });
-$('val').value = st.val;
-// − / + : pas de 0,5 km (moins de 5 km), 1 km au-delà, 5 min en minutes
+// − / + : pas de 0,5 km (moins de 5 km), 1 km au-delà, 5 min en durée
 function stepVal(dir){
-  let v = parseFloat($('val').value) || 0;
+  let v = getVal();
   const s = st.unit === 'min' ? 5 : ((dir > 0 ? v : v - 0.01) < 5 ? 0.5 : 1);
   v = Math.max(s, Math.round((v + dir * s) / s) * s);
-  $('val').value = +v.toFixed(1);
-  $('val').oninput();
+  st.val = +v.toFixed(1); store.set('st', st);
+  setVal(st.val); hint();
 }
 $('vMinus').onclick = () => stepVal(-1);
 $('vPlus').onclick = () => stepVal(1);
 $('unitLbl').textContent = st.unit;
-$('val').oninput = () => { st.val = parseFloat($('val').value) || 0; store.set('st', st); hint(); };
+$('val').type = 'text';
+setVal(st.val);
+$('val').oninput = () => { st.val = getVal(); store.set('st', st); hint(); };
+$('val').onchange = () => { if(st.unit === 'min' && st.val) setVal(st.val); };   // remet au format "1 h 30" après saisie
 
 function targetMeters(){
-  const v = parseFloat($('val').value) || 0;
+  const v = getVal();
   return st.unit === 'km' ? v * 1000 : v / 60 * speed() * 1000;
 }
 function fmtMin(m){
@@ -565,7 +581,7 @@ function hint(){
   const t = targetMeters();
   $('hint').textContent = !t ? '' : st.unit === 'km'
     ? '≈ ' + fmtMin(t/1000 / speed() * 60) + ' à ' + speed() + ' km/h'
-    : '≈ ' + (t/1000).toFixed(1) + ' km à ' + speed() + ' km/h';
+    : '≈ ' + (t/1000).toFixed(1).replace('.', ',') + ' km à ' + speed() + ' km/h';
   if(sheetReady) updateChip();
 }
 hint();
@@ -2204,7 +2220,8 @@ $('grab').onclick = () => setSheet(sheetState === 'peek' ? 'half' : 'peek');
 // Ligne de résumé : réglages en un coup d'œil (toucher = ouvrir les réglages) + bouton Générer
 function updateChip(){
   const ico = { marche:'🚶', course:'🏃', velo:'🚴' }, lbl = { marche:'Marche', course:'Course', velo:'Vélo' };
-  const what = dest ? '→ ' + dest.name : (($('val').value || '?') + ' ' + st.unit);
+  const v = getVal();
+  const what = dest ? '→ ' + dest.name : (!v ? '?' : st.unit === 'min' ? fmtMin(v) : String(v).replace('.', ',') + ' km');
   $('chipTxt').textContent = ico[st.mode] + ' ' + lbl[st.mode] + ' · ' + (st.type === 'boucle' ? 'Boucle' : (st.withReturn ? 'Aller-retour' : 'Aller')) + ' · ' + what;
 }
 $('chip').onclick = () => {
