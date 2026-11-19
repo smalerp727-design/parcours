@@ -111,23 +111,29 @@
   #btnCfg{top:calc(12px + env(safe-area-inset-top))}
   #btnLoc{top:auto;bottom:calc(var(--sheet, 170px) + 12px);transition:bottom .28s cubic-bezier(.2,.8,.2,1),opacity .2s}
   body.sheet-drag #btnLoc,body.sheet-drag #routeActs{transition:none}
-  #btnHere{display:none;height:42px;border:none;border-radius:21px;padding:0 16px;background:#fff;color:var(--c);font:700 15px system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.3);cursor:pointer;white-space:nowrap}
-  body.show-here #btnHere{display:block}
-  @media (max-width:430px){ body.has-routes #btnHere span{display:none} }   /* place pour Démarrer / Effacer */
-  #routeActs #btnStart,#routeActs #btnClear{display:none}
-  body.has-routes #routeActs #btnStart,body.has-routes #routeActs #btnClear{display:flex}
-  /* Effacer en confirmation : Démarrer se réduit en rond ▶ au lieu d'être poussé */
-  #routeActs.confirm #btnStart{width:42px;padding:0;justify-content:center}
-  #routeActs.confirm #btnStart span{display:none}
-  #routeActs{position:fixed;right:66px;bottom:calc(var(--sheet, 170px) + 14px);z-index:1000;display:none;gap:8px;align-items:center;transition:bottom .28s cubic-bezier(.2,.8,.2,1)}
-  body.has-routes #routeActs,body.show-here #routeActs{display:flex}
-  body.sheet-tall #routeActs,body.nav #routeActs{display:none}
-  #btnStart{height:42px;border:none;border-radius:21px;padding:0 16px;align-items:center;gap:6px;white-space:nowrap;transition:width .2s,padding .2s;background:var(--c);color:#fff;font:700 15px system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.3);cursor:pointer}
-  #btnClear{height:42px;min-width:42px;border:none;border-radius:21px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;gap:4px;padding:0 10px;cursor:pointer}
-  #btnClear svg{width:22px;height:22px;fill:#b91c1c}
-  #btnClear span{display:none;color:#b91c1c;font:700 14px system-ui,sans-serif}
+  /* Ligne de boutons du bas : apparitions en fondu et déplacements fluides (≈ 0,3 s) */
+  #routeActs{--ease:cubic-bezier(.25,.8,.25,1);position:fixed;right:66px;bottom:calc(var(--sheet, 170px) + 14px);z-index:1000;display:flex;align-items:center;pointer-events:none;transition:bottom .28s var(--ease),opacity .3s var(--ease)}
+  body.sheet-tall #routeActs,body.nav #routeActs{opacity:0}
+  body.sheet-tall #routeActs > button,body.nav #routeActs > button{pointer-events:none !important}
+  #routeActs > button{height:42px;border:none;border-radius:21px;box-shadow:0 2px 8px rgba(0,0,0,.3);cursor:pointer;white-space:nowrap;overflow:hidden;
+    display:flex;align-items:center;justify-content:center;flex:none;
+    max-width:0;padding:0;margin-left:0;opacity:0;transform:scale(.85);pointer-events:none;
+    transition:max-width .32s var(--ease),padding .32s var(--ease),margin .32s var(--ease),opacity .25s ease,transform .32s var(--ease),background-color .25s}
+  #routeActs > button.vis{max-width:220px;margin-left:8px;opacity:1;transform:none;pointer-events:auto}
+  #routeActs > button span{display:inline-block;max-width:120px;overflow:hidden;vertical-align:middle;transition:max-width .32s var(--ease),opacity .2s ease}
+  #btnHere{background:#fff;color:var(--c);font:700 15px system-ui,sans-serif}
+  #btnHere.vis{padding:0 16px}
+  @media (max-width:430px){ body.has-routes #btnHere span{max-width:0;opacity:0} }
+  #btnStart{background:var(--c);color:#fff;font:700 15px system-ui,sans-serif;gap:6px}
+  #btnStart.vis{padding:0 16px}
+  #routeActs.confirm #btnStart{padding:0 14px;gap:0}
+  #routeActs.confirm #btnStart span{max-width:0;opacity:0}
+  #btnClear{background:#fff;gap:4px}
+  #btnClear.vis{padding:0 10px}
+  #btnClear svg{width:22px;height:22px;fill:#b91c1c;flex:none}
+  #btnClear span{color:#b91c1c;font:700 14px system-ui,sans-serif;max-width:0 !important;opacity:0}
   #btnClear.sure{background:#fee2e2}
-  #btnClear.sure span{display:inline}
+  #btnClear.sure span{max-width:90px !important;opacity:1}
   /* Mode navigation */
   #navbar{display:none;position:fixed;left:0;right:0;bottom:0;z-index:1100;background:var(--bg);border-radius:18px 18px 0 0;box-shadow:0 -2px 12px rgba(0,0,0,.25);padding:0 14px calc(12px + env(safe-area-inset-bottom))}
   body.nav #navbar{display:block}
@@ -267,7 +273,8 @@
   @media (min-width:800px), (orientation:landscape) and (max-height:520px){
     #btnLoc{bottom:calc(24px + env(safe-area-inset-bottom)) !important;opacity:1 !important;pointer-events:auto !important}
     #routeActs{bottom:calc(26px + env(safe-area-inset-bottom)) !important}
-    body.sheet-tall.has-routes:not(.nav) #routeActs,body.sheet-tall.show-here:not(.nav) #routeActs{display:flex}
+    body.sheet-tall:not(.nav) #routeActs{opacity:1}
+    body.sheet-tall:not(.nav) #routeActs > button.vis{pointer-events:auto !important}
     #navbar{left:auto;right:12px;bottom:12px;width:420px;border-radius:18px}
     /* Le haut du panneau reste fixe, seule la liste défile */
     #list{flex-direction:column;overflow-y:auto;margin:8px -4px 0;padding:0 4px;flex:1 1 auto;min-height:0}
@@ -405,6 +412,8 @@
     <div id="styles"></div>
     <label>Photos sur la carte</label>
     <label class="sw"><input type="checkbox" id="optPhotos"><span>Photos autour du parcours<small>Wikimedia Commons et Panoramax</small></span></label>
+    <label>Liste des parcours</label>
+    <label class="sw"><input type="checkbox" id="optNoConfirm"><span>Effacer sans confirmation<small>le bouton 🗑 efface la liste dès le 1er appui</small></span></label>
     <label class="sw"><input type="checkbox" id="optMine"><span>Mes photos et vidéos<small>ajoutées avec le bouton 📷+</small></span></label>
     <label>Vitesses moyennes (km/h) — servent à convertir une durée en distance</label>
     <div class="speeds">
@@ -940,6 +949,7 @@ function renderList(){
   L_.querySelectorAll('.it:not(.pin)').forEach(b => listObs.observe(b));
   L_.scrollLeft = keepX; L_.scrollTop = keepY;
   document.body.classList.toggle('has-routes', candidates.length > 0 && !!selected);
+  syncActs();
   if(sheetReady && !WIDE.matches && sheetState !== 'full') setSheet(sheetState);   // hauteur du tiroir replié
 }
 
@@ -1759,8 +1769,20 @@ function clearAll(){
   msg('Liste effacée. Tes parcours enregistrés ⭐ sont conservés.');
   if(sheetReady && !WIDE.matches) setSheet('peek');
 }
-$('btnClear').onclick = () => {   // 1er appui : confirmation, 2e appui : effacer
+// Boutons du bas : visibles selon la situation (classe .vis = apparition en fondu)
+function syncActs(){
+  const routes = document.body.classList.contains('has-routes'), here = document.body.classList.contains('show-here');
+  $('btnHere').classList.toggle('vis', here);
+  $('btnStart').classList.toggle('vis', routes);
+  $('btnClear').classList.toggle('vis', routes);
+}
+new MutationObserver(syncActs).observe(document.body, { attributes:true, attributeFilter:['class'] });   // suit has-routes / show-here
+syncActs();
+$('optNoConfirm').checked = !!st.noConfirm;
+$('optNoConfirm').onchange = () => { st.noConfirm = $('optNoConfirm').checked; store.set('st', st); };
+$('btnClear').onclick = () => {   // 1er appui : confirmation, 2e appui : effacer (sauf réglage "sans confirmation")
   const b = $('btnClear');
+  if(st.noConfirm){ clearAll(); syncActs(); return; }
   if(!b.classList.contains('sure')){
     b.classList.add('sure'); $('routeActs').classList.add('confirm');
     clearTimeout(b._t); b._t = setTimeout(() => { b.classList.remove('sure'); $('routeActs').classList.remove('confirm'); }, 3000);
@@ -1768,6 +1790,7 @@ $('btnClear').onclick = () => {   // 1er appui : confirmation, 2e appui : efface
   }
   b.classList.remove('sure'); $('routeActs').classList.remove('confirm');
   clearAll();
+  syncActs();
 };
 
 /* ---------- Mode navigation : on suit le parcours en direct ---------- */
@@ -1848,6 +1871,7 @@ function checkHere(){
     show = c.distanceTo(s) > Math.min(140, mapEl.clientWidth * 0.3);   // départ loin du centre de la vue
   }
   document.body.classList.toggle('show-here', show);
+  syncActs();
 }
 map.on('moveend', checkHere);
 $('btnHere').onclick = () => {
