@@ -89,6 +89,11 @@
   #tabs button.on{color:var(--c);border-bottom-color:var(--c)}
   #coach{flex:1 1 auto;min-height:0;overflow-y:auto;margin:8px -14px 0;padding:0 14px 14px;overscroll-behavior:contain}
   #panel[data-state=peek] #coach > :not(.cur){display:none}
+  #demoList{display:flex;flex-direction:column;gap:6px}
+  #demoList button{text-align:left;border:1px solid var(--bd);background:var(--bg);border-radius:9px;padding:8px 10px;font-size:14px;color:var(--tx);cursor:pointer}
+  #demoList button.on{border-color:var(--c);background:#e6f4f1;color:var(--c);font-weight:600}
+  #demoList button.back{color:#b45309;border-color:#fcd34d;background:#fffbeb}
+  .cc.demo{background:#fffbeb;border-color:#fcd34d;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px}
   .cc{border:1px solid var(--bd);border-radius:12px;padding:10px 12px;margin-bottom:10px;background:var(--bg)}
   .cc.warn{background:#fffbeb;border-color:#fcd34d}
   .cc p{font-size:14px;line-height:1.4;margin:6px 0}
@@ -537,6 +542,8 @@
     <div id="styles"></div>
     <label>Photos sur la carte</label>
     <label class="sw"><input type="checkbox" id="optPhotos"><span>Photos autour du parcours<small>Wikimedia Commons et Panoramax</small></span></label>
+    <label>Profils de test (démonstration du Coach)</label>
+    <div id="demoList"></div>
     <label>Liste des parcours</label>
     <label class="sw"><input type="checkbox" id="optNoConfirm"><span>Effacer sans confirmation<small>le bouton 🗑 efface la liste dès le 1er appui</small></span></label>
     <label class="sw"><input type="checkbox" id="optMine"><span>Mes photos et vidéos<small>ajoutées avec le bouton 📷+</small></span></label>
@@ -2655,6 +2662,13 @@ function renderCoach(){
     return;
   }
   const b = bilan(coach), o = coach.objectif, p = coach.profil;
+  if(coach.demo){
+    const d = document.createElement('div'); d.className = 'cc demo';
+    d.innerHTML = '<span>🧪 Profil de test : <b></b></span><button class="sgDet">Quitter</button>';
+    d.querySelector('b').textContent = coach.demo.split(' — ')[0];
+    d.querySelector('button').onclick = leaveDemo;
+    box.appendChild(d);
+  }
   // Carte objectif (affichée en premier : c'est elle qu'on voit tiroir replié)
   const obj = document.createElement('div');
   obj.className = 'cc cur';
@@ -2695,7 +2709,7 @@ function renderCoach(){
 }
 function objDetail(o, p){
   if(o.type === 'poids') return 'de ' + r1(p.poids) + ' à ' + r1(o.poids) + ' kg' + (o.date ? ' d\'ici le ' + new Date(o.date).toLocaleDateString('fr-FR') : '');
-  if(o.type === 'course') return (o.dist ? o.dist + ' km' : 'course') + (o.temps ? ' en ' + fmtMin(o.temps) : '') + (o.date ? ' le ' + new Date(o.date).toLocaleDateString('fr-FR') : '');
+  if(o.type === 'course') return (o.dist ? r1(o.dist) + ' km' : 'course') + (o.temps ? ' en ' + fmtMin(o.temps) : '') + (o.date ? ' le ' + new Date(o.date).toLocaleDateString('fr-FR') : '');
   if(o.type === 'endur') return 'tenir ' + fmtMin(o.duree || 30) + ' sans s\'arrêter';
   if(o.type === 'vitesse') return 'gagner en vitesse sur ' + (o.dist || 5) + ' km';
   if(o.type === 'regul') return (o.min || 150) + ' min d\'activité par semaine';
@@ -2916,6 +2930,49 @@ function stopTest(keep){
   $('tRes').textContent = '✓ Résultat enregistré : ' + testTxt(bz.test);
 }
 renderCoach();
+/* --- Profils de démonstration (Réglages) : pour voir le Coach avec différents utilisateurs --- */
+const inMonths = m => { const d = new Date(); d.setMonth(d.getMonth() + m); return d.toISOString().slice(0, 10); };
+const DEMOS = [
+  { nom:'Léa, 28 ans — perdre du poids en marchant', c:{ profil:{ age:28, sexe:'f', taille:165, poids:72 }, activite:{ acts:['marche'], niveau:'sed', seances:3, duree:45 },
+      sante:[false,false,false,false,false], objectif:{ type:'poids', poids:66, date:inMonths(4) }, test:{ type:'ukk', temps:1180, fc:128 } } },
+  { nom:'Marc, 45 ans — semi-marathon en 1 h 55', c:{ profil:{ age:45, sexe:'h', taille:180, poids:82 }, activite:{ acts:['course'], niveau:'reg', seances:4, duree:60 },
+      sante:[false,false,false,false,false], objectif:{ type:'course', dist:21.1, temps:115, date:inMonths(3) }, test:{ type:'cooper', dist:2650 } } },
+  { nom:'Inès, 35 ans — plus rapide à vélo', c:{ profil:{ age:35, sexe:'f', taille:170, poids:60 }, activite:{ acts:['velo', 'course'], niveau:'spo', seances:5, duree:90 },
+      sante:[false,false,false,false,false], objectif:{ type:'vitesse', dist:20 }, test:{ type:'velo', dist:9500 } } },
+  { nom:'Paul, 62 ans — remise en forme (alerte santé)', c:{ profil:{ age:62, sexe:'h', taille:175, poids:88 }, activite:{ acts:['marche'], niveau:'sed', seances:2, duree:30 },
+      sante:[false,false,false,true,true], objectif:{ type:'forme' }, test:null } },
+  { nom:'Sam, 22 ans — courir 1 h sans s\'arrêter', c:{ profil:{ age:22, sexe:'a', taille:178, poids:68 }, activite:{ acts:['course', 'velo'], niveau:'occ', seances:3, duree:45 },
+      sante:[false,false,false,false,false], objectif:{ type:'endur', duree:60 }, test:{ type:'cooper', dist:2200 } } }
+];
+function loadDemo(i){
+  if(!coach || !coach.demo) store.set('coachReal', coach);   // ton vrai profil est mis de côté
+  coach = Object.assign(JSON.parse(JSON.stringify(DEMOS[i].c)), { demo:DEMOS[i].nom, date:new Date().toISOString() });
+  saveCoach(); renderCoach(); renderDemos();
+  $('cfg').classList.add('hidden');
+  setTab('coach');
+  if(sheetReady && !WIDE.matches && sheetState === 'peek') setSheet('half');
+}
+function leaveDemo(){
+  coach = store.get('coachReal', null);
+  try{ localStorage.removeItem('prc_coachReal'); }catch(e){}
+  saveCoach(); renderCoach(); renderDemos();
+}
+function renderDemos(){
+  const box = $('demoList');
+  box.innerHTML = '';
+  DEMOS.forEach((d, i) => {
+    const b = document.createElement('button');
+    b.textContent = d.nom;
+    b.classList.toggle('on', !!coach && coach.demo === d.nom);
+    b.onclick = () => loadDemo(i);
+    box.appendChild(b);
+  });
+  if(coach && coach.demo){
+    const r = document.createElement('button'); r.className = 'back'; r.textContent = '↩︎ Revenir à mon profil';
+    r.onclick = leaveDemo; box.appendChild(r);
+  }
+}
+renderDemos();
 
 /* ---------- Téléphone : panneau en tiroir façon Android (glisser pour agrandir) ---------- */
 var sheetState = 'peek', sheetReady = false;
