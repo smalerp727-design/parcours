@@ -107,6 +107,46 @@
   .cctab td:first-child{color:var(--mu);padding-right:10px}
   .cctab td:last-child{text-align:right;font-weight:600}
   .card.bz{max-width:520px}
+  .ferr{color:#b91c1c;font-size:14px;min-height:18px;margin:8px 0 0}
+  .pbar{height:8px;border-radius:4px;background:#f3f4f6;overflow:hidden;margin:10px 0 4px}
+  .pbar i{display:block;height:100%;background:var(--c);border-radius:4px;transition:width .5s}
+  .ses{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f3f4f6}
+  .ses:last-child{border-bottom:none}
+  .ses .sd{flex:none;width:36px;height:36px;border-radius:10px;background:#f3f4f6;color:var(--mu);font:700 12px/36px system-ui,sans-serif;text-align:center}
+  .ses.now .sd{background:var(--c);color:#fff}
+  .ses.ok .sd{background:var(--sel-bg);color:var(--c)}
+  .ses.late .sd{background:#fef3c7;color:#92400e}
+  .ses > div{flex:1;min-width:0}
+  .ses b{display:block;font-size:14px}
+  .ses small{display:block;color:var(--mu);font-size:12px;line-height:1.35}
+  .ses .sm{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-size:13px;font-weight:600;text-align:right}
+  .ses .sm small{font-weight:400}
+  .sok{color:var(--c);font-size:18px;line-height:1}
+  .ccacts{margin-top:8px}
+  .kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+  .kpi{background:#f9fafb;border:1px solid #f1f1f1;border-radius:10px;padding:8px 10px}
+  .kpi small{display:block;color:var(--mu);font-size:12px}
+  .kpi b{font-size:17px}
+  .chh{font-size:12px !important;color:var(--mu);margin:10px 0 2px !important}
+  .chart{width:100%;height:auto;display:block}
+  .chart text{font:10px system-ui,sans-serif;fill:#6b7280}
+  .ins{list-style:none;padding:0;margin:6px 0 0}
+  .ins li{display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px solid #f3f4f6}
+  .ins li:last-child{border-bottom:none}
+  .ins li span{flex:none;width:22px;text-align:center}
+  .ins li p{margin:0 !important;font-size:14px}
+  .wk{display:grid;grid-template-columns:34px 1fr auto;column-gap:8px;padding:7px 0;border-bottom:1px solid #f3f4f6;align-items:baseline}
+  .wk:last-child{border-bottom:none}
+  .wk b{font-size:14px;color:var(--mu)}
+  .wk span{font-size:13px;font-weight:600}
+  .wk em{font-style:normal;font-size:13px;font-weight:600;text-align:right;white-space:nowrap}
+  .wk small{grid-column:2 / 4;color:var(--mu);font-size:12px}
+  .wk.cur{background:var(--sel-bg);border-radius:8px;padding:7px 6px;margin:0 -6px}
+  .wk.cur b{color:var(--c)}
+  .wk.past{opacity:.55}
+  .bzc.rpe{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
+  .bzc.rpe button{min-width:0;padding:7px 0}
+  @media (hover:hover){ .ses:not(.ok):hover{background:var(--hov-bg)} }
   .bzhd{display:flex;align-items:center;justify-content:space-between}
   .bzhd h2{margin:0}
   #bzClose{border:none;background:none;font-size:18px;cursor:pointer;color:var(--mu)}
@@ -484,6 +524,15 @@
     <div id="bzBody"></div>
     <p id="bzErr"></p>
     <div class="btns"><button id="bzPrev">Précédent</button><button id="bzNext" class="primary">Suivant</button></div>
+  </div>
+</div>
+
+<div id="logModal" class="modal hidden">
+  <div class="card">
+    <h2 id="logTitle">Enregistrer une séance</h2>
+    <div id="logBody"></div>
+    <p id="logErr" class="ferr"></p>
+    <div class="btns"><button id="logCancel">Annuler</button><button id="logSave" class="primary">Enregistrer</button></div>
   </div>
 </div>
 
@@ -1983,6 +2032,7 @@ function startNav(){
   map.setView(meLL || nav.line[0], 17);
 }
 function stopNav(){
+  const ride = nav && { dist:nav.arc[nav.idx] / 1000, duree:Math.round((Date.now() - nav.t0) / 60000), act:st.mode };
   nav = null;
   document.body.classList.remove('nav');
   if(doneLine){ map.removeLayer(doneLine); doneLine = null; }
@@ -1990,6 +2040,7 @@ function stopNav(){
   $('navAlert').hidden = true;
   if(sheetReady && !WIDE.matches) setSheet('peek');
   fitRoute();
+  if(coach && ride && ride.dist > 0.3 && ride.duree >= 3) openLog({ act:ride.act, duree:ride.duree, dist:ride.dist, fromNav:true });   // suivi du Coach
 }
 function navBar(main){
   const el = Math.round((Date.now() - nav.t0) / 60000), done = nav.arc[nav.idx], left = Math.max(0, nav.total - done);
@@ -2705,6 +2756,7 @@ function renderCoach(){
     w.innerHTML = '<b>⚠️ Avant d\'augmenter l\'intensité</b><p>Tu as répondu « oui » à une question santé : demande l\'avis d\'un médecin avant de faire des efforts intenses. En attendant, ton programme restera progressif et modéré.</p>';
     box.appendChild(w);
   }
+  renderProgram(box);   // semaine, suivi, analyse, programme
   // Carte bilan
   const bl = document.createElement('div');
   bl.className = 'cc';
@@ -2723,11 +2775,6 @@ function renderCoach(){
   rows.forEach(([k, v]) => { const tr = document.createElement('tr'); tr.innerHTML = '<td></td><td></td>'; tr.cells[0].textContent = k; tr.cells[1].textContent = v; bl.querySelector('table').appendChild(tr); });
   box.appendChild(bl);
   if($('ccTest')) $('ccTest').onclick = () => openBilan(4);
-  // Prochaine étape (partie 2)
-  const nx = document.createElement('div');
-  nx.className = 'cc';
-  nx.innerHTML = '<b class="cct">📅 Programme</b><p>Ton programme personnalisé (séances de la semaine, courbe d\'évolution, ajustement selon tes sorties) arrive dans la prochaine version.</p>';
-  box.appendChild(nx);
   box.querySelectorAll('[data-e]').forEach(btn => btn.onclick = () => openBilan(+btn.dataset.e));
 }
 function objDetail(o, p){
@@ -2844,6 +2891,12 @@ function validStep(){
 }
 function finishBilan(){
   bz.date = new Date().toISOString();
+  const prev = coach && !coach.demo ? coach : null;
+  bz.log = prev ? prev.log || [] : bz.log || [];
+  bz.poids = prev ? prev.poids || [] : bz.poids || [];
+  // nouvel objectif (ou premier bilan) : le programme repart de cette semaine
+  if(!prev || !prev.debut || prev.objectif.type !== bz.objectif.type || JSON.stringify(prev.objectif) !== JSON.stringify(bz.objectif)) bz.debut = new Date().toISOString();
+  if(!prev || prev.profil.poids !== bz.profil.poids) bz.poids.push({ date:new Date().toISOString(), kg:bz.profil.poids });
   coach = bz; saveCoach();
   $('bilanModal').classList.add('hidden');
   renderCoach();
@@ -2952,6 +3005,444 @@ function stopTest(keep){
   bz.test = { type:r.k, dist:Math.round(r.dist) };
   $('tRes').textContent = '✓ Résultat enregistré : ' + testTxt(bz.test);
 }
+
+/* =====================================================================
+   COACH — partie 2 : programme adaptatif, suivi (KPI), analyses, courbes
+   ===================================================================== */
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const DAYMS = 864e5, WEEKMS = 7 * DAYMS;
+const JOURS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+const ICO = { marche:'🚶', course:'🏃', velo:'🚴' };
+function wkStart(d){ const x = new Date(d); x.setHours(0, 0, 0, 0); return new Date(x.getTime() - ((x.getDay() + 6) % 7) * DAYMS); }
+const isoDay = d => { const x = new Date(d); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); };
+const fmtD = d => new Date(d).toLocaleDateString('fr-FR', { day:'numeric', month:'short' });
+const hm = m => fmtMin(Math.round(m));
+
+// Niveau 0 (débutant) à 3 (sportif) : activité déclarée, corrigée par le test
+function levelOf(c){
+  let L = { sed:0, occ:1, reg:2, spo:3 }[c.activite.niveau];
+  const n = bilan(c).niveau || '';
+  if(/développer|débutant/.test(n)) L--;
+  if(/très bon|excellent|confirmé|avancé/.test(n)) L++;
+  return clamp(L, 0, 3);
+}
+function planMeta(c){
+  const debut = wkStart(c.debut || c.date), o = c.objectif, p = c.profil;
+  let weeks = 12;
+  if(o.date) weeks = clamp(Math.ceil((new Date(o.date) - debut) / WEEKMS), 3, 40);
+  else if(o.type === 'poids') weeks = clamp(Math.ceil((p.poids - o.poids) / 0.6), 4, 40);
+  const cur = clamp(Math.floor((wkStart(Date.now()) - debut) / WEEKMS), 0, weeks - 1);
+  return { debut, weeks, cur };
+}
+const raceGoal = c => c.objectif.type === 'course' && !!c.objectif.date;
+function mainAct(c){
+  const a = c.activite.acts, t = c.objectif.type;
+  if(t === 'course' && a.includes('course')) return 'course';   // préparation de course : la course à pied d'abord
+  return a[0];                                                  // sinon : la 1re activité choisie
+}
+function phaseOf(c, w, meta){
+  if(raceGoal(c)){ if(w >= meta.weeks - 1) return 'Affûtage'; if(w >= meta.weeks - 4) return 'Spécifique'; }
+  return w < Math.ceil(meta.weeks * 0.35) ? 'Base' : 'Développement';
+}
+// Volume de la semaine (minutes) : montée progressive, semaine allégée toutes les 4, affûtage avant la course
+function weekMinutes(c, w, meta, factor){
+  const L = levelOf(c), cap = c.activite.seances * c.activite.duree;
+  const walk = mainAct(c) === 'marche' ? 1.5 : 1;   // la marche est moins intense : plus de minutes
+  const base = Math.min(cap, [60, 90, 150, 220][L] * walk);
+  const peak = Math.min(cap, base * 1.6 + (c.objectif.type === 'course' ? (c.objectif.dist || 10) * 2 : 0));
+  const build = Math.max(1, meta.weeks - (raceGoal(c) ? 2 : 0) - 1);
+  let m = base + (peak - base) * Math.min(1, w / build);
+  if((w + 1) % 4 === 0) m *= 0.75;
+  if(raceGoal(c)){ if(w === meta.weeks - 1) m *= 0.55; else if(w === meta.weeks - 2) m *= 0.8; }
+  return Math.max(20, Math.round(m * factor / 5) * 5);
+}
+const DAYS_BY_N = { 1:[5], 2:[2, 5], 3:[1, 3, 5], 4:[0, 2, 4, 6], 5:[0, 1, 3, 4, 6], 6:[0, 1, 2, 4, 5, 6] };
+
+// Séances de la semaine w
+function weekPlan(c, w, meta, ad){
+  ad = ad || { factor:1 };
+  const b = bilan(c), o = c.objectif, L = levelOf(c), acts = c.activite.acts, main = mainAct(c);
+  const n = clamp(c.activite.seances - (ad.dropOne ? 1 : 0), 1, 6);
+  const tot = weekMinutes(c, w, meta, ad.factor), phase = phaseOf(c, w, meta);
+  const soft = b.alerte || ad.soft;
+  let intense = soft ? 0 : ['vitesse', 'course'].includes(o.type) ? (L >= 2 ? 2 : 1) : (L >= 1 ? 1 : 0);
+  intense = Math.min(intense, n - 1);
+  const types = [];
+  for(let i = 0; i < n; i++) types.push('ef');
+  if(n >= 2) types[n - 1] = 'long';
+  for(let i = 0; i < intense; i++){
+    let t = i === 0 ? (w % 2 ? 'seuil' : 'vma') : 'seuil';
+    if(o.type === 'course' && phase === 'Spécifique') t = i === 0 ? 'specifique' : 'seuil';
+    if(phase === 'Affûtage') t = 'specifique';
+    types[i === 0 ? Math.min(1, n - 2) : Math.min(3, n - 2)] = t;
+  }
+  const share = types.map(t => t === 'long' ? 1.6 : t === 'ef' ? 1 : 0.9);
+  const sum = share.reduce((a, x) => a + x, 0), days = DAYS_BY_N[n];
+  let k = 0;
+  return types.map((t, i) => {
+    const act = t === 'long' || (t !== 'ef' && ['course', 'vitesse'].includes(o.type)) ? main : acts[(k++) % acts.length];
+    const dur = clamp(Math.round(tot * share[i] / sum / 5) * 5, 15, Math.max(20, c.activite.duree));
+    return Object.assign({ w, day:days[i], act, type:t, duree:dur }, sessText(c, act, t, dur, w));
+  });
+}
+// Libellé et consignes de chaque séance
+function sessText(c, act, t, dur, w){
+  const b = bilan(c), vma = b.vma, z = (a, bb) => 'FC ' + Math.round(b.fcmax * a) + '–' + Math.round(b.fcmax * bb) + ' bpm';
+  const o = c.objectif, L = levelOf(c);
+  const race = o.type === 'course' && o.dist && o.temps ? o.dist / (o.temps / 60) : null;
+  const calm = (lab, det) => ({ label:lab, detail:det });
+  if(act === 'course'){
+    if(t === 'ef' || t === 'long'){
+      if(L === 0 && w < 6){   // débutant : course / marche alternées
+        const run = clamp(1 + w, 1, 8);
+        return calm(t === 'long' ? 'Sortie longue alternée' : 'Course / marche alternées', run + ' min de course lente / 1 min de marche, à répéter ' + Math.max(3, Math.floor(dur / (run + 1))) + ' fois. Tu dois pouvoir parler.');
+      }
+      return calm(t === 'long' ? 'Sortie longue' : 'Endurance fondamentale', (vma ? 'À ' + allure(vma * 0.675) + ', ' : '') + 'en aisance respiratoire (tu peux parler) · ' + z(0.6, 0.72));
+    }
+    if(t === 'vma'){ const k = clamp(Math.round((dur - 25) / 1.2), 6, 16); return calm('Fractionné court', 'Échauffement 15 min, puis ' + k + ' × (30 s vite' + (vma ? ' à ' + allure(vma) : '') + ' / 30 s trot), retour au calme 10 min.'); }
+    if(t === 'seuil'){ const r = clamp(Math.round((dur - 25) / 10), 2, 5); return calm('Seuil', 'Échauffement 15 min, puis ' + r + ' × 8 min soutenu' + (vma ? ' à ' + allure(vma * 0.86) : '') + ' (récup. 2 min), retour au calme.'); }
+    if(t === 'specifique'){ const r = clamp(Math.round((dur - 25) / 12), 2, 4); return calm('Allure course', 'Échauffement 15 min, puis ' + r + ' × 10 min à ton allure de course' + (race ? ' (' + allure(race) + ')' : '') + ', récup. 2 min.'); }
+  }
+  if(act === 'velo'){
+    if(t === 'ef' || t === 'long') return calm(t === 'long' ? 'Sortie longue vélo' : 'Vélo endurance', 'En souplesse, sans forcer en côte · ' + z(0.6, 0.72));
+    if(t === 'vma') return calm('Intervalles vélo', 'Échauffement 15 min, puis ' + clamp(Math.round((dur - 25) / 6), 3, 8) + ' × (3 min soutenu / 3 min facile).');
+    return calm('Vélo tempo', 'Échauffement 15 min, puis ' + clamp(Math.round((dur - 25) / 13), 2, 4) + ' × 10 min soutenu (récup. 3 min).');
+  }
+  // marche
+  if(t === 'ef' || t === 'long') return calm(t === 'long' ? 'Longue marche' : 'Marche active', 'À bon rythme : légèrement essoufflé(e) mais capable de parler · ' + z(0.55, 0.68));
+  return calm('Marche rapide fractionnée', clamp(Math.round(dur / 5), 3, 10) + ' × (3 min très rapide / 2 min normal).');
+}
+// Calories estimées (MET × poids × heures)
+function kcalOf(c, act, type, min){
+  const met = act === 'course' ? (type === 'ef' || type === 'long' ? 8.5 : 10) : act === 'velo' ? (type === 'ef' || type === 'long' ? 6.8 : 9) : (type === 'ef' || type === 'long' ? 4.3 : 5);
+  return Math.round(met * c.profil.poids * min / 60);
+}
+
+/* --- Suivi : séances faites, adaptation --- */
+const logsOf = c => (c.log || []).slice().sort((a, b) => a.date.localeCompare(b.date));
+function logsWeek(c, meta, w){
+  const s = meta.debut.getTime() + w * WEEKMS;
+  return logsOf(c).filter(l => { const t = new Date(l.date).getTime(); return t >= s && t < s + WEEKMS; });
+}
+// Associe les séances faites aux séances prévues (même activité, dans l'ordre)
+function matchWeek(plan, logs){
+  const used = new Set();
+  plan.forEach(s => {
+    const i = logs.findIndex((l, k) => !used.has(k) && l.act === s.act);
+    if(i >= 0){ used.add(i); s.done = logs[i]; }
+  });
+  return logs.filter((l, k) => !used.has(k));   // séances en plus
+}
+// Le programme s'ajuste selon les 2 dernières semaines : régularité et ressenti
+function adaptOf(c, meta){
+  const ws = [meta.cur - 1, meta.cur - 2].filter(w => w >= 0);
+  if(!ws.length) return { factor:1, why:'' };
+  let plan = 0, done = 0, rpe = [];
+  ws.forEach(w => {
+    const p = weekPlan(c, w, meta), l = logsWeek(c, meta, w);
+    matchWeek(p, l); plan += p.length; done += p.filter(s => s.done).length;
+    l.forEach(x => x.rpe && rpe.push(x.rpe));
+  });
+  const adh = plan ? done / plan : 1, r = rpe.length ? rpe.reduce((a, x) => a + x, 0) / rpe.length : 5;
+  if(adh < 0.5) return { factor:0.8, dropOne:true, adh, rpe:r, why:'Programme allégé (–20 % et une séance de moins) car moins de la moitié des séances ont été faites ces 2 dernières semaines.' };
+  if(r > 7.5) return { factor:0.85, soft:true, adh, rpe:r, why:'Intensité réduite : ton ressenti moyen est élevé (' + r1(r) + '/10). On privilégie l\'endurance cette semaine.' };
+  if(adh < 0.75) return { factor:0.9, adh, rpe:r, why:'Volume légèrement réduit (–10 %) pour t\'aider à retrouver de la régularité.' };
+  if(adh >= 0.9 && r < 6) return { factor:1.08, adh, rpe:r, why:'Progression accélérée (+8 %) : séances faites et ressenti confortable.' };
+  return { factor:1, adh, rpe:r, why:'' };
+}
+// VMA actuelle : test de départ, corrigée selon l'évolution de l'allure en endurance
+function vmaNow(c){
+  const b = bilan(c);
+  if(!b.vma) return null;
+  const ef = logsOf(c).filter(l => l.act === 'course' && l.dist && l.duree && ['ef', 'long', undefined].includes(l.type) && (l.rpe || 5) <= 6).map(l => l.dist / (l.duree / 60));
+  if(ef.length < 4) return b.vma;
+  const k = Math.min(3, Math.floor(ef.length / 2));
+  const avg = a => a.reduce((x, y) => x + y, 0) / a.length;
+  return b.vma * clamp(avg(ef.slice(-k)) / avg(ef.slice(0, k)), 0.95, 1.08);
+}
+const raceTime = (vma, d) => d / (vma * (0.97 - 0.05 * Math.log(d))) * 60;   // minutes
+function trendKgWeek(pts){   // pente (kg / semaine) par régression linéaire
+  if(pts.length < 2) return null;
+  const xs = pts.map(p => new Date(p.date).getTime() / WEEKMS), ys = pts.map(p => p.kg);
+  const mx = xs.reduce((a, x) => a + x, 0) / xs.length, my = ys.reduce((a, x) => a + x, 0) / ys.length;
+  let num = 0, den = 0; xs.forEach((x, i) => { num += (x - mx) * (ys[i] - my); den += (x - mx) ** 2; });
+  return den ? num / den : null;
+}
+
+/* --- Indicateurs et analyses --- */
+function coachStats(c){
+  const meta = planMeta(c), ad = adaptOf(c, meta), now = Date.now(), logs = logsOf(c);
+  const plan = weekPlan(c, meta.cur, meta, ad), extra = matchWeek(plan, logsWeek(c, meta, meta.cur));
+  // 4 dernières semaines terminées
+  let p4 = 0, d4 = 0;
+  for(let w = Math.max(0, meta.cur - 4); w < meta.cur; w++){ const p = weekPlan(c, w, meta), l = logsWeek(c, meta, w); matchWeek(p, l); p4 += p.length; d4 += p.filter(s => s.done).length; }
+  const since = d => logs.filter(l => now - new Date(l.date).getTime() < d * DAYMS);
+  const load = ls => ls.reduce((a, l) => a + l.duree * (l.rpe || 5), 0);
+  const acute = load(since(7)), chronic = load(since(28)) / 4;
+  const vol = w => logsWeek(c, meta, w).reduce((a, l) => a + l.duree, 0);
+  const weeksVol = [];
+  for(let w = Math.max(0, meta.cur - 5); w <= Math.min(meta.weeks - 1, meta.cur + 2); w++)
+    weeksVol.push({ w, plan:weekPlan(c, w, meta, w >= meta.cur ? ad : null).reduce((a, s) => a + s.duree, 0), done:w <= meta.cur ? vol(w) : null });
+  const kcal7 = since(7).reduce((a, l) => a + kcalOf(c, l.act, l.type || 'ef', l.duree), 0);
+  return { meta, ad, plan, extra, adh4: p4 ? d4 / p4 : null, acute, chronic, ratio: chronic > 0 ? acute / chronic : null, weeksVol, kcal7, logs };
+}
+function insights(c, S){
+  const out = [], o = c.objectif, p = c.profil, b = bilan(c);
+  const add = (ico, txt) => out.push({ ico, txt });
+  if(!S.logs.length){ add('💡', 'Enregistre tes séances (▶ Démarrer ou « Fait ») : l\'analyse et l\'ajustement du programme s\'appuient dessus.'); return out; }
+  if(S.adh4 != null) add(S.adh4 >= 0.85 ? '✅' : S.adh4 >= 0.6 ? '🟡' : '⚠️', 'Régularité sur 4 semaines : ' + Math.round(S.adh4 * 100) + ' % des séances prévues' + (S.adh4 >= 0.85 ? ' — excellent, c\'est la clé de la progression.' : S.adh4 >= 0.6 ? ' — correct, vise au moins 80 %.' : ' — trop irrégulier : mieux vaut des séances plus courtes mais tenues.'));
+  if(S.ratio != null && S.chronic > 0){
+    if(S.acute === 0) add('🟡', 'Aucune séance ces 7 derniers jours : reprends en douceur avec une séance courte et facile.');
+    else if(S.ratio > 1.5) add('⚠️', 'Charge des 7 derniers jours ' + Math.round((S.ratio - 1) * 100) + ' % au-dessus de ta moyenne : risque de blessure ou de fatigue. Prévois quelques jours plus légers.');
+    else if(S.ratio > 1.3) add('🟡', 'Charge en nette hausse (+' + Math.round((S.ratio - 1) * 100) + ' % par rapport à ta moyenne) : reste attentif(ve) à la fatigue et au sommeil.');
+    else if(S.ratio < 0.7 && S.meta.cur > 1) add('🟡', 'Charge en baisse (' + Math.round((1 - S.ratio) * 100) + ' % sous ta moyenne) : la forme se maintient mais ne progresse pas.');
+    else add('✅', 'Charge d\'entraînement bien dosée (variation de ' + Math.round((S.ratio - 1) * 100) + ' % par rapport à ta moyenne).');
+  }
+  const rp = S.logs.slice(-6).filter(l => l.rpe);
+  if(rp.length >= 3){ const m = rp.reduce((a, l) => a + l.rpe, 0) / rp.length; if(m >= 7.5) add('⚠️', 'Ressenti moyen élevé (' + r1(m) + '/10) sur tes dernières séances : ralentis en endurance, tu dois pouvoir parler.'); }
+  if(S.ad.why) add('🔄', S.ad.why);
+  // Objectif
+  const pts = (c.poids || []).slice().sort((a, x) => a.date.localeCompare(x.date));
+  if(o.type === 'poids' && pts.length >= 2){
+    const sl = trendKgWeek(pts.slice(-6)), cur = pts[pts.length - 1].kg;
+    if(sl != null && sl < -0.05){
+      const wk = (cur - o.poids) / -sl, when = new Date(Date.now() + wk * WEEKMS);
+      add(sl < -1 ? '⚠️' : '✅', 'Tendance : ' + r1(sl) + ' kg/semaine' + (sl < -1 ? ' (trop rapide, risque de fonte musculaire).' : '.') + ' À ce rythme, ' + r1(o.poids) + ' kg vers le ' + fmtD(when) + (o.date ? (when <= new Date(o.date) ? ' ✓ dans les temps.' : ' (objectif le ' + fmtD(o.date) + ').') : '.'));
+    } else add('🟡', 'Poids stable ces dernières semaines : augmente un peu la durée des séances d\'endurance et surveille l\'alimentation (léger déficit de 300 à 500 kcal/jour).');
+  }
+  if(o.type === 'course' && o.dist){
+    const v = vmaNow(c);
+    if(v){
+      const now = raceTime(v, o.dist), wl = Math.max(0, (new Date(o.date || Date.now()) - Date.now()) / WEEKMS);
+      const fut = raceTime(v * (1 + 0.004 * wl * (S.adh4 ?? 0.8)), o.dist);
+      add(o.temps && fut <= o.temps ? '✅' : '🎯', 'Temps estimé sur ' + r1(o.dist) + ' km : ' + hm(now) + ' aujourd\'hui → ' + hm(fut) + ' le jour J' + (o.temps ? ' (objectif ' + hm(o.temps) + (fut <= o.temps ? ' : atteignable ✓).' : ' : encore ' + hm(fut - o.temps) + ' à gagner).') : '.'));
+    } else add('💡', 'Fais le test de terrain pour obtenir une estimation de ton temps de course.');
+  }
+  const mainL = S.logs.filter(l => l.act === mainAct(c) && l.dist && ['ef', 'long', undefined].includes(l.type));
+  if(['vitesse', 'course', 'forme', 'poids'].includes(o.type) && mainL.length >= 4){
+    const sp = l => l.dist / (l.duree / 60), k = Math.min(3, Math.floor(mainL.length / 2));
+    const a = mainL.slice(0, k).reduce((x, l) => x + sp(l), 0) / k, z = mainL.slice(-k).reduce((x, l) => x + sp(l), 0) / k;
+    const g = (z / a - 1) * 100;
+    add(g > 1 ? '📈' : g < -2 ? '📉' : '➖', 'Vitesse en endurance (' + ACT[mainAct(c)].split(' ')[1].toLowerCase() + ') : ' + r1(a) + ' → ' + r1(z) + ' km/h (' + (g >= 0 ? '+' : '') + r1(g) + ' %)' + (g > 1 ? ' : tu progresses.' : g < -2 ? ' : fatigue possible, privilégie la récupération.' : ' : stable.'));
+  }
+  if(o.type === 'endur'){
+    const lg = S.logs.filter(l => l.act === mainAct(c)).map(l => l.duree), best = Math.max(0, ...lg);
+    add(best >= o.duree ? '✅' : '🎯', 'Plus longue séance : ' + hm(best) + ' (objectif ' + hm(o.duree) + ')' + (best >= o.duree ? ' — objectif atteint 🎉' : '.'));
+  }
+  if(o.type === 'regul' || o.type === 'forme'){
+    const target = o.type === 'regul' ? o.min || 150 : 150, done = S.weeksVol.filter(x => x.done != null && x.w < S.meta.cur).slice(-4);
+    if(done.length){ const m = done.reduce((a, x) => a + x.done, 0) / done.length; add(m >= target ? '✅' : '🎯', 'Activité moyenne : ' + Math.round(m) + ' min/semaine (repère : ' + target + ' min).'); }
+  }
+  return out;
+}
+
+/* --- Graphiques (SVG, aux couleurs de l'appli) --- */
+function barChart(data){
+  const W = 320, H = 120, pad = 18, bw = (W - pad) / data.length, max = Math.max(30, ...data.map(d => Math.max(d.plan, d.done || 0)));
+  let s = '<svg viewBox="0 0 ' + W + ' ' + (H + 16) + '" class="chart" role="img" aria-label="Volume par semaine">';
+  data.forEach((d, i) => {
+    const x = pad + i * bw + 4, w = bw - 8, hp = d.plan / max * H, hd = (d.done || 0) / max * H;
+    s += '<rect x="' + x + '" y="' + (H - hp) + '" width="' + w + '" height="' + hp + '" rx="4" fill="none" stroke="#9fd6cd" stroke-dasharray="3 2"/>';
+    if(d.done != null) s += '<rect x="' + (x + 3) + '" y="' + (H - hd) + '" width="' + (w - 6) + '" height="' + hd + '" rx="3" fill="' + (d.cur ? '#14b8a6' : '#0f766e') + '"/>';
+    s += '<text x="' + (x + w / 2) + '" y="' + (H + 12) + '" text-anchor="middle">' + d.label + '</text>';
+  });
+  return s + '<text x="0" y="10">' + Math.round(max) + '\'</text></svg>';
+}
+function lineChart(series, opt){
+  const W = 320, H = 120, l = 30, all = series.flatMap(s => s.pts);
+  if(all.length < 2) return '';
+  const xs = all.map(p => p[0]), ys = all.concat(opt.target != null ? [[0, opt.target]] : []).map(p => p[1]);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys) - 0.5, y1 = Math.max(...ys) + 0.5;
+  const X = x => l + (x - x0) / (x1 - x0 || 1) * (W - l - 6), Y = y => 6 + (1 - (y - y0) / (y1 - y0 || 1)) * (H - 12);
+  let s = '<svg viewBox="0 0 ' + W + ' ' + (H + 16) + '" class="chart" role="img" aria-label="' + opt.title + '">';
+  if(opt.target != null) s += '<line x1="' + l + '" x2="' + W + '" y1="' + Y(opt.target) + '" y2="' + Y(opt.target) + '" stroke="#f59e0b" stroke-dasharray="4 3"/><text x="' + (l + 2) + '" y="' + (Y(opt.target) - 3) + '" fill="#b45309">objectif</text>';
+  series.forEach(se => {
+    if(se.pts.length < 2 && !se.dots) return;
+    s += '<polyline fill="none" stroke="' + se.color + '" stroke-width="2.2"' + (se.dash ? ' stroke-dasharray="5 4"' : '') + ' points="' + se.pts.map(p => X(p[0]) + ',' + Y(p[1])).join(' ') + '"/>';
+    if(se.dots) se.pts.forEach(p => { s += '<circle cx="' + X(p[0]) + '" cy="' + Y(p[1]) + '" r="3" fill="' + se.color + '"/>'; });
+  });
+  s += '<text x="0" y="12">' + opt.fmt(y1) + '</text><text x="0" y="' + H + '">' + opt.fmt(y0) + '</text>';
+  s += '<text x="' + l + '" y="' + (H + 14) + '">' + fmtD(x0) + '</text><text x="' + W + '" y="' + (H + 14) + '" text-anchor="end">' + fmtD(x1) + '</text>';
+  return s + '</svg>';
+}
+function goalChart(c, S){
+  const o = c.objectif, p = c.profil;
+  if(o.type === 'poids'){
+    const pts = (c.poids || []).slice().sort((a, b) => a.date.localeCompare(b.date)).map(x => [new Date(x.date).getTime(), x.kg]);
+    const t0 = S.meta.debut.getTime(), tEnd = o.date ? new Date(o.date).getTime() : t0 + S.meta.weeks * WEEKMS;
+    const proj = [[t0, p.poids], [tEnd, o.poids]];
+    const sl = trendKgWeek((c.poids || []).slice(-6)), last = pts[pts.length - 1];
+    const series = [{ pts:proj, color:'#9fd6cd', dash:true }];
+    if(pts.length) series.push({ pts, color:'#0f766e', dots:true });
+    if(last && sl && sl < -0.05){ const wk = (last[1] - o.poids) / -sl; series.push({ pts:[last, [last[0] + wk * WEEKMS, o.poids]], color:'#14b8a6', dash:true }); }
+    return { title:'⚖️ Poids : prévu (pointillés) et réel', svg:lineChart(series, { title:'Poids', target:o.poids, fmt:v => r1(v) + ' kg' }) };
+  }
+  if(o.type === 'course' && o.dist && bilan(c).vma){
+    const v0 = bilan(c).vma, v = vmaNow(c), t0 = S.meta.debut.getTime(), now = Date.now(), tEnd = o.date ? new Date(o.date).getTime() : t0 + S.meta.weeks * WEEKMS;
+    const wl = Math.max(0, (tEnd - now) / WEEKMS);
+    const series = [
+      { pts:[[t0, raceTime(v0, o.dist)], [now, raceTime(v, o.dist)]], color:'#0f766e', dots:true },
+      { pts:[[now, raceTime(v, o.dist)], [tEnd, raceTime(v * (1 + 0.004 * wl * (S.adh4 ?? 0.8)), o.dist)]], color:'#14b8a6', dash:true }
+    ];
+    return { title:'⏱️ Temps estimé sur ' + r1(o.dist) + ' km', svg:lineChart(series, { title:'Temps estimé', target:o.temps || null, fmt:v => hm(v) }) };
+  }
+  return null;
+}
+
+/* --- Affichage dans l'onglet Coach --- */
+let progAll = false;
+function renderProgram(box){
+  const c = coach, S = coachStats(c), o = c.objectif, p = c.profil, meta = S.meta;
+  // Progression vers l'objectif (dans la carte Objectif)
+  let pct = (meta.cur + 1) / meta.weeks, line = 'Semaine ' + (meta.cur + 1) + ' / ' + meta.weeks + ' · ' + phaseOf(c, meta.cur, meta);
+  const pts = (c.poids || []).slice().sort((a, b) => a.date.localeCompare(b.date));
+  if(o.type === 'poids' && pts.length){ const cur = pts[pts.length - 1].kg; pct = clamp((p.poids - cur) / (p.poids - o.poids), 0, 1); line += ' · ' + r1(cur) + ' kg (' + r1(cur - p.poids) + ' kg)'; }
+  const objCard = box.querySelector('.cc.cur');
+  objCard.insertAdjacentHTML('beforeend', '<div class="pbar"><i style="width:' + Math.round(pct * 100) + '%"></i></div><p class="ccsub">' + line + '</p>');
+
+  // Cette semaine
+  const ws = new Date(meta.debut.getTime() + meta.cur * WEEKMS), today = (new Date().getDay() + 6) % 7;
+  const wk = document.createElement('div'); wk.className = 'cc';
+  const done = S.plan.filter(s => s.done).length;
+  wk.innerHTML = '<div class="cch"><b class="cct">📅 Cette semaine</b><span class="ccsub">' + done + ' / ' + S.plan.length + ' séances · ' + hm(S.plan.reduce((a, s) => a + s.duree, 0)) + '</span></div><div class="sess"></div>' +
+    '<div class="bzrow ccacts"><button class="sgDet" id="ccLog">➕ Séance libre</button><button class="sgDet" id="ccKg">⚖️ Pesée</button></div>';
+  S.plan.forEach(s => {
+    const r = document.createElement('div');
+    r.className = 'ses' + (s.done ? ' ok' : s.day < today ? ' late' : s.day === today ? ' now' : '');
+    r.innerHTML = '<span class="sd">' + JOURS[s.day] + '</span><div><b></b><small></small></div><span class="sm"></span>';
+    r.querySelector('b').textContent = ICO[s.act] + ' ' + s.label;
+    r.querySelector('small').textContent = s.detail;
+    const right = r.querySelector('.sm');
+    if(s.done){ right.innerHTML = '<span class="sok">✓</span><small></small>'; right.querySelector('small').textContent = hm(s.done.duree) + (s.done.dist ? ' · ' + r1(s.done.dist) + ' km' : ''); }
+    else { right.innerHTML = '<span>' + hm(s.duree) + '</span><button class="sgDet">Fait</button>'; right.querySelector('button').onclick = () => openLog({ act:s.act, duree:s.duree, type:s.type, date:new Date(ws.getTime() + s.day * DAYMS + 12 * 3600e3) }); }
+    wk.querySelector('.sess').appendChild(r);
+  });
+  S.extra.forEach(l => { const r = document.createElement('div'); r.className = 'ses ok'; r.innerHTML = '<span class="sd">+</span><div><b></b><small></small></div><span class="sm"><span class="sok">✓</span></span>'; r.querySelector('b').textContent = ICO[l.act] + ' Séance en plus'; r.querySelector('small').textContent = hm(l.duree) + (l.dist ? ' · ' + r1(l.dist) + ' km' : ''); wk.querySelector('.sess').appendChild(r); });
+  box.appendChild(wk);
+  wk.querySelector('#ccLog').onclick = () => openLog({});
+  wk.querySelector('#ccKg').onclick = () => openKg();
+
+  // Suivi : indicateurs + graphiques
+  const kp = document.createElement('div'); kp.className = 'cc';
+  const tiles = [
+    ['Séances (semaine)', done + ' / ' + S.plan.length],
+    ['Régularité (4 sem.)', S.adh4 == null ? '—' : Math.round(S.adh4 * 100) + ' %'],
+    ['Charge 7 j / moyenne', S.ratio == null ? '—' : (S.ratio >= 1 ? '+' : '') + Math.round((S.ratio - 1) * 100) + ' %'],
+    ['Dépense 7 j (sport)', S.kcal7 + ' kcal']
+  ];
+  if(o.type === 'poids' && pts.length){ const sl = trendKgWeek(pts.slice(-6)); tiles.push(['Tendance poids', sl == null ? '—' : (sl > 0 ? '+' : '') + r1(sl) + ' kg/sem.']); }
+  if(o.type === 'course' && vmaNow(c)) tiles.push(['VMA actuelle', r1(vmaNow(c)) + ' km/h']);
+  kp.innerHTML = '<b class="cct">📈 Suivi</b><div class="kpis"></div><p class="chh">Volume par semaine (min) — prévu en pointillés, fait en vert</p>';
+  tiles.forEach(([k, v]) => { const t = document.createElement('div'); t.className = 'kpi'; t.innerHTML = '<small></small><b></b>'; t.querySelector('small').textContent = k; t.querySelector('b').textContent = v; kp.querySelector('.kpis').appendChild(t); });
+  kp.insertAdjacentHTML('beforeend', barChart(S.weeksVol.map(x => ({ label:'S' + (x.w + 1), plan:x.plan, done:x.done, cur:x.w === meta.cur }))));
+  const g = goalChart(c, S);
+  if(g && g.svg) kp.insertAdjacentHTML('beforeend', '<p class="chh">' + g.title + '</p>' + g.svg);
+  box.appendChild(kp);
+
+  // Analyse
+  const an = document.createElement('div'); an.className = 'cc';
+  an.innerHTML = '<b class="cct">🔍 Analyse</b><ul class="ins"></ul>';
+  insights(c, S).forEach(x => { const li = document.createElement('li'); li.innerHTML = '<span></span><p></p>'; li.querySelector('span').textContent = x.ico; li.querySelector('p').textContent = x.txt; an.querySelector('ul').appendChild(li); });
+  box.appendChild(an);
+
+  // Programme complet
+  const pr = document.createElement('div'); pr.className = 'cc';
+  pr.innerHTML = '<div class="cch"><b class="cct">🗓️ Programme (' + meta.weeks + ' semaines)</b><button class="sgDet">' + (progAll ? 'Réduire' : 'Tout voir') + '</button></div><div class="weeks"></div>';
+  const from = progAll ? 0 : meta.cur, to = progAll ? meta.weeks : Math.min(meta.weeks, meta.cur + 3);
+  for(let w = from; w < to; w++){
+    const pl = weekPlan(c, w, meta, w >= meta.cur ? S.ad : null), d = new Date(meta.debut.getTime() + w * WEEKMS);
+    const r = document.createElement('div'); r.className = 'wk' + (w === meta.cur ? ' cur' : w < meta.cur ? ' past' : '');
+    r.innerHTML = '<b>S' + (w + 1) + '</b><span>' + fmtD(d) + ' · ' + phaseOf(c, w, meta) + ((w + 1) % 4 === 0 ? ' (allégée)' : '') + '</span><em>' + hm(pl.reduce((a, s) => a + s.duree, 0)) + '</em><small></small>';
+    r.querySelector('small').textContent = pl.map(s => ICO[s.act] + ' ' + s.label).join(' · ');
+    pr.querySelector('.weeks').appendChild(r);
+  }
+  pr.querySelector('button').onclick = () => { progAll = !progAll; renderCoach(); };
+  box.appendChild(pr);
+}
+
+/* --- Saisie d'une séance / d'une pesée --- */
+let lz = null;
+function openLog(pre){
+  lz = Object.assign({ mode:'log', date:new Date(), act:mainAct(coach), duree:30, dist:null, dplus:null, fc:null, rpe:5, type:'ef' }, pre);
+  $('logTitle').textContent = pre && pre.fromNav ? 'Enregistrer ta sortie ?' : 'Enregistrer une séance';
+  const B = $('logBody'); B.innerHTML = '';
+  const lab = t => B.insertAdjacentHTML('beforeend', '<div class="bzl">' + t + '</div>');
+  lab('Activité');
+  const ch = document.createElement('div'); ch.className = 'bzc';
+  Object.entries(ACT).forEach(([k, v]) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = v; b.classList.toggle('on', lz.act === k); b.onclick = () => { lz.act = k; ch.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); }; ch.appendChild(b); });
+  B.appendChild(ch);
+  const g = document.createElement('div'); g.className = 'bzg'; B.appendChild(g);
+  const add = (t, val, cb, type) => { const w = document.createElement('label'); w.innerHTML = '<span>' + t + '</span><input>'; const i = w.querySelector('input'); if(type) i.type = type; i.value = val ?? ''; i.oninput = () => cb(i.value); g.appendChild(w); return i; };
+  add('Date', isoDay(lz.date), v => { lz.date = v ? new Date(v + 'T12:00') : lz.date; }, 'date');
+  add('Durée', fmtMin(lz.duree), v => { lz.duree = parseDur(v); });
+  add('Distance (km)', lz.dist ? r1(lz.dist) : '', v => { lz.dist = parseFloat(v.replace(',', '.')) || null; });
+  add('Dénivelé + (m)', lz.dplus ?? '', v => { lz.dplus = parseFloat(v) || null; });
+  add('FC moy. (option)', '', v => { lz.fc = parseFloat(v) || null; });
+  lab('Ressenti de l\'effort (1 = très facile, 10 = maximal)');
+  const rp = document.createElement('div'); rp.className = 'bzc rpe';
+  for(let k = 1; k <= 10; k++){ const b = document.createElement('button'); b.type = 'button'; b.textContent = k; b.classList.toggle('on', lz.rpe === k); b.onclick = () => { lz.rpe = k; rp.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); }; rp.appendChild(b); }
+  B.appendChild(rp);
+  $('logErr').textContent = '';
+  $('logModal').classList.remove('hidden');
+}
+function openKg(){
+  const pts = (coach.poids || []).slice().sort((a, b) => a.date.localeCompare(b.date));
+  lz = { mode:'kg', date:new Date(), kg:pts.length ? pts[pts.length - 1].kg : coach.profil.poids };
+  $('logTitle').textContent = 'Ajouter une pesée';
+  const B = $('logBody'); B.innerHTML = '<div class="bzg"></div><p class="bzh">Conseil : pèse-toi le matin, à jeun, 1 à 2 fois par semaine — c\'est la tendance qui compte.</p>';
+  const g = B.querySelector('.bzg');
+  [['Date', isoDay(new Date()), 'date', v => { lz.date = new Date(v + 'T08:00'); }], ['Poids (kg)', r1(lz.kg), 'text', v => { lz.kg = parseFloat(v.replace(',', '.')) || null; }]].forEach(([t, v, ty, cb]) => {
+    const w = document.createElement('label'); w.innerHTML = '<span>' + t + '</span><input>'; const i = w.querySelector('input'); i.type = ty; i.value = v; i.oninput = () => cb(i.value); g.appendChild(w);
+  });
+  $('logErr').textContent = '';
+  $('logModal').classList.remove('hidden');
+}
+$('logCancel').onclick = () => $('logModal').classList.add('hidden');
+$('logSave').onclick = () => {
+  if(lz.mode === 'kg'){
+    if(!(lz.kg >= 30 && lz.kg <= 250)){ $('logErr').textContent = 'Indique un poids valide.'; return; }
+    (coach.poids = coach.poids || []).push({ date:new Date(lz.date).toISOString(), kg:lz.kg });
+  } else {
+    if(!(lz.duree > 0)){ $('logErr').textContent = 'Indique la durée.'; return; }
+    (coach.log = coach.log || []).push({ date:new Date(lz.date).toISOString(), act:lz.act, type:lz.type || 'ef', duree:lz.duree, dist:lz.dist, dplus:lz.dplus, fc:lz.fc, rpe:lz.rpe });
+  }
+  saveCoach(); $('logModal').classList.add('hidden'); renderCoach();
+  msg(lz.mode === 'kg' ? '⚖️ Pesée enregistrée.' : '✓ Séance enregistrée dans ton suivi.');
+};
+
+/* --- Historique fictif pour les profils de test (4 semaines) --- */
+function seeded(seed){ return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const DEMO_BEHAV = [   // régularité, ressenti en plus, progression / semaine, surcharge la dernière semaine
+  { adh:0.88, rpe:0, gain:0.012, kg:-0.55 }, { adh:0.93, rpe:0, gain:0.01, kg:-0.25 }, { adh:1, rpe:1.4, gain:0.006, over:true },
+  { adh:0.4, rpe:0.6, gain:0.002, kg:-0.05 }, { adh:0.8, rpe:0.3, gain:0.02, longer:true }
+];
+function genDemo(c, i){
+  const R = seeded(1234 + i * 97), B = DEMO_BEHAV[i];
+  c.debut = new Date(wkStart(Date.now()).getTime() - 4 * WEEKMS).toISOString();
+  c.log = []; c.poids = [];
+  const meta = planMeta(c), b = bilan(c), now = Date.now();
+  const base = { course:b.vma ? b.vma * 0.66 : 9, velo:22, marche:5.1 };
+  for(let w = 0; w <= meta.cur; w++){
+    const plan = weekPlan(c, w, meta);
+    if(B.over && w === meta.cur - 1) plan.push(Object.assign({}, plan[plan.length - 1], { day:6, duree:plan[plan.length - 1].duree + 30 }), Object.assign({}, plan[0], { day:3 }));
+    plan.forEach(s => {
+      const t = meta.debut.getTime() + w * WEEKMS + s.day * DAYMS + 18 * 3600e3;
+      if(t > now || R() > B.adh) return;
+      const intense = !['ef', 'long'].includes(s.type);
+      const dur = Math.round(s.duree * (0.9 + R() * 0.2) * (B.longer && s.type === 'long' ? 1 + w * 0.12 : 1));
+      const v = base[s.act] * (1 + B.gain * w) * (intense ? 1.12 : s.type === 'long' ? 0.96 : 1) * (0.97 + R() * 0.06);
+      const rpe = clamp(Math.round((intense ? 7.2 : s.type === 'long' ? 5.6 : 4.4) + B.rpe + (R() - 0.5) * 1.6 + (B.over && w >= meta.cur - 1 ? 1 : 0)), 1, 10);
+      const dist = Math.round(v * dur / 60 * 10) / 10;
+      c.log.push({ date:new Date(t).toISOString(), act:s.act, type:s.type, duree:dur, dist, dplus:Math.round(dist * (4 + R() * 12)), fc:Math.round(b.fcmax * (intense ? 0.84 : 0.7) + (R() - 0.5) * 8), rpe });
+    });
+  }
+  if(B.kg != null) for(let k = 0; k <= 8; k++){
+    const t = meta.debut.getTime() + k * 3.5 * DAYMS + 8 * 3600e3;
+    if(t > now) break;
+    c.poids.push({ date:new Date(t).toISOString(), kg:Math.round((c.profil.poids + B.kg * k / 2 + (R() - 0.5) * 0.6) * 10) / 10 });
+  }
+}
+
 renderCoach();
 /* --- Profils de démonstration (Réglages) : pour voir le Coach avec différents utilisateurs --- */
 const inMonths = m => { const d = new Date(); d.setMonth(d.getMonth() + m); return d.toISOString().slice(0, 10); };
@@ -2969,7 +3460,8 @@ const DEMOS = [
 ];
 function loadDemo(i){
   if(!coach || !coach.demo) store.set('coachReal', coach);   // ton vrai profil est mis de côté
-  coach = Object.assign(JSON.parse(JSON.stringify(DEMOS[i].c)), { demo:DEMOS[i].nom, date:new Date().toISOString() });
+  coach = Object.assign(JSON.parse(JSON.stringify(DEMOS[i].c)), { demo:DEMOS[i].nom, date:new Date(Date.now() - 28 * 864e5).toISOString() });
+  genDemo(coach, i);   // 4 semaines de séances et de pesées fictives
   saveCoach(); renderCoach(); renderDemos();
   $('cfg').classList.add('hidden');
   setTab('coach');
