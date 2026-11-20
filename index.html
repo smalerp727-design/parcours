@@ -2862,9 +2862,12 @@ const fmtKm = m => m < 1000 ? Math.round(m / 10) * 10 + ' m' : (m / 1000).toFixe
 
 // Lieux intéressants autour de c, dans un rayon donné, avec photo et quelques lignes de description
 async function findPlaces(c, radius){
-  const centers = radius <= 10000 ? [c] : [c].concat([0, 60, 120, 180, 240, 300].map(b => destPoint(c, radius * 0.6, b)));
-  const res = await inBatches(centers, 4, p => getJSON('https://fr.wikipedia.org/w/api.php?action=query&format=json&origin=*' +
-    '&list=geosearch&gslimit=100&gsprop=type%7Cdim&gsradius=' + Math.round(Math.min(10000, Math.max(200, radius))) +
+  // Wikipédia renvoie les articles les plus proches du point demandé (rayon max. 10 km) : en ville, ils sont tous
+  // tout près du centre. Au-delà de 3 km, on interroge aussi une couronne de points pour couvrir toute la zone.
+  const ring = radius > 3000 ? [0, 60, 120, 180, 240, 300].map(b => [destPoint(c, radius * 0.6, b), Math.min(10000, radius * 0.55)]) : [];
+  const centers = [[c, Math.min(10000, Math.max(200, radius))]].concat(ring);
+  const res = await inBatches(centers, 4, ([p, r]) => getJSON('https://fr.wikipedia.org/w/api.php?action=query&format=json&origin=*' +
+    '&list=geosearch&gslimit=500&gsprop=type%7Cdim&gsradius=' + Math.round(r) +
     '&gscoord=' + p[0].toFixed(5) + '%7C' + p[1].toFixed(5)).then(j => (j.query && j.query.geosearch) || []));
   const seen = new Map();
   res.flat().forEach(g => {
@@ -2876,7 +2879,7 @@ async function findPlaces(c, radius){
     if(score < 2) return;   // on ne garde que des lieux "à visiter"
     seen.set(g.pageid, { id:g.pageid, title:cleanName(g.title), ll:[g.lat, g.lon], dist:d, score });
   });
-  const top = [...seen.values()].sort((a, b) => b.score - a.score || a.dist - b.dist).slice(0, 40);
+  const top = [...seen.values()].sort((a, b) => b.score - a.score || a.dist - b.dist).slice(0, 60);
   const chunks = [];
   for(let i = 0; i < top.length; i += 20) chunks.push(top.slice(i, i + 20));
   const det = await inBatches(chunks, 2, ch => getJSON('https://fr.wikipedia.org/w/api.php?action=query&format=json&origin=*' +
@@ -2911,7 +2914,7 @@ function planTours(places, target){
 }
 async function routeTour(base, t, target){
   let places = t.places.slice(), stretch = 0, best = null;
-  for(let i = 0; i < 4; i++){
+  for(let i = 0; i < 6; i++){
     // Points de passage : les lieux dans l'ordre du tour (+ un point de détour si la balade est trop courte)
     let pts = places.map(p => ({ ll:p.ll, r:t.rel(p) }));
     if(stretch > 0){
@@ -2923,6 +2926,7 @@ async function routeTour(base, t, target){
     const r = j.routes[0];
     const c = makeCandidate(r, r.geometry.coordinates, { kind:'boucle', brg:t.dir, places });
     if(fits(c, target)) return c;
+    if(!best || Math.abs(c.distance - target) < Math.abs(best.distance - target)) best = c;
     if(c.distance > target){   // trop long : on retire le lieu le moins intéressant (ou on réduit le détour)
       if(stretch > 0){ stretch = Math.max(0, stretch - (c.distance - target) / 2.6); continue; }
       if(places.length <= 1) return null;
@@ -2934,7 +2938,8 @@ async function routeTour(base, t, target){
       else stretch += (target - c.distance) / 2.6;
     }
   }
-  return null;
+  // pas pile dans la tolérance : on garde la plus proche si l'écart reste sous 15 %
+  return best && Math.abs(best.distance - target) <= Math.max(tolerance(target), target * 0.15) ? best : null;
 }
 
 /* --- Affichage --- */
@@ -3161,10 +3166,10 @@ async function runSugg(){
       const c = await routeTour(base, tours[i], target);
       if(run !== suggRun) return;
       if(c && !suggTours.some(o => similarity(c, o) > 0.7)) suggTours.push(c);
-    }catch(e){ break; }
+    }catch(e){ await sleep(1200); }   // on passe à la balade suivante
   }
   sugBusy = '';
-  if(!suggTours.length){ sugMsg = 'Pas de balade à ±' + fmtKm(tolerance(target)) + ' de ton objectif avec ces lieux. Essaie une autre distance.'; suggKey = ''; }
+  if(!suggTours.length){ sugMsg = 'Pas de balade de cette longueur avec ces ' + places.length + ' lieux. Essaie une autre distance, ou passe en « Aller » pour les voir un par un.'; suggKey = ''; }
   renderSugg(); if(sheetReady && !WIDE.matches) setSheet(sheetState);
 }
 function setTab(t){
