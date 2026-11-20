@@ -183,6 +183,20 @@
   .prog.on{border-color:var(--c);background:var(--sel-bg)}
   .hsh{margin-top:4px}
   .hsh .chh{margin:0 !important}
+  .lgw{border-bottom:1px solid #f3f4f6}
+  .lgw:last-child{border-bottom:none}
+  .lgw > .ses{border-bottom:none}
+  .lgw.open{background:var(--sel-bg);border-radius:12px;padding:0 8px 8px;margin:4px -8px;border:1px solid #9fd6cd}
+  .lgw .sgDet.on{border-color:var(--c);color:var(--c)}
+  .lgx{animation:lgIn .25s cubic-bezier(.25,.8,.25,1)}
+  @keyframes lgIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .lgg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+  .lgg > div{background:var(--bg);border:1px solid #e5e7eb;border-radius:10px;padding:6px 8px;min-width:0}
+  .lgg small{display:block;font-size:11px;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lgg b{display:block;font-size:13px;line-height:1.3}
+  .lgg > div:last-child:nth-child(3n+1){grid-column:1 / -1}
+  .lgg > div:nth-last-child(2):nth-child(3n+1), .lgg > div:last-child:nth-child(3n+2){grid-column:span 1}
+  .lgc{margin-top:8px;background:var(--bg);border-radius:10px;border:1px solid #e5e7eb}
   .ses.hs .sd{line-height:1.05;padding-top:6px;height:30px;font-size:13px;color:#374151}
   .ses.hs .sd i{display:block;font-style:normal;font-size:10px;font-weight:600;color:var(--mu)}
   @media (hover:hover){ .wk:not(.cur):hover, .evoTab .er:not(.on):hover{background:var(--hov-bg)} .prog:not(.on):hover{border-color:var(--hov-bd);background:var(--hov-bg)} }
@@ -2219,6 +2233,20 @@ function stopNav(){
     ride = { dist:nav.arc[nav.idx] / 1000, duree:Math.round((Date.now() - nav.t0) / 60000), act:st.mode, parcours:name,
       trace:line.filter((p, k) => k % step === 0 || k === line.length - 1).map(p => [+(p.lat ?? p[0]).toFixed(5), +(p.lng ?? p[1]).toFixed(5)]) };
     if(pendingSess && pendingSess.act === st.mode) ride.type = pendingSess.type;
+    const gps = nav.gps || [];
+    if(gps.length >= 5){
+      const stp = Math.max(1, Math.ceil(gps.length / 120));
+      ride.trace = gps.filter((p, k) => k % stp === 0 || k === gps.length - 1).map(p => [p[1], p[2]]);
+      // vitesse minute par minute
+      const sp = [], t0 = gps[0][0];
+      let m = 0, d = 0;
+      for(let k = 1; k < gps.length; k++){
+        const mi = Math.floor((gps[k][0] - t0) / 60000);
+        while(mi > m){ sp.push(Math.round(d * 60 / 100) / 10); d = 0; m++; }
+        d += hav([gps[k - 1][1], gps[k - 1][2]], [gps[k][1], gps[k][2]]);
+      }
+      if(sp.length >= 3) ride.sp = sp;
+    }
   }
   nav = null;
   document.body.classList.remove('nav');
@@ -2237,6 +2265,8 @@ function navBar(main){
 }
 function navUpdate(ll){
   if(!nav) return;
+  const gt = Date.now(), gl = nav.gps || (nav.gps = []);
+  if(!gl.length || gt - gl[gl.length - 1][0] >= 5000) gl.push([gt, +(ll.lat ?? ll[0]).toFixed(5), +(ll.lng ?? ll[1]).toFixed(5)]);
   // Point du parcours le plus proche, en avançant (une boucle repasse par son départ à la fin)
   const L_ = nav.line, from = Math.max(0, nav.idx - 20), to = Math.min(L_.length - 1, nav.idx + 300);
   let best = Infinity, bi = nav.idx;
@@ -3620,7 +3650,63 @@ function showTrace(l){
   setTimeout(() => map.fitBounds(histLayer.getBounds(), visPad()), WIDE.matches ? 0 : 320);
   msg('🗺️ ' + (l.parcours || 'Séance') + ' · ' + fmtD(l.date) + ' · ' + r1(l.dist) + ' km en ' + hm(l.duree) + (l.trace ? '' : ' (tracé fictif du profil de test)'));
 }
-function hideTrace(){ if(histLayer){ map.removeLayer(histLayer); histLayer = null; } }
+function hideTrace(){ if(histLayer){ map.removeLayer(histLayer); histLayer = null; } openLogId = null; }
+var openLogId = null;
+// Profil minute par minute : enregistré pendant le guidage, ou simulé pour les profils de test
+function streamOf(l){
+  if(l.sp && l.sp.length >= 3) return { sp:l.sp, hr:l.hr || null, real:true };
+  if(!coach || !coach.demo || !l.dist || !l.duree) return null;
+  const R = seeded(hashStr(l.date + 's')), n = Math.max(5, Math.round(l.duree)), v = l.dist / (l.duree / 60);
+  const intense = !['ef', 'long', undefined].includes(l.type), warm = Math.min(12, Math.round(n * 0.2));
+  let sp = [], hr = [];
+  for(let i = 0; i < n; i++){
+    let f = i < warm ? 0.86 + 0.14 * i / warm : i >= n - Math.min(8, n * 0.12) ? 0.88 : 1;
+    if(intense && i >= warm && i < n - Math.min(8, n * 0.12)) f = l.type === 'vma' ? (i % 2 ? 0.8 : 1.22) : (Math.floor((i - warm) / 8) % 2 ? 0.82 : 1.12);
+    if(l.type === 'long') f *= 1 - 0.06 * i / n;
+    sp.push(v * f * (0.96 + R() * 0.08));
+    hr.push(l.fc ? l.fc * (0.86 + 0.14 * Math.min(1, i / 10)) * (f > 1.1 ? 1.07 : f < 0.85 ? 0.95 : 1) * (0.985 + R() * 0.03) : null);
+  }
+  const ks = v / avg(sp); sp = sp.map(x => x * ks);
+  if(l.fc){ const kh = l.fc / avg(hr); hr = hr.map(x => x * kh); } else hr = null;
+  return { sp, hr, real:false };
+}
+function streamChart(S){
+  const W = 320, H = 54, n = S.sp.length, line = (a, col) => { const lo = Math.min(...a), hi = Math.max(...a); return '<polyline fill="none" stroke="' + col + '" stroke-width="1.8" stroke-linejoin="round" points="' + a.map((v, i) => (i / (n - 1) * W).toFixed(1) + ',' + (4 + (1 - (v - lo) / (hi - lo || 1)) * (H - 8)).toFixed(1)).join(' ') + '"/>'; };
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" class="chart lgc" role="img" aria-label="Profil de la séance">' + line(S.sp, '#0f766e') + (S.hr ? line(S.hr, '#e11d48') : '') + '</svg>' +
+    '<div class="lgd"><span><i class="ln"></i>vitesse</span>' + (S.hr ? '<span><i class="ln" style="background:#e11d48"></i>fréquence cardiaque</span>' : '') + '<span>· minute par minute</span></div>';
+}
+function logDetail(l){
+  const S = streamOf(l), sp = speedOf(l), run = l.act === 'course', fs = v => run ? r1(v) + ' km/h · ' + allure(v) : r1(v) + ' km/h';
+  const cells = [['⏱️ Temps', hm(l.duree)], ['📏 Distance', l.dist ? r1(l.dist) + ' km' : '—'], ['⛰️ Dénivelé +', l.dplus ? l.dplus + ' m' : '—']];
+  if(sp){
+    cells.push(['⚡ Vitesse moy.', fs(sp)]);
+    if(S){ cells.push(['🔺 Vitesse max.', fs(Math.max(...S.sp))], ['🔻 Vitesse min.', fs(Math.min(...S.sp))]); }
+  }
+  if(l.fc){
+    cells.push(['❤️ FC moy.', Math.round(l.fc) + ' bpm']);
+    if(S && S.hr){ cells.push(['❤️ FC max.', Math.round(Math.max(...S.hr)) + ' bpm'], ['❤️ FC min.', Math.round(Math.min(...S.hr)) + ' bpm']); }
+    const fcm = bilan(coach).fcmax; cells.push(['📊 Intensité', Math.round(l.fc / fcm * 100) + ' % FC max']);
+  }
+  cells.push(['😮‍💨 Effort', l.rpe ? l.rpe + ' / 10' : '—'], ['🔥 Dépense', kcalOf(coach, l.act, l.type || 'ef', l.duree) + ' kcal'], ['🔋 Charge', String(Math.round(l.duree * (l.rpe || 5)))]);
+  const d = mk('div', 'lgx', '<div class="lgg"></div>');
+  cells.forEach(([k, v]) => { const x = mk('div', '', '<small></small><b></b>'); x.children[0].textContent = k; x.children[1].textContent = v; d.firstChild.appendChild(x); });
+  if(S) d.insertAdjacentHTML('beforeend', streamChart(S));
+  const notes = [];
+  if(S && !S.real) notes.push('Profil simulé (profil de test)');
+  if(!S) notes.push('Max. / min. disponibles pour les sorties guidées dans l\'appli');
+  if(l.fc && !(S && S.hr)) notes.push('FC max. / min. : avec un capteur cardio (bientôt)');
+  if(notes.length) d.appendChild(mk('p', 'ccsub', notes.join(' · ')));
+  return d;
+}
+function toggleLog(l){
+  if(openLogId === l.date){ hideTrace(); renderCoach(); return; }
+  $('indModal').classList.add('hidden');
+  if(l.dist) showTrace(l); else hideTrace();
+  openLogId = l.date;
+  renderCoach();
+  const row = $('coach').querySelector('.lgw.open');
+  if(row) setTimeout(() => row.scrollIntoView({ block:'nearest', behavior:'smooth' }), WIDE.matches ? 0 : 340);
+}
 
 /* --- Séance du programme → liste de parcours adaptés --- */
 var pendingSess = null;
@@ -3713,8 +3799,13 @@ function logRow(l){
   const d = new Date(l.date), sp = speedOf(l), r = mk('div', 'ses hs', '<span class="sd">' + d.getDate() + '<i>' + d.toLocaleDateString('fr-FR', { month:'short' }).replace('.', '') + '</i></span><div><b></b><small></small></div><span class="sm"></span>');
   r.querySelector('b').textContent = ICO[l.act] + ' ' + (l.parcours || TYPE_LBL[l.type] || 'Séance');
   r.querySelector('small').textContent = [TYPE_LBL[l.type] || 'Séance', hm(l.duree), l.dist ? r1(l.dist) + ' km' : '', sp ? (l.act === 'course' ? allure(sp) : r1(sp) + ' km/h') : '', l.dplus ? 'D+ ' + l.dplus + ' m' : '', l.fc ? l.fc + ' bpm' : '', l.rpe ? 'effort ' + l.rpe + '/10' : ''].filter(Boolean).join(' · ');
-  if(l.dist){ const b = mk('button', 'sgDet'); b.textContent = 'Voir'; b.title = 'Voir le parcours sur la carte'; b.onclick = () => { $('indModal').classList.add('hidden'); showTrace(l); }; r.querySelector('.sm').appendChild(b); }
-  return r;
+  const open = openLogId === l.date;
+  const b = mk('button', 'sgDet' + (open ? ' on' : '')); b.textContent = open ? 'Masquer' : 'Voir'; b.title = open ? 'Masquer le parcours et les détails' : 'Voir le parcours et les détails';
+  b.onclick = () => toggleLog(l); r.querySelector('.sm').appendChild(b);
+  const w = mk('div', 'lgw' + (open ? ' open' : ''));
+  w.appendChild(r);
+  if(open) w.appendChild(logDetail(l));
+  return w;
 }
 const INS_ORDER = ['⚠️', '🎯', '🟡', '🔄', '📉', '💡', '📈', '✅', '➖'];
 function insList(items){ const ul = mk('ul', 'ins'); items.forEach(x => { const li = mk('li', '', '<span></span><p></p>'); li.children[0].textContent = x.ico; li.children[1].textContent = x.txt; ul.appendChild(li); }); return ul; }
@@ -4267,6 +4358,7 @@ $('logSave').onclick = () => {
     const e = { date:new Date(lz.date).toISOString(), act:lz.act, type:lz.type || 'ef', duree:lz.duree, dist:lz.dist, dplus:lz.dplus, fc:lz.fc, rpe:lz.rpe };
     if(lz.parcours) e.parcours = lz.parcours;
     if(lz.trace) e.trace = lz.trace;
+    if(lz.sp) e.sp = lz.sp;
     (coach.log = coach.log || []).push(e);
     if(lz.fromNav) pendingSess = null, renderSessBar();
   }
