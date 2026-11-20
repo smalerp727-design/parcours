@@ -412,6 +412,9 @@
   .it.sg > div > b{display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.25}
   #sugg .it.sg{flex-wrap:wrap}
   #sugg .it.sg > div:not(.sga){flex:1 1 0}
+  #vActs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+  #vActs[hidden]{display:none}
+  #vActs button{padding:10px 6px;font-size:14px}
   .it.sg > .sga{flex:0 0 100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding-top:6px;margin-top:2px;border-top:1px solid var(--n3)}
   .sga button, .sga a{display:flex;align-items:center;justify-content:center;gap:5px;border:1px solid var(--bd);background:var(--bg);border-radius:9px;padding:7px 4px;font:600 13px system-ui,sans-serif;color:var(--tx);text-decoration:none;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:border-color .15s, background .15s}
   .sga .on{border-color:var(--c);background:var(--sel-bg);color:var(--c)}
@@ -798,6 +801,7 @@
     </div>
     <div id="vTip" hidden>📱 Fais glisser pour regarder autour · pince pour zoomer</div>
     <div id="vCap"></div>
+    <div id="vActs" class="sga" hidden><button id="vGo" type="button">🧭 Itinéraire</button><button id="vSave" type="button">☆ Enregistrer</button></div>
     <div class="btns">
       <a id="vLink" href="#" target="_blank" rel="noopener">Voir la source</a>
       <button id="vDel" hidden>🗑 Supprimer</button>
@@ -1910,7 +1914,7 @@ function showSavedPlace(s){
   if(savedPlLayer) map.removeLayer(savedPlLayer);
   savedPlLayer = L.marker(s.ll, { zIndexOffset:950, icon:L.divIcon({ className:'', iconSize:[54,54], iconAnchor:[27,27],
     html:'<div class="pl on" style="background-image:url(' + s.thumb + ')"></div>' }) })
-    .on('click', () => openGallery([{ img:s.thumb, link:s.url, title:s.name, credit:(s.extract || '') + ' — Wikipédia' }], 0)).addTo(map);
+    .on('click', () => openGallery([plItem({ ll:s.ll, title:s.name, thumb:s.thumb, url:s.url, extract:s.extract || '' })], 0)).addTo(map);
   if(sheetReady && !WIDE.matches && sheetState === 'full') setSheet('half');
   setTimeout(() => centerVisible(s.ll, Math.max(map.getZoom(), 16)), sheetReady && !WIDE.matches ? 320 : 0);
   msg('📍 ' + s.name);
@@ -2111,6 +2115,8 @@ function closePano(){ if(pano){ try{ pano.destroy(); }catch(e){} pano = null; } 
 function flat(p){ closePano(); $('vImg').hidden = false; $('vImg').src = p.img; }
 
 let gallery = [], gIdx = 0;
+// Photo d'un lieu à visiter : la visionneuse propose aussi Itinéraire et Enregistrer
+const plItem = p => ({ img:p.thumb, link:p.url, title:p.title, credit:(p.extract || '') + ' — Wikipédia', place:p });
 function openGallery(list, i){
   gallery = list; gIdx = i;
   const many = list.length > 1;
@@ -2171,6 +2177,14 @@ function showPhoto(p){
   const s = document.createElement('small'); s.textContent = p.credit;
   $('vCap').append(t, s);
   $('vLink').href = p.link;
+  const pl = p.place;
+  $('vActs').hidden = !pl;
+  if(pl){
+    const sv = () => { const on = placeSaved(pl); $('vSave').textContent = on ? '★ Enregistré' : '☆ Enregistrer'; $('vSave').classList.toggle('on', on); };
+    sv();
+    $('vGo').onclick = () => { $('vClose').onclick(); placeToPlan(pl); };
+    $('vSave').onclick = () => { togglePlace(pl); sv(); if(tab === 'sugg') renderSugg(); };
+  }
   $('viewer').classList.remove('hidden');
 }
 $('vClose').onclick = () => {
@@ -2923,7 +2937,7 @@ function placeMarker(p){
     .on('click', () => {
       const i = suggPlaces.indexOf(p);
       if(tab === 'sugg' && st.type !== 'boucle' && i >= 0){ sugOpen = -1; openSugg(i); }
-      else openGallery([{ img:p.thumb, link:p.url, title:p.title, credit:p.extract + ' — Wikipédia' }], 0);
+      else openGallery([plItem(p)], 0);
     });
   m.place = p;
   return m;
@@ -2978,7 +2992,7 @@ function placeCard(p, withGo){
   const desc = (p.extract.match(/^.*?[.!?](\s|$)/) || [p.extract])[0].trim();
   const i = suggPlaces.indexOf(p), d = miniCard(p.thumb, p.title, 'à ' + fmtKm(p.dist) + ' · ' + desc, '',
     () => viewPlace(p),
-    () => openGallery([{ img:p.thumb, link:p.url, title:p.title, credit:p.extract + ' — Wikipédia' }], 0),
+    () => openGallery([plItem(p)], 0),
     () => openSugg(i));
   if(sugOpen === i && sugIdx === i){ d.classList.add('open'); d.appendChild(sugActions(p)); }
   return d;
@@ -2989,7 +3003,7 @@ function tourCard(c){
     n + ' lieu' + (n > 1 ? 'x' : '') + ' à voir · côté ' + dirOf(c.brg),
     d1(km) + ' km<small>≈ ' + fmtMin(km / speed() * 60) + '</small>',
     () => viewTour(c),
-    () => openGallery(c.places.map(x => ({ img:x.thumb, link:x.url, title:x.title, credit:x.extract + ' — Wikipédia' })), 0),
+    () => openGallery(c.places.map(x => plItem(x)), 0),
     () => openSugg(i));
   if(sugOpen === i && sugIdx === i){ d.classList.add('open'); d.appendChild(sugActions(null, c)); }
   return d;
@@ -3006,7 +3020,7 @@ function placeBig(p){
   d.querySelector('.pcd').textContent = 'à ' + fmtKm(p.dist) + ' à vol d\'oiseau';
   d.querySelector('p').textContent = p.extract;
   d.querySelector('a').href = p.url;
-  d.querySelector('img').onclick = () => openGallery([{ img:p.thumb, link:p.url, title:p.title, credit:p.extract + ' — Wikipédia' }], 0);
+  d.querySelector('img').onclick = () => openGallery([plItem(p)], 0);
   d.querySelector('.vbtn').onclick = e => { e.stopPropagation(); viewPlace(p); };
   d.querySelector('.pgo').onclick = e => { e.stopPropagation(); placeToPlan(p); };
   const sv = d.querySelector('.psv'); sv.textContent = placeSaved(p) ? '★' : '☆'; sv.title = placeSaved(p) ? 'Retirer de mes lieux' : 'Enregistrer ce lieu'; sv.classList.toggle('on', placeSaved(p));
@@ -3028,7 +3042,7 @@ function tourBig(c){
     f.innerHTML = '<img loading="lazy" alt=""><figcaption></figcaption>';
     f.querySelector('img').src = p.thumb;
     f.querySelector('figcaption').textContent = (i + 1) + '. ' + p.title;
-    f.onclick = () => openGallery(c.places.map(x => ({ img:x.thumb, link:x.url, title:x.title, credit:x.extract + ' — Wikipédia' })), i);
+    f.onclick = () => openGallery(c.places.map(x => plItem(x)), i);
     strip.appendChild(f);
     const l = document.createElement('p');
     l.innerHTML = '<b></b> — <span></span>';
