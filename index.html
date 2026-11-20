@@ -27,13 +27,13 @@
   #btnApply{display:none}
   body.tab-sugg #btnGo{display:none !important}
   /* Micro : dégradé façon assistant IA, qui tourne et pulse pendant l'écoute */
-  #mic{background:linear-gradient(135deg,#6366f1 0%,#a855f7 45%,#ec4899 80%,#f59e0b 100%) !important;box-shadow:0 2px 10px rgba(124,58,237,.45)}
+  #mic{background:linear-gradient(135deg,var(--ai0) 0%,var(--ai1) 40%,var(--ai2) 75%,var(--ai3) 100%) !important;box-shadow:0 2px 10px var(--ai-sh)}
   #mic svg{fill:#fff !important}
-  #mic::after{content:"";position:absolute;inset:-3px;border-radius:50%;background:conic-gradient(from 0deg,#6366f1,#a855f7,#ec4899,#f59e0b,#6366f1);z-index:-1;opacity:0;transition:opacity .2s}
+  #mic::after{content:"";position:absolute;inset:-3px;border-radius:50%;background:conic-gradient(from 0deg,var(--ai0),var(--ai1),var(--ai2),var(--ai3),var(--ai0));z-index:-1;opacity:0;transition:opacity .2s}
   #mic.on::after{opacity:1;animation:micSpin 1.6s linear infinite}
   #mic.on{animation:micPulse 1.2s ease-in-out infinite}
   @keyframes micSpin{to{transform:rotate(360deg)}}
-  @keyframes micPulse{0%,100%{box-shadow:0 0 0 0 rgba(168,85,247,.55)}50%{box-shadow:0 0 0 10px rgba(168,85,247,0)}}
+  @keyframes micPulse{0%,100%{box-shadow:0 0 0 0 var(--ai-sh)}50%{box-shadow:0 0 0 10px transparent}}
   @media (hover:hover){ #mic:hover{filter:brightness(1.1)} }
   @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(220,38,38,.5)}100%{box-shadow:0 0 0 12px rgba(220,38,38,0)}}
   #btnPlan{position:absolute;right:4px;top:0;height:38px;width:38px;border:none;background:none;border-radius:50%;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
@@ -361,6 +361,11 @@
   .dark .nxc .nxi{background:var(--n2) !important}
   .dark .ferr, .dark #info .err{color:#fca5a5}
   .sv input{text-overflow:ellipsis}
+  .bzc.svcat{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:0 0 6px}
+  .svcat button{padding:7px 4px;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sv .svth{flex:none;width:40px;height:40px;border-radius:8px;object-fit:cover;background:var(--n3)}
+  .sv .go{padding:7px 8px}
+  .sv small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #segType button, #segMode button, #segUnit button{white-space:nowrap}
   .istat b{white-space:nowrap}
   .bzc.rpe{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
@@ -404,6 +409,14 @@
   .vbtn.wide{width:100%;margin-top:8px;padding:10px;font-size:15px}
   .it .th{flex:none;width:46px;height:46px;border-radius:9px;object-fit:cover;background:var(--n3)}
   .it.sg div small{white-space:nowrap}
+  .it.sg > div > b{display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.25}
+  #sugg .it.sg{flex-wrap:wrap}
+  #sugg .it.sg > div:not(.sga){flex:1 1 0}
+  .it.sg > .sga{flex:0 0 100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding-top:6px;margin-top:2px;border-top:1px solid var(--n3)}
+  .sga button, .sga a{display:flex;align-items:center;justify-content:center;gap:5px;border:1px solid var(--bd);background:var(--bg);border-radius:9px;padding:7px 4px;font:600 13px system-ui,sans-serif;color:var(--tx);text-decoration:none;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:border-color .15s, background .15s}
+  .sga .on{border-color:var(--c);background:var(--sel-bg);color:var(--c)}
+  @media (hover:hover){ .sga button:not(.on):hover, .sga a:hover{border-color:var(--hov-bd);background:var(--hov-bg)} }
+  #btnPlan .pbn{position:absolute;top:2px;right:0;min-width:16px;height:16px;border-radius:8px;background:var(--c);color:#fff;font:700 10px/16px system-ui,sans-serif;text-align:center;padding:0 4px}
   .vbtn{flex:none;border:none;background:var(--c);color:#fff;border-radius:9px;padding:8px 10px;font:600 13px system-ui,sans-serif;cursor:pointer;white-space:nowrap}
   .sg-msg{color:var(--mu);font-size:14px;text-align:center;margin:14px 0}
   .pc{display:flex;gap:10px;border:1px solid var(--bd);border-radius:12px;padding:8px;margin-bottom:8px;background:var(--bg)}
@@ -711,11 +724,11 @@
 <button id="btnPhoto" class="fab" title="Ajouter des photos ou vidéos"><svg viewBox="0 0 24 24" style="transform:translate(1px,0)"><path d="M3 4V1h2v3h3v2H5v3H3V6H0V4h3zm3 6V7h3V4h7l1.83 2H21a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V10h3zm7 9a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm-3.2-5a3.2 3.2 0 1 0 6.4 0 3.2 3.2 0 0 0-6.4 0z"/></svg></button>
 <input id="mediaIn" type="file" accept="image/*,video/*" multiple hidden>
 
-<button id="btnSaved" class="fab" title="Mes parcours"><svg viewBox="0 0 24 24"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg><span id="svCount" hidden></span></button>
+<button id="btnSaved" class="fab" title="Mes enregistrements"><svg viewBox="0 0 24 24"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg><span id="svCount" hidden></span></button>
 
 <div id="savedModal" class="modal hidden">
   <div class="card">
-    <h2>Mes parcours</h2>
+    <h2>Mes enregistrements</h2>
     <div id="savedList"></div>
     <div class="btns">
       <button id="svExport">Exporter</button>
@@ -905,6 +918,17 @@ function mixHex(a, b, t){
   return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, '0')).join('');
 }
 const darkMQ = matchMedia('(prefers-color-scheme: dark)');
+// Teinte décalée (cercle chromatique) : dégradé « IA » du micro construit à partir des couleurs du thème
+function hueShift(hex, deg, light){
+  let [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255);
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b); let hh = 0, s = 0, l = (mx + mn) / 2;
+  if(mx !== mn){ const d = mx - mn; s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn);
+    hh = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; hh *= 60; }
+  hh = (hh + deg + 360) % 360; l = Math.min(0.85, l + (light || 0));
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q;
+  const f = t => { t = (t + 1) % 1; return t < 1 / 6 ? p + (q - p) * 6 * t : t < 0.5 ? q : t < 2 / 3 ? p + (q - p) * (2 / 3 - t) * 6 : p; };
+  return '#' + [hh / 360 + 1 / 3, hh / 360, hh / 360 - 1 / 3].map(t => Math.round(f(t) * 255).toString(16).padStart(2, '0')).join('');
+}
 function applyTheme(){
   const th = THEMES[theme.t] || THEMES.emeraude, dark = theme.m === 'sombre' || (theme.m === 'auto' && darkMQ.matches);
   const N = dark ? { bg:'#161b22', tx:'#e6e8eb', tx2:'#c9ced6', mu:'#9aa3ae', bd:'#2d3540', bd2:'#3a4452', n1:'#1c232c', n2:'#232b35', n3:'#2c3540' }
@@ -914,6 +938,7 @@ function applyTheme(){
     c3:mixHex(N.bg, c, dark ? 0.55 : 0.4), sel:mixHex(N.bg, c, dark ? 0.22 : 0.1), hov:mixHex(N.bg, c, dark ? 0.1 : 0.035), soft:mixHex(N.bg, c, dark ? 0.12 : 0.06), dk:mixHex(c, '#000000', 0.1), n2:N.n2, n3:N.n3 });
   const r = document.documentElement.style;
   Object.entries({ '--c':c, '--c2':c2, '--c-dk':TC.dk, '--c-soft':TC.soft, '--hov-bd':TC.c3, '--hov-bg':TC.hov, '--sel-bg':TC.sel,
+    '--ai0':hueShift(th.c, -35, 0.05), '--ai1':th.c, '--ai2':th.c2, '--ai3':hueShift(th.c2, 40, 0.1), '--ai-sh':th.c2 + '73',
     '--bg':N.bg, '--tx':N.tx, '--tx2':N.tx2, '--mu':N.mu, '--bd':N.bd, '--bd2':N.bd2, '--n1':N.n1, '--n2':N.n2, '--n3':N.n3 }).forEach(([k, v]) => r.setProperty(k, v));
   document.documentElement.classList.toggle('dark', dark);
   document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
@@ -1832,12 +1857,14 @@ function saveRoute(c){
     name: titleOf(c, candidates.indexOf(c)), date: new Date().toISOString(), mode: st.mode,
     kind: c.kind, brg: c.brg || 0, distance: Math.round(c.distance), overlap: c.overlap || 0,
     lm: c.lm || [], names: (c.names || []).slice(0, 3), up: c.up, down: c.down,
-    coords: c.geometry.coordinates.map(p => [+p[0].toFixed(5), +p[1].toFixed(5)])   // arrondi : prend moins de place
+    coords: c.geometry.coordinates.map(p => [+p[0].toFixed(5), +p[1].toFixed(5)]),   // arrondi : prend moins de place
+    cat: pendingSess ? 'entrainement' : 'parcours'
   };
+  if(pendingSess) s.sess = ICO[pendingSess.act] + ' ' + pendingSess.label + ' · ' + hm(pendingSess.duree);
   saved.unshift(s);
   if(!persist()){ saved.shift(); return; }
   c.savedId = s.id; c.savedName = s.name;
-  msg('★ Parcours enregistré dans « Mes parcours ».');
+  msg(s.cat === 'entrainement' ? '★ Enregistré dans « Mes enregistrements » › Entraînements.' : '★ Parcours enregistré dans « Mes enregistrements ».');
 }
 function unsaveRoute(c){
   saved = saved.filter(s => s.id !== c.savedId); persist();
@@ -1864,11 +1891,66 @@ function showSaved(s){
   $('btnGo').textContent = 'Générer des parcours ici';
 }
 
+/* Lieux enregistrés (depuis les suggestions) */
+const catOf = s => s.cat || 'parcours';
+const placeSaved = p => saved.some(s => s.cat === 'lieu' && s.name === p.title && hav(s.ll, p.ll) < 50);
+function togglePlace(p){
+  if(placeSaved(p)){ saved = saved.filter(s => !(s.cat === 'lieu' && s.name === p.title && hav(s.ll, p.ll) < 50)); persist(); msg('Lieu retiré de « Mes enregistrements ».'); }
+  else {
+    saved.unshift({ id:Date.now().toString(36) + Math.random().toString(36).slice(2, 6), cat:'lieu', name:p.title, date:new Date().toISOString(),
+      ll:[+p.ll[0].toFixed(5), +p.ll[1].toFixed(5)], thumb:p.thumb, url:p.url, extract:(p.extract || '').slice(0, 300) });
+    if(!persist()){ saved.shift(); return; }
+    msg('★ Lieu enregistré dans « Mes enregistrements » › Lieux.');
+  }
+  updateSavedBadge();
+}
+var savedPlLayer = null;
+function showSavedPlace(s){
+  $('savedModal').classList.add('hidden');
+  if(savedPlLayer) map.removeLayer(savedPlLayer);
+  savedPlLayer = L.marker(s.ll, { zIndexOffset:950, icon:L.divIcon({ className:'', iconSize:[54,54], iconAnchor:[27,27],
+    html:'<div class="pl on" style="background-image:url(' + s.thumb + ')"></div>' }) })
+    .on('click', () => openGallery([{ img:s.thumb, link:s.url, title:s.name, credit:(s.extract || '') + ' — Wikipédia' }], 0)).addTo(map);
+  if(sheetReady && !WIDE.matches && sheetState === 'full') setSheet('half');
+  setTimeout(() => centerVisible(s.ll, Math.max(map.getZoom(), 16)), sheetReady && !WIDE.matches ? 320 : 0);
+  msg('📍 ' + s.name);
+}
+let svCat = 'tout';
 function renderSaved(){
   const box = $('savedList');
   box.innerHTML = '';
-  if(!saved.length){ box.innerHTML = '<p class="empty">Aucun parcours enregistré pour l\'instant.<br>Touche ☆ sur un parcours de la liste pour le garder.</p>'; return; }
-  saved.forEach(s => {
+  // filtres par catégorie
+  const cats = [['tout', 'Tout'], ['parcours', '🗺️ Parcours'], ['entrainement', '💪 Entraînements'], ['lieu', '📍 Lieux']];
+  const bar = mk('div', 'bzc svcat');
+  cats.forEach(([k, t]) => {
+    const n = k === 'tout' ? saved.length : saved.filter(s => catOf(s) === k).length;
+    const b = mk('button', k === svCat ? 'on' : ''); b.type = 'button'; b.textContent = t + (n ? ' ' + n : '');
+    b.onclick = () => { svCat = k; renderSaved(); };
+    bar.appendChild(b);
+  });
+  box.appendChild(bar);
+  const list = saved.filter(s => svCat === 'tout' || catOf(s) === svCat);
+  if(!list.length){
+    box.insertAdjacentHTML('beforeend', '<p class="empty">' + ({ tout:'Rien d\'enregistré pour l\'instant.<br>Touche ☆ sur un parcours, ou « Enregistrer » sur un lieu des suggestions.', parcours:'Aucun parcours enregistré.<br>Touche ☆ sur un parcours de la liste pour le garder.', entrainement:'Aucun entraînement enregistré.<br>Depuis le Coach, touche 🗺️ sur une séance, puis ☆ sur le parcours choisi.', lieu:'Aucun lieu enregistré.<br>Dans Suggestions, touche un lieu puis « ☆ Enregistrer ».' })[svCat] + '</p>');
+    return;
+  }
+  list.forEach(s => {
+    if(catOf(s) === 'lieu'){
+      const row = mk('div', 'sv lieu', '<img class="svth" alt="" loading="lazy"><div><input aria-label="Nom du lieu"><small></small></div><button class="see">Voir</button><button class="go" title="Ajouter à l\'itinéraire">🧭</button><button class="del" title="Supprimer">🗑</button>');
+      row.querySelector('img').src = s.thumb;
+      const inp = row.querySelector('input'); inp.value = s.name;
+      inp.onchange = () => { s.name = inp.value.trim() || s.name; inp.value = s.name; persist(); };
+      row.querySelector('small').textContent = '📍 Lieu' + (start ? ' · à ' + fmtKm(hav(start, s.ll)) : '') + ' · ' + new Date(s.date).toLocaleDateString('fr-FR', { day:'numeric', month:'short' });
+      row.querySelector('.see').onclick = () => showSavedPlace(s);
+      row.querySelector('.go').onclick = () => { $('savedModal').classList.add('hidden'); placeToPlan({ ll:s.ll, title:s.name }); };
+      const del = row.querySelector('.del');
+      del.onclick = () => {
+        if(!del.classList.contains('sure')){ del.classList.add('sure'); del.textContent = 'Supprimer ?'; setTimeout(() => { del.classList.remove('sure'); del.textContent = '🗑'; }, 3000); return; }
+        saved = saved.filter(x => x.id !== s.id); persist(); renderSaved(); updateSavedBadge(); if(tab === 'sugg') renderSugg();
+      };
+      box.appendChild(row);
+      return;
+    }
     const row = document.createElement('div');
     row.className = 'sv';
     const d = new Date(s.date).toLocaleDateString('fr-FR', { day:'numeric', month:'short', year:'numeric' });
@@ -1881,7 +1963,9 @@ function renderSaved(){
       candidates.forEach(c => { if(c.savedId === s.id) c.savedName = s.name; });
       renderList();
     };
-    row.querySelector('small').textContent = [MODE_ICO[s.mode] || '', d1(s.distance / 1000) + ' km', s.kind === 'boucle' ? 'boucle' : 'aller simple', d].filter(Boolean).join(' · ');
+    row.querySelector('small').textContent = catOf(s) === 'entrainement'
+      ? ['💪 ' + (s.sess || 'Entraînement'), d1(s.distance / 1000) + ' km', d].join(' · ')
+      : [MODE_ICO[s.mode] || '', d1(s.distance / 1000) + ' km', s.kind === 'boucle' ? 'boucle' : 'aller simple', d].filter(Boolean).join(' · ');
     row.querySelector('.see').onclick = () => showSaved(s);
     const del = row.querySelector('.del');
     del.onclick = () => {   // 1er appui : demande confirmation, 2e appui : supprime
@@ -1916,7 +2000,7 @@ $('svImport').onchange = async () => {
     const list = JSON.parse(await f.text());
     if(!Array.isArray(list)) throw 0;
     let n = 0;
-    list.forEach(s => { if(s && s.id && Array.isArray(s.coords) && !saved.some(x => x.id === s.id)){ saved.push(s); n++; } });
+    list.forEach(s => { if(s && s.id && (Array.isArray(s.coords) || (s.cat === 'lieu' && Array.isArray(s.ll))) && !saved.some(x => x.id === s.id)){ saved.push(s); n++; } });
     saved.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
     persist(); renderSaved(); updateSavedBadge();
     msg(n + ' parcours importé' + (n > 1 ? 's' : '') + '.');
@@ -2465,6 +2549,22 @@ function ensurePlan(){
   plan.active = true;
 }
 function addStep(p){ ensurePlan(); insertBest(p); planChanged(); }
+function placeToPlan(p, quiet){
+  ensurePlan();
+  const near = x => x && x.ll && hav(x.ll, p.ll) < 30;
+  if(near(plan.end) || plan.steps.some(near)){ if(!quiet) msg('« ' + p.title + ' » est déjà dans ton itinéraire.'); return; }
+  if(st.type !== 'boucle' && !plan.end){ plan.end = { ll:p.ll, name:p.title }; planChanged(); }
+  else addStep({ ll:p.ll, name:p.title });
+  updatePlanBadge();
+  if(!quiet) msg('🧭 « ' + p.title + ' » ajouté à l\'itinéraire (' + (plan.steps.length + (plan.end ? 1 : 0)) + ' lieu' + (plan.steps.length + (plan.end ? 1 : 0) > 1 ? 'x' : '') + ') — touche 🧭 en haut pour le voir.');
+  else msg('🧭 Lieux de la balade ajoutés à l\'itinéraire — touche 🧭 en haut pour le voir.');
+}
+function updatePlanBadge(){
+  const n = plan.steps.filter(s => s.ll).length + (plan.end ? 1 : 0);
+  let b = $('btnPlan').querySelector('.pbn');
+  if(!b){ b = document.createElement('span'); b.className = 'pbn'; $('btnPlan').appendChild(b); }
+  b.textContent = n; b.hidden = !n;
+}
 
 function planPoints(){
   if(!plan.start) return null;
@@ -2475,6 +2575,7 @@ function planPoints(){
 // Recalcul automatique (½ seconde après la dernière modification)
 function planChanged(){
   plan.active = true;
+  if(typeof updatePlanBadge === 'function') setTimeout(updatePlanBadge);
   if(plan.start) setStart(plan.start.ll);
   renderPlan(); drawPlanMarks();
   clearTimeout(plan.timer);
@@ -2707,7 +2808,7 @@ $('navStop').onclick = stopNav;
 /* ---------- Suggestions : lieux à visiter (Wikipédia : photo + description) ---------- */
 let tab = 'parcours', suggKey = '', suggRun = 0, suggPlaces = [], suggTours = [];
 const placeLayer = L.markerClusterGroup({
-  maxClusterRadius:55, showCoverageOnHover:false,
+  maxClusterRadius:55, showCoverageOnHover:false, zoomToBoundsOnClick:false,
   // groupe = photo du lieu le plus intéressant + nombre de lieux ; toucher = zoomer dessus
   iconCreateFunction: c => {
     const ps = c.getAllChildMarkers().map(m => m.place).sort((a, b) => b.score - a.score);
@@ -2715,6 +2816,15 @@ const placeLayer = L.markerClusterGroup({
       html:'<div class="pl plc" style="background-image:url(' + ps[0].thumb + ')"><span>' + ps.length + '</span></div>' });
   }
 }).addTo(map);
+// Toucher un groupe : on zoome juste assez pour voir tous ses lieux, sans en sortir de la zone visible
+placeLayer.on('clusterclick', e => {
+  const b = e.layer.getBounds(), pad = visPad(), m = 34;   // marge = rayon d'une vignette + un peu d'air
+  const tl = L.point(pad.paddingTopLeft[0] + m, pad.paddingTopLeft[1] + m), br = L.point(pad.paddingBottomRight[0] + m, pad.paddingBottomRight[1] + m);
+  const z = Math.min(map.getMaxZoom(), map.getBoundsZoom(b, false, tl.add(br)));
+  if(z <= map.getZoom() || b.getNorthEast().equals(b.getSouthWest())){ e.layer.spiderfy(); return; }   // déjà au plus près : on écarte les lieux
+  userMoved = false;
+  map.fitBounds(b, { paddingTopLeft:tl, paddingBottomRight:br, maxZoom:z });
+});
 const SUG_BADTYPE = /^(country|state|adm|city|edu|event|satellite|airport|railwaystation)/;
 const SUG_BADNAME = /^(rue|avenue|boulevard|cours|impasse|chemin|route|liste|arrondissement|quartier|ligne|tunnel|autoroute|gare|station|lycée|collège|école|groupe scolaire|université|institut|hôpital|clinique|centre hospitalier|tramway|métro|échangeur|élection|bataille|siège)\b/i;
 
@@ -2810,7 +2920,11 @@ function placeMarker(p){
   const s = on ? 54 : 40;
   const m = L.marker(p.ll, { zIndexOffset:on ? 900 : 650, icon:L.divIcon({ className:'', iconSize:[s,s], iconAnchor:[s/2,s/2],
     html:'<div class="pl' + (on ? ' on' : '') + '" style="background-image:url(' + p.thumb + ')"></div>' }) })
-    .on('click', () => openGallery([{ img:p.thumb, link:p.url, title:p.title, credit:p.extract + ' — Wikipédia' }], 0));
+    .on('click', () => {
+      const i = suggPlaces.indexOf(p);
+      if(tab === 'sugg' && st.type !== 'boucle' && i >= 0){ sugOpen = -1; openSugg(i); }
+      else openGallery([{ img:p.thumb, link:p.url, title:p.title, credit:p.extract + ' — Wikipédia' }], 0);
+    });
   m.place = p;
   return m;
 }
@@ -2822,6 +2936,31 @@ function showPlaces(){
   placeLayer.addLayers(list.map(placeMarker));
 }
 // Mini-liste des suggestions (même format que la liste des parcours)
+let sugOpen = -1;   // suggestion dont les actions sont affichées
+function sugActions(p, tour){
+  const a = mk('div', 'sga');
+  const go = mk('button', '', '🧭 Itinéraire'); go.type = 'button'; go.title = tour ? 'Mettre ces lieux comme étapes de l\'itinéraire' : 'Ajouter ce lieu à l\'itinéraire';
+  go.onclick = e => { e.stopPropagation(); tour ? tour.places.forEach(x => placeToPlan(x, true)) : placeToPlan(p); };
+  a.appendChild(go);
+  if(!tour){
+    const sv = mk('button', placeSaved(p) ? 'on' : '', placeSaved(p) ? '★ Enregistré' : '☆ Enregistrer'); sv.type = 'button';
+    sv.onclick = e => { e.stopPropagation(); togglePlace(p); renderSugg(); };
+    a.appendChild(sv);
+  }
+  const wk = mk('a', '', 'Wikipédia'); wk.href = (tour ? tour.places[0] : p).url; wk.target = '_blank'; wk.rel = 'noopener';
+  wk.onclick = e => e.stopPropagation();
+  a.appendChild(wk);
+  if(tour) a.style.gridTemplateColumns = '1fr 1fr';
+  return a;
+}
+// Toucher une suggestion : choisie + ses actions (itinéraire, enregistrer, Wikipédia) ; retoucher : refermer
+function openSugg(i){
+  sugOpen = sugOpen === i && sugIdx === i ? -1 : i;
+  sugIdx = i;
+  renderSugg();
+  if(sheetReady && !WIDE.matches){ if(sheetState === 'full') setSheet('half'); else setSheet(sheetState); }
+  setTimeout(focusSugg, sheetReady && !WIDE.matches ? 320 : 0);
+}
 function miniCard(thumb, title, sub, right, onView, onThumb, onSelect){
   const d = document.createElement('div');
   d.className = 'it sg';
@@ -2837,18 +2976,23 @@ function miniCard(thumb, title, sub, right, onView, onThumb, onSelect){
 }
 function placeCard(p, withGo){
   const desc = (p.extract.match(/^.*?[.!?](\s|$)/) || [p.extract])[0].trim();
-  return miniCard(p.thumb, p.title, 'à ' + fmtKm(p.dist) + ' · ' + desc, '',
+  const i = suggPlaces.indexOf(p), d = miniCard(p.thumb, p.title, 'à ' + fmtKm(p.dist) + ' · ' + desc, '',
     () => viewPlace(p),
     () => openGallery([{ img:p.thumb, link:p.url, title:p.title, credit:p.extract + ' — Wikipédia' }], 0),
-    () => pickSugg(suggPlaces.indexOf(p)));
+    () => openSugg(i));
+  if(sugOpen === i && sugIdx === i){ d.classList.add('open'); d.appendChild(sugActions(p)); }
+  return d;
 }
 function tourCard(c){
   const km = c.distance / 1000, n = c.places.length;
-  return miniCard(c.places[0].thumb, 'Visite · ' + c.places.slice(0, 2).map(p => p.title).join(', ') + (n > 2 ? ' +' + (n - 2) : ''),
+  const i = suggTours.indexOf(c), d = miniCard(c.places[0].thumb, 'Visite · ' + c.places.slice(0, 2).map(p => p.title).join(', ') + (n > 2 ? ' +' + (n - 2) : ''),
     n + ' lieu' + (n > 1 ? 'x' : '') + ' à voir · côté ' + dirOf(c.brg),
     d1(km) + ' km<small>≈ ' + fmtMin(km / speed() * 60) + '</small>',
     () => viewTour(c),
-    () => openGallery(c.places.map(x => ({ img:x.thumb, link:x.url, title:x.title, credit:x.extract + ' — Wikipédia' })), 0));
+    () => openGallery(c.places.map(x => ({ img:x.thumb, link:x.url, title:x.title, credit:x.extract + ' — Wikipédia' })), 0),
+    () => openSugg(i));
+  if(sugOpen === i && sugIdx === i){ d.classList.add('open'); d.appendChild(sugActions(null, c)); }
+  return d;
 }
 
 // Version détaillée (grande photo, description, étapes de la balade)
@@ -2856,7 +3000,7 @@ function placeBig(p){
   const d = document.createElement('div');
   d.className = 'pc';
   d.innerHTML = '<img loading="lazy" alt=""><div class="pcb"><b></b><span class="pcd"></span><p></p>' +
-    '<div class="pca"><button class="vbtn">Voir parcours</button><a target="_blank" rel="noopener">Wikipédia</a></div></div>';
+    '<div class="pca"><button class="vbtn">Voir parcours</button><button class="sgDet pgo">🧭 Itinéraire</button><button class="sgDet psv"></button><a target="_blank" rel="noopener">Wikipédia</a></div></div>';
   d.querySelector('img').src = p.thumb;
   d.querySelector('b').textContent = p.title;
   d.querySelector('.pcd').textContent = 'à ' + fmtKm(p.dist) + ' à vol d\'oiseau';
@@ -2864,6 +3008,9 @@ function placeBig(p){
   d.querySelector('a').href = p.url;
   d.querySelector('img').onclick = () => openGallery([{ img:p.thumb, link:p.url, title:p.title, credit:p.extract + ' — Wikipédia' }], 0);
   d.querySelector('.vbtn').onclick = e => { e.stopPropagation(); viewPlace(p); };
+  d.querySelector('.pgo').onclick = e => { e.stopPropagation(); placeToPlan(p); };
+  const sv = d.querySelector('.psv'); sv.textContent = placeSaved(p) ? '★' : '☆'; sv.title = placeSaved(p) ? 'Retirer de mes lieux' : 'Enregistrer ce lieu'; sv.classList.toggle('on', placeSaved(p));
+  sv.onclick = e => { e.stopPropagation(); togglePlace(p); renderSugg(); };
   d.querySelector('a').onclick = e => e.stopPropagation();
   d.onclick = () => pickSugg(suggPlaces.indexOf(p));
   return d;
@@ -4729,7 +4876,7 @@ function swipeEnd(d, dx){
   card.style.transform = 'translateX(' + (dir > 0 ? '-110%' : '110%') + ')';
   card.style.opacity = '0';
   setTimeout(() => {
-    if(isSugg){ sugIdx = (sugIdx + dir + n) % n; renderSugg(); setSheet('peek'); focusSugg(); }
+    if(isSugg){ sugIdx = (sugIdx + dir + n) % n; sugOpen = -1; renderSugg(); setSheet('peek'); focusSugg(); }
     else pick(next);
     const nc = isSugg ? $('sugg').querySelector('.cur') : pinnedCard();   // le nouveau arrive du côté opposé
     if(nc){
