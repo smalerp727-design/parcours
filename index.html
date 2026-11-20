@@ -1586,7 +1586,7 @@ async function generate(){
     if(target > 100000){ msg('Objectif limité à 100 km.', true); return; }
   }
   const run = ++genRun, base = PROFILES[st.mode];
-  logHist('parcours');
+  logHist(histNext || 'parcours'); histNext = null;
   if(tab !== 'parcours') setTab('parcours');
   const keepSize = keepSheetOnce; keepSheetOnce = false;
   if(!WIDE.matches && sheetReady && !keepSize){ $('panel').classList.remove('open'); setSheet('peek'); }
@@ -1714,6 +1714,7 @@ function closeSearch(){ $('sres').hidden = true; $('q').value = ''; $('q').blur(
 let hist = store.get('hist', []), histCat = 'tout';
 const HIST_MAX = 100;   // les plus anciennes s'effacent d'elles-mêmes
 function histLabel(e){
+  if(e.title) return MODE_ICO[e.mode] + ' ' + e.title;
   return MODE_ICO[e.mode] + ' ' + (e.type === 'boucle' ? 'Boucle' : 'Aller') + ' · ' + (e.dest ? '→ ' + e.dest.name : e.unit === 'km' ? r1(e.val) + ' km' : fmtMin(e.val));
 }
 function histWhen(t){
@@ -1723,12 +1724,16 @@ function histWhen(t){
   if(isoDay(d) === isoDay(new Date())) return 'aujourd\'hui ' + d.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
   return d.toLocaleDateString('fr-FR', { day:'numeric', month:'short' }) + ' ' + d.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
 }
-function logHist(kind){
+var histNext = null;   // le prochain « Générer » vient d'une suggestion
+const pickPl = p => ({ ll:[+p.ll[0].toFixed(5), +p.ll[1].toFixed(5)], title:p.title, thumb:p.thumb, url:p.url, extract:(p.extract || '').slice(0, 200) });
+function logHist(k){
   if(!start) return;
-  const e = { id:Date.now().toString(36) + Math.random().toString(36).slice(2, 5), t:new Date().toISOString(), kind, mode:st.mode, type:st.type, unit:st.unit, val:st.val,
-    start:[+start[0].toFixed(5), +start[1].toFixed(5)], dest:dest ? { ll:dest.ll, name:dest.name } : null };
+  const x0 = typeof k === 'string' ? { kind:k } : k;
+  const e = Object.assign({ id:Date.now().toString(36) + Math.random().toString(36).slice(2, 5), t:new Date().toISOString(), mode:st.mode, type:st.type, unit:st.unit, val:st.val,
+    start:[+start[0].toFixed(5), +start[1].toFixed(5)], dest:dest && !x0.sug ? { ll:dest.ll, name:dest.name } : null }, x0);
   // même recherche déjà faite (mêmes réglages, départ à moins de 150 m) : elle remonte en tête au lieu d'être dupliquée
-  const same = x => x.kind === e.kind && x.mode === e.mode && x.type === e.type && (e.dest ? x.dest && hav(x.dest.ll, e.dest.ll) < 50 : !x.dest && x.unit === e.unit && x.val === e.val) && hav(x.start, e.start) < 150;
+  const same = x => x.kind === e.kind && x.mode === e.mode && x.type === e.type && hav(x.start, e.start) < 150 &&
+    (e.sug ? x.title === e.title : !x.sug && (e.dest ? x.dest && hav(x.dest.ll, e.dest.ll) < 50 : !x.dest && x.unit === e.unit && x.val === e.val));
   const old = hist.find(same);
   if(old){ e.name = old.name; hist = hist.filter(x => x !== old); }
   hist.unshift(e); hist = hist.slice(0, HIST_MAX); store.set('hist', hist);
@@ -1741,6 +1746,12 @@ function replayHist(e){
   click('segMode', e.mode);
   if(!e.dest){ clearDest(); click('segType', e.type); click('segUnit', e.unit); st.val = e.val; store.set('st', st); setVal(e.val); hint(); }
   setStart(e.start);
+  if(e.sug && e.sug.place){ histNext = { kind:'suggestion', title:e.title, sug:e.sug }; viewPlace(e.sug.place); return; }
+  if(e.sug && e.sug.steps){   // balade ou itinéraire : on refait l'itinéraire par les mêmes lieux
+    endPlan(); plan.start = { ll:e.start, name:'Mon départ' }; plan.end = null; plan.steps = [];
+    e.sug.steps.forEach(p => placeToPlan(p, true));
+    logHist({ kind:'suggestion', title:e.title, sug:e.sug }); updatePlanBadge(); return;
+  }
   if(e.dest) setDest(e.dest.ll, e.dest.name);
   else centerVisible(e.start, Math.max(map.getZoom(), 14));
   if(e.kind === 'suggestion'){ setTab('sugg'); applySugg(); } else generate();
@@ -2685,6 +2696,10 @@ function placeToPlan(p, quiet){
   if(near(plan.end) || plan.steps.some(near)){ if(!quiet) msg('« ' + p.title + ' » est déjà dans ton itinéraire.'); return; }
   if(st.type !== 'boucle' && !plan.end){ plan.end = { ll:p.ll, name:p.title }; planChanged(); }
   else addStep({ ll:p.ll, name:p.title });
+  if(!quiet){   // historique : l'itinéraire complet tel qu'il est maintenant
+    const all = plan.steps.filter(s => s.ll).concat(plan.end ? [plan.end] : []).map(s => ({ ll:s.ll, title:s.name }));
+    logHist({ kind:'suggestion', title:'🧭 ' + all.map(s => s.title).slice(0, 2).join(', ') + (all.length > 2 ? ' +' + (all.length - 2) : ''), sug:{ steps:all } });
+  }
   updatePlanBadge();
   if(!quiet) msg('🧭 « ' + p.title + ' » ajouté à l\'itinéraire (' + (plan.steps.length + (plan.end ? 1 : 0)) + ' lieu' + (plan.steps.length + (plan.end ? 1 : 0) > 1 ? 'x' : '') + ') — touche 🧭 en haut pour le voir.');
   else msg('🧭 Lieux de la balade ajoutés à l\'itinéraire — touche 🧭 en haut pour le voir.');
@@ -3084,7 +3099,7 @@ let sugOpen = -1;   // suggestion dont les actions sont affichées
 function sugActions(p, tour){
   const a = mk('div', 'sga');
   const go = mk('button', '', '🧭 Itinéraire'); go.type = 'button'; go.title = tour ? 'Mettre ces lieux comme étapes de l\'itinéraire' : 'Ajouter ce lieu à l\'itinéraire';
-  go.onclick = e => { e.stopPropagation(); tour ? tour.places.forEach(x => placeToPlan(x, true)) : placeToPlan(p); };
+  go.onclick = e => { e.stopPropagation(); if(tour){ tour.places.forEach(x => placeToPlan(x, true)); logHist({ kind:'suggestion', title:'🧭 ' + tourTitle(tour), sug:{ steps:tour.places.map(pickPl) } }); } else placeToPlan(p); };
   a.appendChild(go);
   if(!tour){
     const sv = mk('button', placeSaved(p) ? 'on' : '', placeSaved(p) ? '★ Enregistré' : '☆ Enregistrer'); sv.type = 'button';
@@ -3184,8 +3199,15 @@ function tourBig(c){
   d.querySelector('.vbtn').onclick = () => viewTour(c);
   return d;
 }
-function viewPlace(p){ setDest(p.ll, p.title); keepSheetOnce = true; setTab('parcours'); generate(); }   // itinéraire vers ce lieu
-function viewTour(c){ candidates = suggTours.slice(); lastGenKey = ''; userPicked = true; setTab('parcours'); select(c, false, true); }
+function viewPlace(p){   // itinéraire vers ce lieu
+  if(!histNext) histNext = { kind:'suggestion', title:'→ ' + p.title, sug:{ place:pickPl(p) } };
+  setDest(p.ll, p.title); keepSheetOnce = true; setTab('parcours'); generate();
+}
+const tourTitle = c => 'Visite · ' + c.places.slice(0, 2).map(p => p.title).join(', ') + (c.places.length > 2 ? ' +' + (c.places.length - 2) : '');
+function viewTour(c){
+  logHist({ kind:'suggestion', title:tourTitle(c), sug:{ steps:c.places.map(pickPl) } });
+  candidates = suggTours.slice(); lastGenKey = ''; userPicked = true; setTab('parcours'); select(c, false, true);
+}
 
 /* --- Liste des suggestions : compacte ou détaillée ; tiroir replié = une suggestion à la fois --- */
 let sugDetail = !!st.sugDetail, sugIdx = 0, sugHead = '', sugBusy = '', sugMsg = '';
@@ -3253,7 +3275,6 @@ async function runSugg(){
   const key = [start[0].toFixed(4), start[1].toFixed(4), st.mode, st.type, Math.round(target)].join('|');
   if(key === suggKey){ renderSugg(); return; }
   const run = ++suggRun;
-  logHist('suggestion');
   suggKey = key; suggPlaces = []; suggTours = []; sugIdx = 0; sugHead = '';
   const radius = loop ? target * 0.42 : target / 1.3;
   sugBusy = '🔎 Recherche des lieux à visiter à moins de ' + fmtKm(radius) + '…';
