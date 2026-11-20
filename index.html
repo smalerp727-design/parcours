@@ -2774,8 +2774,13 @@ $('planReset').onclick = () => {
 /* ---------- Bouton "Rechercher ici" : quand on a déplacé la carte loin du départ ---------- */
 var userMoved = false;   // var : utilisable dès le premier recadrage
 const mapEl = map.getContainer();
-map.on('dragstart', () => { userMoved = true; });
-['wheel', 'touchstart'].forEach(ev => mapEl.addEventListener(ev, e => { if(ev === 'wheel' || e.touches.length > 1) userMoved = true; }, { passive:true }));
+// Déplacement fait à la main (glisser, molette, pincer, double toucher) ≠ recadrage automatique de l'appli
+var manualMove = false;
+const markManual = () => { userMoved = true; manualMove = true; };
+map.on('dragstart', markManual);
+map.on('dblclick', markManual);
+['wheel', 'touchstart'].forEach(ev => mapEl.addEventListener(ev, e => { if(ev === 'wheel' || e.touches.length > 1) markManual(); }, { passive:true }));
+mapEl.addEventListener('keydown', e => { if(/^(Arrow|\+|-|=)/.test(e.key)) markManual(); });
 // Centre de la partie de carte visible (hors barre de recherche, tiroir ou panneau)
 function visibleCenter(){
   const W = mapEl.clientWidth, H = mapEl.clientHeight, p = $('panel').getBoundingClientRect();
@@ -2795,12 +2800,16 @@ function fitTargetToView(c){
   else st.val = Math.max(10, Math.round(km / speed() * 60 / 5) * 5);
   store.set('st', st); setVal(st.val); hint();
 }
+let lastView = null;
 function checkHere(){
-  let show = false;
-  if(userMoved && !nav && start){
-    const c = map.latLngToContainerPoint(visibleCenter()), s = map.latLngToContainerPoint(start);
-    show = c.distanceTo(s) > Math.min(140, mapEl.clientWidth * 0.3);   // départ loin du centre de la vue
-  }
+  // Dès que la zone affichée change à la main : le bouton apparaît.
+  // Un vrai recadrage automatique (focus d'un lieu, affichage d'un tracé…) le retire ; un simple ajustement de taille ne change rien.
+  const v = { c:map.latLngToContainerPoint(map.getCenter()), ll:map.getCenter(), z:map.getZoom() };
+  let show = document.body.classList.contains('show-here');
+  if(nav) show = false;
+  else if(manualMove) show = true;
+  else if(lastView && (v.z !== lastView.z || map.latLngToContainerPoint(lastView.ll).distanceTo(v.c) > 40)) show = false;
+  manualMove = false; lastView = v;
   document.body.classList.toggle('show-here', show);
   syncActs();
 }
