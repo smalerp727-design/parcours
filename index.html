@@ -2961,9 +2961,10 @@ function sugActions(p, tour){
     sv.onclick = e => { e.stopPropagation(); togglePlace(p); renderSugg(); };
     a.appendChild(sv);
   }
-  const wk = mk('a', '', 'Wikipédia'); wk.href = (tour ? tour.places[0] : p).url; wk.target = '_blank'; wk.rel = 'noopener';
-  wk.onclick = e => e.stopPropagation();
-  a.appendChild(wk);
+  // Détails : la fiche du lieu (photo, description, Itinéraire, Enregistrer, source)
+  const dt = mk('button', '', 'ℹ️ Détails'); dt.type = 'button'; dt.title = tour ? 'Voir les lieux de la balade' : 'Voir la fiche du lieu';
+  dt.onclick = e => { e.stopPropagation(); openGallery(tour ? tour.places.map(plItem) : [plItem(p)], 0); };
+  a.appendChild(dt);
   if(tour) a.style.gridTemplateColumns = '1fr 1fr';
   return a;
 }
