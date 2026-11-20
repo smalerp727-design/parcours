@@ -24,8 +24,17 @@
   .fab{display:flex;align-items:center;justify-content:center;padding:0}
   .fab svg{width:24px;height:24px;fill:var(--tx2);display:block}
   #search{position:relative}
-  #mic.on svg{fill:#fff !important}
-  #mic.on{background:#dc2626 !important;animation:pulse 1.2s infinite}
+  #btnApply{display:none}
+  body.tab-sugg #btnGo{display:none !important}
+  /* Micro : dégradé façon assistant IA, qui tourne et pulse pendant l'écoute */
+  #mic{background:linear-gradient(135deg,#6366f1 0%,#a855f7 45%,#ec4899 80%,#f59e0b 100%) !important;box-shadow:0 2px 10px rgba(124,58,237,.45)}
+  #mic svg{fill:#fff !important}
+  #mic::after{content:"";position:absolute;inset:-3px;border-radius:50%;background:conic-gradient(from 0deg,#6366f1,#a855f7,#ec4899,#f59e0b,#6366f1);z-index:-1;opacity:0;transition:opacity .2s}
+  #mic.on::after{opacity:1;animation:micSpin 1.6s linear infinite}
+  #mic.on{animation:micPulse 1.2s ease-in-out infinite}
+  @keyframes micSpin{to{transform:rotate(360deg)}}
+  @keyframes micPulse{0%,100%{box-shadow:0 0 0 0 rgba(168,85,247,.55)}50%{box-shadow:0 0 0 10px rgba(168,85,247,0)}}
+  @media (hover:hover){ #mic:hover{filter:brightness(1.1)} }
   @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(220,38,38,.5)}100%{box-shadow:0 0 0 12px rgba(220,38,38,0)}}
   #btnPlan{position:absolute;right:4px;top:0;height:38px;width:38px;border:none;background:none;border-radius:50%;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
   #btnPlan svg{width:22px;height:22px;fill:var(--c)}
@@ -653,6 +662,7 @@
     #list{flex-direction:column;overflow-y:auto;margin:8px -4px 0;padding:0 4px;flex:1 1 auto;min-height:0}
     #ctrl{flex:none;display:block !important;padding-top:0}
     #ctrl #btnGo{display:block}
+    body.tab-sugg #ctrl #btnApply{display:block}
     #grab,#sumrow{display:none}
     #info{margin-top:10px;font-size:15px}
     .leaflet-top.leaflet-left{top:0}
@@ -823,6 +833,7 @@
     <label id="retRow" class="pill" hidden title="Distance, temps et dénivelé comptés aller + retour"><input type="checkbox" id="optRet">↩︎ Compter le retour</label>
   </div>
   <button id="btnGo" class="primary">Générer un parcours</button>
+  <button id="btnApply" class="primary">✓ Appliquer</button>
   </div>
   <div id="destChip" hidden><span id="destName"></span><button id="destClear" title="Retirer l'arrivée">✕ Retirer</button></div>
   <div id="info"></div>
@@ -2656,6 +2667,19 @@ function visibleCenter(){
   const pt = WIDE.matches ? L.point((p.right + W) / 2, H / 2) : L.point(W / 2, (70 + p.top) / 2);
   return map.containerPointToLatLng(pt);
 }
+// Distance (ou temps) réglée pour que les lieux cherchés tiennent dans la partie visible de la carte
+function fitTargetToView(c){
+  const W = mapEl.clientWidth, H = mapEl.clientHeight, p = $('panel').getBoundingClientRect();
+  const x0 = WIDE.matches ? p.right : 0, y0 = WIDE.matches ? 0 : 70, y1 = WIDE.matches ? H : p.top;
+  const ctr = map.latLngToContainerPoint(c);
+  const half = Math.max(80, Math.min(ctr.x - x0, W - ctr.x, ctr.y - y0, y1 - ctr.y)) * 0.9;   // jusqu'au bord visible le plus proche
+  const r = map.distance(c, map.containerPointToLatLng(L.point(ctr.x + half, ctr.y)));
+  let km = (st.type === 'boucle' ? r / 0.42 : r * 1.3) / 1000;   // inverse du rayon utilisé par les suggestions
+  km = clamp(km, 1, st.mode === 'velo' ? 150 : 60);
+  if(st.unit === 'km') st.val = km < 5 ? Math.round(km * 2) / 2 : Math.round(km);
+  else st.val = Math.max(10, Math.round(km / speed() * 60 / 5) * 5);
+  store.set('st', st); setVal(st.val); hint();
+}
 function checkHere(){
   let show = false;
   if(userMoved && !nav && start){
@@ -2671,7 +2695,7 @@ $('btnHere').onclick = () => {
   userMoved = false;
   document.body.classList.remove('show-here');
   setStart([c.lat, c.lng]);
-  if(tab === 'sugg'){ suggKey = ''; runSugg(); }
+  if(tab === 'sugg'){ fitTargetToView(c); applySugg(); }
   else generate();
 };
 
@@ -2876,6 +2900,7 @@ let sugDetail = !!st.sugDetail, sugIdx = 0, sugHead = '', sugBusy = '', sugMsg =
 const sugItems = () => st.type === 'boucle' ? suggTours : suggPlaces;
 const sugPeek = () => sheetReady && !WIDE.matches && sheetState === 'peek';
 function renderSugg(){
+  if(typeof syncGo2 === 'function') syncGo2();
   const box = $('sugg'), items = sugItems(), detail = sugDetail && !sugPeek();
   const keepY = box.scrollTop;
   box.innerHTML = '';
@@ -2926,6 +2951,8 @@ function pickSugg(i){
   } else focusSugg();
 }
 
+function applySugg(){ suggKey = ''; runSugg(); }
+$('btnApply').onclick = applySugg;
 async function runSugg(){
   sugMsg = ''; sugBusy = '';
   if(!start){ sugHead = ''; sugMsg = 'Place d\'abord ton départ (🎯 ou touche la carte).'; renderSugg(); return; }
@@ -2937,11 +2964,12 @@ async function runSugg(){
   suggKey = key; suggPlaces = []; suggTours = []; sugIdx = 0; sugHead = '';
   const radius = loop ? target * 0.42 : target / 1.3;
   sugBusy = '🔎 Recherche des lieux à visiter à moins de ' + fmtKm(radius) + '…';
+  syncGo2(); $('btnApply').disabled = true;
   renderSugg(); if(sheetReady && !WIDE.matches) setSheet(sheetState);
   let places = [];
   try{ places = await findPlaces(start, radius); }catch(e){}
   if(run !== suggRun) return;
-  sugBusy = '';
+  sugBusy = ''; syncGo2(); $('btnApply').disabled = false;
   if(!places.length){ sugMsg = 'Aucun lieu à visiter trouvé dans ce rayon. Essaie une distance plus grande.'; suggKey = ''; renderSugg(); return; }
 
   if(!loop){
@@ -2970,6 +2998,7 @@ async function runSugg(){
 }
 function setTab(t){
   tab = t;
+  document.body.classList.toggle('tab-sugg', t === 'sugg');
   document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
   $('list').hidden = t !== 'parcours';
   $('sugg').hidden = t !== 'sugg';
@@ -2977,6 +3006,7 @@ function setTab(t){
   if(typeof renderSessBar === 'function') renderSessBar();
   if(t === 'sugg') runSugg();
   if(t === 'coach') renderCoach();
+  if(typeof syncGo2 === 'function') syncGo2();
   showPlaces();
   if(sheetReady && !WIDE.matches) setSheet(sheetState);
 }
@@ -4732,12 +4762,17 @@ $('chip').onclick = () => {
   $('panel').classList.toggle('open', open);
   setSheet(open && sheetState === 'peek' ? 'half' : sheetState);
 };
-$('go2').onclick = () => $('btnGo').click();
-new MutationObserver(() => {   // le bouton du résumé suit l'état du grand bouton
+$('go2').onclick = () => tab === 'sugg' ? applySugg() : $('btnGo').click();
+// Le bouton du résumé suit l'état du grand bouton ; dans Suggestions il devient « Appliquer »
+function syncGo2(){
   const b = $('btnGo'), t = b.textContent, m = t.match(/(\d+) \/ (\d+)/);
+  $('btnApply').disabled = !!sugBusy;
+  if(tab === 'sugg'){ $('go2').disabled = !!sugBusy; $('go2').textContent = sugBusy ? '⏳' : '✓ Appliquer'; return; }
   $('go2').disabled = b.disabled;
   $('go2').textContent = b.disabled ? (m ? '⏳ ' + m[1] + '/' + m[2] : '⏳') : (/Autres/.test(t) ? '🔁 Autres' : 'Générer');
-}).observe($('btnGo'), { childList:true, characterData:true, subtree:true, attributes:true });
+}
+new MutationObserver(syncGo2).observe($('btnGo'), { childList:true, characterData:true, subtree:true, attributes:true });
+syncGo2();
 
 sheetReady = true;
 updateChip();
