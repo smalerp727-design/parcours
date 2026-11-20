@@ -433,6 +433,12 @@
   #vActs button{padding:10px 6px;font-size:14px}
   :root{--share-ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M18 16.1c-.8 0-1.5.3-2 .8l-7.1-4.2c.1-.2.1-.5.1-.7s0-.5-.1-.7L16 7.2c.5.5 1.2.8 2 .8a3 3 0 1 0-3-3c0 .2 0 .5.1.7L8 9.8A3 3 0 0 0 6 9a3 3 0 0 0 0 6c.8 0 1.5-.3 2-.8l7.1 4.2c-.1.2-.1.4-.1.6a2.9 2.9 0 1 0 3-2.9z'/%3E%3C/svg%3E")}
   .sga .ico{padding:7px 0;font-size:16px}
+  .pic{width:17px;height:17px;flex:none;fill:currentColor}
+  .sga .pic, #vActs .pic, .pca .pic, .sga .ico{color:var(--c)}
+  #vShare::before{background:var(--c) !important}
+  .pca .pgo{display:inline-flex;align-items:center;gap:5px}
+  .sv .go{display:flex;align-items:center;justify-content:center}
+  .sv .go .pic{color:var(--c)}
   .sga .ico svg{width:17px;height:17px;fill:currentColor}
   .it .iacts{flex:none;display:flex;flex-direction:column;align-items:center;gap:2px}
   .it .shr{border:none;background:none;padding:3px 2px;cursor:pointer;color:#9ca3af;line-height:0}
@@ -832,7 +838,7 @@
     </div>
     <div id="vTip" hidden>📱 Fais glisser pour regarder autour · pince pour zoomer</div>
     <div id="vCap"></div>
-    <div id="vActs" class="sga" hidden><button id="vGo" type="button">🧭 Itinéraire</button><button id="vShare" type="button">Partager</button><button id="vSave" type="button">☆ Enregistrer</button></div>
+    <div id="vActs" class="sga" hidden><button id="vGo" type="button"><svg class="pic" viewBox="0 0 24 24" aria-hidden="true"><path d="M21.71 11.29l-9-9a1 1 0 0 0-1.42 0l-9 9a1 1 0 0 0 0 1.42l9 9a1 1 0 0 0 1.42 0l9-9a1 1 0 0 0 0-1.42zM14 14.5V12h-4v3H8v-4a1 1 0 0 1 1-1h5V7.5l3.5 3.5-3.5 3.5z"/></svg>Itinéraire</button><button id="vShare" type="button">Partager</button><button id="vSave" type="button">☆ Enregistrer</button></div>
     <div class="btns">
       <a id="vLink" href="#" target="_blank" rel="noopener">Voir la source</a>
       <button id="vDel" hidden>🗑 Supprimer</button>
@@ -2037,6 +2043,7 @@ function showSaved(s){
 
 
 /* ---------- Partage : lien qui rouvre l'appli sur le parcours ou le lieu ---------- */
+const ITI_SVG = '<svg class="pic" viewBox="0 0 24 24" aria-hidden="true"><path d="M21.71 11.29l-9-9a1 1 0 0 0-1.42 0l-9 9a1 1 0 0 0 0 1.42l9 9a1 1 0 0 0 1.42 0l9-9a1 1 0 0 0 0-1.42zM14 14.5V12h-4v3H8v-4a1 1 0 0 1 1-1h5V7.5l3.5 3.5-3.5 3.5z"/></svg>', INFO_SVG = '<svg class="pic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>';
 const SHARE_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 16.1c-.8 0-1.5.3-2 .8l-7.1-4.2c.1-.2.1-.5.1-.7s0-.5-.1-.7L16 7.2c.5.5 1.2.8 2 .8a3 3 0 1 0-3-3c0 .2 0 .5.1.7L8 9.8A3 3 0 0 0 6 9a3 3 0 0 0 0 6c.8 0 1.5-.3 2-.8l7.1 4.2c-.1.2-.1.4-.1.6a2.9 2.9 0 1 0 3-2.9z"/></svg>';
 function encPoly(pts){   // [lat, lng] → texte compact (algorithme « polyline », précision 1e-5)
   let out = '', pa = 0, pb = 0;
@@ -2133,7 +2140,7 @@ function renderSaved(){
   }
   list.forEach(s => {
     if(catOf(s) === 'lieu'){
-      const row = mk('div', 'sv lieu', '<img class="svth" alt="" loading="lazy"><div><input aria-label="Nom du lieu"><small></small></div><button class="see">Voir</button><button class="go" title="Ajouter à l\'itinéraire">🧭</button><button class="del" title="Supprimer">🗑</button>');
+      const row = mk('div', 'sv lieu', '<img class="svth" alt="" loading="lazy"><div><input aria-label="Nom du lieu"><small></small></div><button class="see">Voir</button><button class="go" title="Ajouter à l\'itinéraire">' + ITI_SVG + '</button><button class="del" title="Supprimer">🗑</button>');
       row.querySelector('img').src = s.thumb;
       const inp = row.querySelector('input'); inp.value = s.name;
       inp.onchange = () => { s.name = inp.value.trim() || s.name; inp.value = s.name; persist(); };
@@ -3165,7 +3172,7 @@ function showPlaces(){
 let sugOpen = -1;   // suggestion dont les actions sont affichées
 function sugActions(p, tour){
   const a = mk('div', 'sga');
-  const go = mk('button', '', '🧭 Itinéraire'); go.type = 'button'; go.title = tour ? 'Mettre ces lieux comme étapes de l\'itinéraire' : 'Ajouter ce lieu à l\'itinéraire';
+  const go = mk('button', '', ITI_SVG + 'Itinéraire'); go.type = 'button'; go.title = tour ? 'Mettre ces lieux comme étapes de l\'itinéraire' : 'Ajouter ce lieu à l\'itinéraire';
   go.onclick = e => { e.stopPropagation(); if(tour){ tour.places.forEach(x => placeToPlan(x, true)); logHist({ kind:'suggestion', title:'🧭 ' + tourTitle(tour), sug:{ steps:tour.places.map(pickPl) } }); } else placeToPlan(p); };
   a.appendChild(go);
   const sh = mk('button', 'ico', SHARE_SVG); sh.type = 'button'; sh.title = tour ? 'Partager cette balade' : 'Partager ce lieu';
@@ -3176,7 +3183,7 @@ function sugActions(p, tour){
   sv.onclick = e => { e.stopPropagation(); tour ? toggleSave(tour) : togglePlace(p); renderSugg(); };
   a.appendChild(sv);
   // Détails : la fiche du lieu (photo, description, Itinéraire, Enregistrer, source)
-  const dt = mk('button', '', 'ℹ️ Détails'); dt.type = 'button'; dt.title = tour ? 'Voir les lieux de la balade' : 'Voir la fiche du lieu';
+  const dt = mk('button', '', INFO_SVG + 'Détails'); dt.type = 'button'; dt.title = tour ? 'Voir les lieux de la balade' : 'Voir la fiche du lieu';
   dt.onclick = e => { e.stopPropagation(); openGallery(tour ? tour.places.map(plItem) : [plItem(p)], 0); };
   a.appendChild(dt);
   return a;
@@ -3228,7 +3235,7 @@ function placeBig(p){
   const d = document.createElement('div');
   d.className = 'pc';
   d.innerHTML = '<img loading="lazy" alt=""><div class="pcb"><b></b><span class="pcd"></span><p></p>' +
-    '<div class="pca"><button class="vbtn">Voir parcours</button><button class="sgDet pgo">🧭 Itinéraire</button><button class="sgDet psv"></button><a target="_blank" rel="noopener">Wikipédia</a></div></div>';
+    '<div class="pca"><button class="vbtn">Voir parcours</button><button class="sgDet pgo">' + ITI_SVG + 'Itinéraire</button><button class="sgDet psv"></button><a target="_blank" rel="noopener">Wikipédia</a></div></div>';
   d.querySelector('img').src = p.thumb;
   d.querySelector('b').textContent = p.title;
   d.querySelector('.pcd').textContent = 'à ' + fmtKm(p.dist) + ' à vol d\'oiseau';
