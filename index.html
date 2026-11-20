@@ -427,10 +427,18 @@
   .it.sg > div > b{display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.25}
   #sugg .it.sg{flex-wrap:wrap}
   #sugg .it.sg > div:not(.sga){flex:1 1 0}
-  #vActs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+  #vActs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px}
+  #vShare::before{content:"";width:16px;height:16px;flex:none;background:currentColor;-webkit-mask:var(--share-ico) center/contain no-repeat;mask:var(--share-ico) center/contain no-repeat}
   #vActs[hidden]{display:none}
   #vActs button{padding:10px 6px;font-size:14px}
-  .it.sg > .sga{flex:0 0 100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding-top:6px;margin-top:2px;border-top:1px solid var(--n3)}
+  :root{--share-ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M18 16.1c-.8 0-1.5.3-2 .8l-7.1-4.2c.1-.2.1-.5.1-.7s0-.5-.1-.7L16 7.2c.5.5 1.2.8 2 .8a3 3 0 1 0-3-3c0 .2 0 .5.1.7L8 9.8A3 3 0 0 0 6 9a3 3 0 0 0 0 6c.8 0 1.5-.3 2-.8l7.1 4.2c-.1.2-.1.4-.1.6a2.9 2.9 0 1 0 3-2.9z'/%3E%3C/svg%3E")}
+  .sga .ico{padding:7px 0;font-size:16px}
+  .sga .ico svg{width:17px;height:17px;fill:currentColor}
+  .it .iacts{flex:none;display:flex;flex-direction:column;align-items:center;gap:2px}
+  .it .shr{border:none;background:none;padding:3px 2px;cursor:pointer;color:#9ca3af;line-height:0}
+  .it .shr svg{width:18px;height:18px;fill:currentColor}
+  @media (hover:hover){ .it .shr:hover{color:var(--c)} }
+  .it.sg > .sga{flex:0 0 100%;display:grid;grid-template-columns:minmax(0,1fr) 44px 44px minmax(0,1fr);gap:6px;padding-top:6px;margin-top:2px;border-top:1px solid var(--n3)}
   .sga button, .sga a{display:flex;align-items:center;justify-content:center;gap:5px;border:1px solid var(--bd);background:var(--bg);border-radius:9px;padding:7px 4px;font:600 13px system-ui,sans-serif;color:var(--tx);text-decoration:none;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:border-color .15s, background .15s}
   .sga .on{border-color:var(--c);background:var(--sel-bg);color:var(--c)}
   @media (hover:hover){ .sga button:not(.on):hover, .sga a:hover{border-color:var(--hov-bd);background:var(--hov-bg)} }
@@ -824,7 +832,7 @@
     </div>
     <div id="vTip" hidden>📱 Fais glisser pour regarder autour · pince pour zoomer</div>
     <div id="vCap"></div>
-    <div id="vActs" class="sga" hidden><button id="vGo" type="button">🧭 Itinéraire</button><button id="vSave" type="button">☆ Enregistrer</button></div>
+    <div id="vActs" class="sga" hidden><button id="vGo" type="button">🧭 Itinéraire</button><button id="vShare" type="button">Partager</button><button id="vSave" type="button">☆ Enregistrer</button></div>
     <div class="btns">
       <a id="vLink" href="#" target="_blank" rel="noopener">Voir la source</a>
       <button id="vDel" hidden>🗑 Supprimer</button>
@@ -1501,7 +1509,12 @@ function renderList(){
     star.textContent = sv ? '★' : '☆';
     star.title = sv ? 'Retirer de Mes parcours' : 'Enregistrer ce parcours';
     star.onclick = e => { e.stopPropagation(); toggleSave(c); };
-    b.appendChild(star);
+    const shr = document.createElement('button');
+    shr.className = 'shr'; shr.innerHTML = SHARE_SVG; shr.title = 'Partager ce parcours';
+    shr.onclick = e => { e.stopPropagation(); shareRoute(c); };
+    const acts = document.createElement('span'); acts.className = 'iacts';
+    acts.append(star, shr);
+    b.appendChild(acts);
     b._c = c;
     L_.appendChild(b);
   });
@@ -2022,6 +2035,59 @@ function showSaved(s){
   $('btnGo').textContent = 'Générer des parcours ici';
 }
 
+
+/* ---------- Partage : lien qui rouvre l'appli sur le parcours ou le lieu ---------- */
+const SHARE_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 16.1c-.8 0-1.5.3-2 .8l-7.1-4.2c.1-.2.1-.5.1-.7s0-.5-.1-.7L16 7.2c.5.5 1.2.8 2 .8a3 3 0 1 0-3-3c0 .2 0 .5.1.7L8 9.8A3 3 0 0 0 6 9a3 3 0 0 0 0 6c.8 0 1.5-.3 2-.8l7.1 4.2c-.1.2-.1.4-.1.6a2.9 2.9 0 1 0 3-2.9z"/></svg>';
+function encPoly(pts){   // [lat, lng] → texte compact (algorithme « polyline », précision 1e-5)
+  let out = '', pa = 0, pb = 0;
+  const enc = v => { v = v < 0 ? ~(v << 1) : v << 1; let s = ''; while(v >= 0x20){ s += String.fromCharCode((0x20 | (v & 0x1f)) + 63); v >>= 5; } return s + String.fromCharCode(v + 63); };
+  pts.forEach(([a, b]) => { const A = Math.round(a * 1e5), B = Math.round(b * 1e5); out += enc(A - pa) + enc(B - pb); pa = A; pb = B; });
+  return out;
+}
+function decPoly(s){
+  const pts = []; let i = 0, a = 0, b = 0;
+  const dec = () => { let r = 0, sh = 0, c; do{ c = s.charCodeAt(i++) - 63; r |= (c & 0x1f) << sh; sh += 5; }while(c >= 0x20); return r & 1 ? ~(r >> 1) : r >> 1; };
+  while(i < s.length){ a += dec(); b += dec(); pts.push([a / 1e5, b / 1e5]); }
+  return pts;
+}
+const appUrl = () => location.origin + location.pathname;
+async function shareIt(title, text, url){
+  if(navigator.share){ try{ await navigator.share({ title, text, url }); return; }catch(e){ if(e.name === 'AbortError') return; } }
+  try{ await navigator.clipboard.writeText(text + '\n' + url); msg('🔗 Lien copié : colle-le dans un message.'); }
+  catch(e){ window.prompt('Copie ce lien :', url); }
+}
+function shareRoute(c){
+  const co = c.geometry.coordinates, stp = Math.max(1, Math.ceil(co.length / 300));   // tracé allégé (≤ 300 points) pour un lien court
+  const pts = co.filter((p, k) => k % stp === 0 || k === co.length - 1).map(p => [p[1], p[0]]);
+  const name = titleOf(c, candidates.indexOf(c)), km = c.distance / 1000;
+  const q = new URLSearchParams({ r:encPoly(pts), m:st.mode, k:c.kind || st.type, d:Math.round(c.distance), n:name });
+  shareIt(name, MODE_ICO[st.mode] + ' ' + name + ' — ' + d1(km) + ' km, ≈ ' + fmtMin(km / speed() * 60) + ' (parcours PARS-COURS)', appUrl() + '#' + q.toString());
+}
+function sharePlace(p){
+  const q = new URLSearchParams({ p:p.ll[0].toFixed(5) + ',' + p.ll[1].toFixed(5), n:p.title });
+  if(p.url) q.set('w', p.url);
+  if(p.thumb) q.set('i', p.thumb);
+  shareIt(p.title, '📍 ' + p.title + ' — un lieu à découvrir avec PARS-COURS', appUrl() + '#' + q.toString());
+}
+// Ouverture d'un lien partagé
+function openShared(){
+  if(!location.hash || location.hash.length < 4) return;
+  const q = new URLSearchParams(location.hash.slice(1));
+  history.replaceState(null, '', location.pathname + location.search);
+  try{
+    if(q.get('r')){
+      const coords = decPoly(q.get('r')).map(p => [p[1], p[0]]);
+      if(coords.length < 2) return;
+      showSaved({ coords, mode:q.get('m') || st.mode, kind:q.get('k') || 'boucle', distance:+q.get('d') || 0, name:q.get('n') || 'Parcours partagé' });
+      setTimeout(() => msg('🔗 Parcours partagé : ' + (q.get('n') || '') + ' — touche ☆ pour le garder.'), 600);
+    } else if(q.get('p')){
+      const ll = q.get('p').split(',').map(Number);
+      showSavedPlace({ ll, name:q.get('n') || 'Lieu partagé', thumb:q.get('i') || '', url:q.get('w') || '', extract:'' });
+      msg('🔗 Lieu partagé : ' + (q.get('n') || ''));
+    }
+  }catch(e){ msg('Lien de partage illisible.', true); }
+}
+
 /* Lieux enregistrés (depuis les suggestions) */
 const catOf = s => s.cat || 'parcours';
 const placeSaved = p => saved.some(s => s.cat === 'lieu' && s.name === p.title && hav(s.ll, p.ll) < 50);
@@ -2310,6 +2376,7 @@ function showPhoto(p){
     const sv = () => { const on = placeSaved(pl); $('vSave').textContent = on ? '★ Enregistré' : '☆ Enregistrer'; $('vSave').classList.toggle('on', on); };
     sv();
     $('vGo').onclick = () => { $('vClose').onclick(); placeToPlan(pl); };
+    $('vShare').onclick = () => sharePlace(pl);
     $('vSave').onclick = () => { togglePlace(pl); sv(); if(tab === 'sugg') renderSugg(); };
   }
   $('viewer').classList.remove('hidden');
@@ -3101,16 +3168,17 @@ function sugActions(p, tour){
   const go = mk('button', '', '🧭 Itinéraire'); go.type = 'button'; go.title = tour ? 'Mettre ces lieux comme étapes de l\'itinéraire' : 'Ajouter ce lieu à l\'itinéraire';
   go.onclick = e => { e.stopPropagation(); if(tour){ tour.places.forEach(x => placeToPlan(x, true)); logHist({ kind:'suggestion', title:'🧭 ' + tourTitle(tour), sug:{ steps:tour.places.map(pickPl) } }); } else placeToPlan(p); };
   a.appendChild(go);
-  if(!tour){
-    const sv = mk('button', placeSaved(p) ? 'on' : '', placeSaved(p) ? '★ Enregistré' : '☆ Enregistrer'); sv.type = 'button';
-    sv.onclick = e => { e.stopPropagation(); togglePlace(p); renderSugg(); };
-    a.appendChild(sv);
-  }
+  const sh = mk('button', 'ico', SHARE_SVG); sh.type = 'button'; sh.title = tour ? 'Partager cette balade' : 'Partager ce lieu';
+  sh.onclick = e => { e.stopPropagation(); tour ? shareRoute(tour) : sharePlace(p); };
+  a.appendChild(sh);
+  const on = tour ? isSaved(tour) : placeSaved(p);
+  const sv = mk('button', 'ico' + (on ? ' on' : ''), on ? '★' : '☆'); sv.type = 'button'; sv.title = on ? 'Retirer de mes enregistrements' : tour ? 'Enregistrer cette balade' : 'Enregistrer ce lieu';
+  sv.onclick = e => { e.stopPropagation(); tour ? toggleSave(tour) : togglePlace(p); renderSugg(); };
+  a.appendChild(sv);
   // Détails : la fiche du lieu (photo, description, Itinéraire, Enregistrer, source)
   const dt = mk('button', '', 'ℹ️ Détails'); dt.type = 'button'; dt.title = tour ? 'Voir les lieux de la balade' : 'Voir la fiche du lieu';
   dt.onclick = e => { e.stopPropagation(); openGallery(tour ? tour.places.map(plItem) : [plItem(p)], 0); };
   a.appendChild(dt);
-  if(tour) a.style.gridTemplateColumns = '1fr 1fr';
   return a;
 }
 // Toucher une suggestion : choisie + ses actions (itinéraire, enregistrer, Wikipédia) ; retoucher : refermer
@@ -5092,6 +5160,8 @@ sheetReady = true;
 updateChip();
 applyLayout();
 setSheet('peek');
+setTimeout(openShared, 300);   // lien partagé (#r=… parcours, #p=… lieu)
+window.addEventListener('hashchange', openShared);
 
 </script>
 </body>
