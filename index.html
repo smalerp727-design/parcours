@@ -88,7 +88,9 @@
   #tabs button{flex:1;border:none;background:none;padding:7px 4px;border-radius:9px;font:600 14px system-ui,sans-serif;color:var(--mu);border-bottom:2px solid transparent;border-radius:0}
   #tabs button.on{color:var(--c);border-bottom-color:var(--c)}
   #coach{flex:1 1 auto;min-height:0;overflow-y:auto;margin:8px -14px 0;padding:0 14px 14px;overscroll-behavior:contain}
-  #panel[data-state=peek] #coach > :not(.cur){display:none}
+  #panel[data-state=peek] #coach > :not(.nxs){display:none}
+  #panel[data-state=peek] #coach .nxs > :not(.cur){display:none}
+  #panel[data-state=peek] #coach .nxs{border:none;padding:0;margin:0;background:none}
   #demoList{display:flex;flex-direction:column;gap:6px}
   #demoList button{text-align:left;border:1px solid var(--bd);background:var(--bg);border-radius:9px;padding:8px 10px;font-size:14px;color:var(--tx);cursor:pointer}
   #demoList button.on{border-color:var(--c);background:#e6f4f1;color:var(--c);font-weight:600}
@@ -271,6 +273,48 @@
   .pq span{grid-column:1;font-size:12px;color:var(--mu)}
   .pq em{grid-column:2;grid-row:1 / 3;align-self:center;font-style:normal;font-weight:700;color:var(--c)}
   @media (hover:hover){ .csec button:not(.on):hover, button.kpi:not(.on):hover, .cd:not(.sel):hover{border-color:var(--hov-bd);background:var(--hov-bg)} }
+  /* Coach : prochaine séance, calendrier semaine / mois, indicateurs, fenêtre d'indicateur */
+  .nxc{margin:10px 0 0;gap:8px;padding:6px 8px}
+  .nxc .nxi{display:flex;align-items:center;justify-content:center;font-size:24px}
+  .nxc div small{white-space:normal}
+  .nxc b{line-height:1.25}
+  .nxd{font-size:13px !important;color:var(--mu);margin:6px 2px 4px !important}
+  .nxs .ses.hs .sd{font-size:12px}
+  .cnav{display:flex;align-items:center;gap:8px;margin-top:8px}
+  .cnav b{flex:1;text-align:center;font-size:14px}
+  .cnav .nav{order:0;margin:0;width:34px;padding:5px 0;font-size:16px;line-height:1}
+  .cd i b.pl.miss{border-style:dotted}
+  .itl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:6px}
+  .itl.full{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .it2{display:flex;flex-direction:column;align-items:flex-start;min-width:0;text-align:left;border:1px solid #f1f1f1;background:#f9fafb;border-radius:10px;padding:7px 8px;font:inherit;color:inherit;cursor:pointer;transition:border-color .15s, background .15s}
+  .it2 small{font-size:11px;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  .it2 b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  .it2 span{font-size:11px;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  .it2 em, .istat b.up, .istat b.down{font-style:normal;font-weight:700}
+  .it2 em.up, .istat b.up{color:#0f766e}
+  .it2 em.down, .istat b.down{color:#b45309}
+  .itl.full .it2 b{font-size:17px}
+  .it2 .chart.mini{margin-top:4px}
+  .chart.mini text{font-size:10px}
+  .card.ind{max-width:560px}
+  .card.ind h2{margin:0}
+  .inote{margin:2px 0 8px !important}
+  .igr{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+  .igr button{padding:7px 0}
+  .inav{display:flex;align-items:center;gap:8px;margin:10px 0 6px}
+  .inav > div{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
+  .inav > div b{font-size:14px;text-align:center}
+  .inav input{border:1px solid var(--bd);border-radius:8px;padding:4px 8px;font:13px system-ui,sans-serif;color:var(--tx);background:var(--bg)}
+  .inav .sgDet{order:0;margin:0;width:36px;padding:7px 0;font-size:16px;line-height:1}
+  .ibig{display:flex;align-items:baseline;gap:8px;margin:6px 0}
+  .ibig b{font-size:26px}
+  .ibig span{font-size:13px;color:var(--mu)}
+  .istat{margin-top:8px;border-top:1px solid #f3f4f6}
+  .istat > div{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid #f3f4f6;font-size:14px}
+  .istat span{color:#374151}
+  .istat b{text-align:right;font-weight:600}
+  .ises{margin-top:10px}
+  @media (hover:hover){ .it2:hover{border-color:var(--hov-bd);background:var(--hov-bg)} }
   .bzc.rpe{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
   .bzc.rpe button{min-width:0;padding:7px 0}
   @media (hover:hover){ .ses:not(.ok):hover{background:var(--hov-bg)} }
@@ -651,6 +695,13 @@
     <div id="bzBody"></div>
     <p id="bzErr"></p>
     <div class="btns"><button id="bzPrev">Précédent</button><button id="bzNext" class="primary">Suivant</button></div>
+  </div>
+</div>
+
+<div id="indModal" class="modal hidden">
+  <div class="card ind">
+    <div id="indBody"></div>
+    <div class="btns"><button id="indClose" class="primary">Fermer</button></div>
   </div>
 </div>
 
@@ -2873,7 +2924,7 @@ function renderCoach(){
     $('ccStart').onclick = () => openBilan(0);
     return;
   }
-  const b = bilan(coach), o = coach.objectif, p = coach.profil;
+  const b = bilan(coach);
   if(coach.demo){
     const d = document.createElement('div'); d.className = 'cc demo';
     d.innerHTML = '<span>🧪 Profil de test : <b></b></span><button class="sgDet">Quitter</button>';
@@ -2881,42 +2932,16 @@ function renderCoach(){
     d.querySelector('button').onclick = leaveDemo;
     box.appendChild(d);
   }
-  // Carte objectif (affichée en premier : c'est elle qu'on voit tiroir replié)
-  const obj = document.createElement('div');
-  obj.className = 'cc cur';
-  obj.innerHTML = '<div class="cch"><b class="cct">🎯 Objectif</b><button class="sgDet" data-e="3">Modifier</button></div><p class="ccbig"></p><p class="ccsub"></p>';
-  obj.querySelector('.ccbig').textContent = OBJ[o.type];
-  obj.querySelector('.ccsub').textContent = objDetail(o, p) + ' · ' + coach.activite.acts.map(a => ACT[a]).join(', ') + ' · ' + coach.activite.seances + ' séance' + (coach.activite.seances > 1 ? 's' : '') + '/sem.';
-  box.appendChild(obj);
   if(b.alerte){
     const w = document.createElement('div');
     w.className = 'cc warn';
     w.innerHTML = '<b>⚠️ Avant d\'augmenter l\'intensité</b><p>Tu as répondu « oui » à une question santé : demande l\'avis d\'un médecin avant de faire des efforts intenses. En attendant, ton programme restera progressif et modéré.</p>';
     box.appendChild(w);
   }
-  obj.querySelector('[data-e]').onclick = () => openBilan(3);
-  const sec = renderProgram(box);   // objectif détaillé + sous-menu Semaine / Indicateurs / Calendrier / Bilan
-  if(sec !== 'bilan'){ box.scrollTop = keep; return; }
-  // Carte bilan
-  const bl = document.createElement('div');
-  bl.className = 'cc';
-  const rows = [
-    ['IMC', r1(b.imc) + ' — ' + b.imcCat],
-    ['Métabolisme de base', Math.round(b.base) + ' kcal / jour'],
-    ['Dépense quotidienne estimée', Math.round(b.jour) + ' kcal / jour'],
-    ['Fréquence cardiaque max. estimée', b.fcmax + ' bpm']
-  ];
-  if(b.vo2 != null) rows.push(['Endurance (VO2max estimée)', r1(b.vo2) + ' ml/kg/min — ' + b.niveau]);
-  else if(b.niveau) rows.push(['Niveau à vélo', b.niveau]);
-  if(b.vma) rows.push(['Vitesse max. aérobie (VMA)', r1(b.vma) + ' km/h'], ['Allure footing (65–70 % VMA)', allure(b.vma * 0.7) + ' · ' + r1(b.vma * 0.675) + ' km/h']);
-  bl.innerHTML = '<div class="cch"><b class="cct">🩺 Bilan du ' + new Date(coach.date).toLocaleDateString('fr-FR') + '</b><button class="sgDet" data-e="0">Refaire</button></div><table class="cctab"></table>' +
-    (coach.test ? '' : '<button class="vbtn wide" id="ccTest">⏱️ Faire le test de terrain</button>') +
-    '<small class="ccs">Estimations à titre indicatif — ce n\'est pas un avis médical.</small>';
-  rows.forEach(([k, v]) => { const tr = document.createElement('tr'); tr.innerHTML = '<td></td><td></td>'; tr.cells[0].textContent = k; tr.cells[1].textContent = v; bl.querySelector('table').appendChild(tr); });
-  box.appendChild(bl);
-  if($('ccTest')) $('ccTest').onclick = () => openBilan(4);
-  box.querySelectorAll('[data-e]').forEach(btn => btn.onclick = () => openBilan(+btn.dataset.e));
+  // Objectif, prochaines activités, calendrier, indicateurs, analyse, historique, bilan
+  renderProgram(box);
   box.scrollTop = keep;
+  if(!$('indModal').classList.contains('hidden')) renderInd();
 }
 function objDetail(o, p){
   if(o.type === 'poids') return 'de ' + r1(p.poids) + ' à ' + r1(o.poids) + ' kg' + (o.date ? ' d\'ici le ' + new Date(o.date).toLocaleDateString('fr-FR') : '');
@@ -3631,42 +3656,55 @@ function renderSessBar(){
   bar.querySelector('button').onclick = () => { pendingSess = null; renderSessBar(); };
 }
 
-/* --- Affichage de l'onglet Coach : sections, cartes rapides / détaillées --- */
+/* --- Onglet Coach : tout à la suite, en sections réductibles (vue rapide / vue détaillée) --- */
 let progAll = false, weekOpen = null;
-let coachSec = store.get('coachSec', 'semaine'), ccOpen = store.get('coachOpen', {}), metSel = null, metPer = 91, calM = null, calSel = null, MC = {};
-const SECS = [['semaine', '📅', 'Semaine'], ['indic', '📈', 'Indicateurs'], ['cal', '🗓️', 'Calendrier'], ['bilan', '🩺', 'Bilan']];
+let ccOpen = store.get('coachOpen2', {}), calM = null, calSel = null, MC = {}, indK = null, indG = 'semaine', indD = null, indAll = false;
 const mk = (tag, cls, html) => { const e = document.createElement(tag); if(cls) e.className = cls; if(html != null) e.innerHTML = html; return e; };
 const ACT_COL = { course:'#0f766e', velo:'#2563eb', marche:'#d97706' };
+const ACT_BG = { course:'#e6f4f1', velo:'#e0ecff', marche:'#fdf0dc' };
+const addD = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };   // par date civile (changements d'heure)
+const d0 = d => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
+const selDate = () => d0(calSel ? calSel + 'T12:00' : Date.now());
+const avg = a => a.reduce((x, y) => x + y, 0) / a.length;
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+function dayLbl(d){
+  const t = d0(Date.now()), x = d0(d), n = Math.round((x - t) / DAYMS);
+  return n === 0 ? 'Aujourd\'hui' : n === 1 ? 'Demain' : cap(x.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'short' }));
+}
 // Carte à deux niveaux : vue rapide, et vue détaillée avec le bouton « Détails »
 function ccCard(box, key, title, opt){
   opt = opt || {};
-  const open = !!ccOpen[key], card = mk('div', 'cc' + (open ? ' open' : ''), '<div class="cch"><b class="cct"></b><span class="cchr"></span></div><div class="ccq"></div><div class="ccd"></div>');
+  const open = !!ccOpen[key], card = mk('div', 'cc' + (open ? ' open' : '') + (opt.cls ? ' ' + opt.cls : ''), '<div class="cch"><b class="cct"></b><span class="cchr"></span></div><div class="ccq"></div><div class="ccd"></div>');
   card.querySelector('.cct').textContent = title;
   const right = card.querySelector('.cchr');
   if(opt.badge) right.appendChild(mk('span', 'ccsub')).textContent = opt.badge;
+  (opt.extra || []).forEach(b => right.appendChild(b));
   if(opt.detail !== false){
     const t = mk('button', 'sgDet'); t.textContent = open ? 'Réduire' : 'Détails'; t.setAttribute('aria-expanded', open);
-    t.onclick = () => { ccOpen[key] = !open; store.set('coachOpen', ccOpen); renderCoach(); };
+    t.onclick = () => { ccOpen[key] = !open; store.set('coachOpen2', ccOpen); renderCoach(); };
     right.appendChild(t);
   }
   box.appendChild(card);
   const q = card.querySelector('.ccq'), d = card.querySelector('.ccd'), showQ = !open || opt.keepQuick;
   if(!showQ) q.remove();
   if(!open) d.remove();
-  return { card, q:showQ ? q : null, d:open ? d : null, open };
+  return { card, q:showQ ? q : null, d:open ? d : null, open, host:open ? d : q };
 }
-// Ligne de séance prévue (consignes + parcours + « Fait »)
-function sessRow(s, wsTime, today){
-  const r = mk('div', 'ses' + (s.done ? ' ok' : today != null && s.day < today ? ' late' : s.day === today ? ' now' : ''), '<span class="sd">' + JOURS[s.day] + '</span><div><b></b><small></small></div><span class="sm"></span>');
+// Ligne de séance prévue (consignes + parcours + « Fait » si le jour est passé ou aujourd'hui)
+function sessRow(s, wsTime, today, withDate){
+  const date = d0(wsTime + s.day * DAYMS + 12 * 3600e3);
+  const r = mk('div', 'ses' + (s.done ? ' ok' : today != null && s.day < today ? ' late' : today != null && s.day === today ? ' now' : '') + (withDate ? ' hs' : ''), '<span class="sd"></span><div><b></b><small></small></div><span class="sm"></span>');
+  r.querySelector('.sd').innerHTML = withDate ? JOURS[s.day] + '<i>' + date.getDate() + ' ' + date.toLocaleDateString('fr-FR', { month:'short' }).replace('.', '') + '</i>' : JOURS[s.day];
   r.querySelector('b').textContent = ICO[s.act] + ' ' + s.label;
   r.querySelector('small').textContent = s.detail;
   const right = r.querySelector('.sm');
   if(s.done){ right.innerHTML = '<span class="sok">✓</span><small></small>'; right.querySelector('small').textContent = hm(s.done.duree) + (s.done.dist ? ' · ' + r1(s.done.dist) + ' km' : ''); }
   else {
-    right.innerHTML = '<span>' + hm(s.duree) + '</span><span class="sbt"><button class="sgDet" title="Trouver un parcours pour cette séance">🗺️</button><button class="sgDet">Fait</button></span>';
+    const past = date <= d0(Date.now());
+    right.innerHTML = '<span>' + hm(s.duree) + '</span><span class="sbt"><button class="sgDet" title="Trouver un parcours pour cette séance">🗺️</button>' + (past ? '<button class="sgDet">Fait</button>' : '') + '</span>';
     const [bp, bf] = right.querySelectorAll('button');
     bp.onclick = () => sessParcours(s);
-    bf.onclick = () => openLog({ act:s.act, duree:s.duree, type:s.type, date:new Date(wsTime + s.day * DAYMS + 12 * 3600e3) });
+    if(bf) bf.onclick = () => openLog({ act:s.act, duree:s.duree, type:s.type, date:new Date(date.getTime() + 12 * 3600e3) });
   }
   return r;
 }
@@ -3674,433 +3712,510 @@ function sessRow(s, wsTime, today){
 function logRow(l){
   const d = new Date(l.date), sp = speedOf(l), r = mk('div', 'ses hs', '<span class="sd">' + d.getDate() + '<i>' + d.toLocaleDateString('fr-FR', { month:'short' }).replace('.', '') + '</i></span><div><b></b><small></small></div><span class="sm"></span>');
   r.querySelector('b').textContent = ICO[l.act] + ' ' + (l.parcours || TYPE_LBL[l.type] || 'Séance');
-  r.querySelector('small').textContent = [TYPE_LBL[l.type] || 'Séance', hm(l.duree), l.dist ? r1(l.dist) + ' km' : '', sp ? (l.act === 'course' ? allure(sp) : r1(sp) + ' km/h') : '', l.dplus ? 'D+ ' + l.dplus + ' m' : '', l.rpe ? 'effort ' + l.rpe + '/10' : ''].filter(Boolean).join(' · ');
-  if(l.dist){ const b = mk('button', 'sgDet'); b.textContent = 'Voir'; b.title = 'Voir le parcours sur la carte'; b.onclick = () => showTrace(l); r.querySelector('.sm').appendChild(b); }
+  r.querySelector('small').textContent = [TYPE_LBL[l.type] || 'Séance', hm(l.duree), l.dist ? r1(l.dist) + ' km' : '', sp ? (l.act === 'course' ? allure(sp) : r1(sp) + ' km/h') : '', l.dplus ? 'D+ ' + l.dplus + ' m' : '', l.fc ? l.fc + ' bpm' : '', l.rpe ? 'effort ' + l.rpe + '/10' : ''].filter(Boolean).join(' · ');
+  if(l.dist){ const b = mk('button', 'sgDet'); b.textContent = 'Voir'; b.title = 'Voir le parcours sur la carte'; b.onclick = () => { $('indModal').classList.add('hidden'); showTrace(l); }; r.querySelector('.sm').appendChild(b); }
   return r;
 }
 const INS_ORDER = ['⚠️', '🎯', '🟡', '🔄', '📉', '💡', '📈', '✅', '➖'];
 function insList(items){ const ul = mk('ul', 'ins'); items.forEach(x => { const li = mk('li', '', '<span></span><p></p>'); li.children[0].textContent = x.ico; li.children[1].textContent = x.txt; ul.appendChild(li); }); return ul; }
 
-/* --- Objectif : progression par phases + projection en fourchette --- */
-function goalLine(c, S){
-  const o = c.objectif;
-  const k = { course:'race', poids:'kg', endur:'long', vitesse:'vit' }[o.type] || 'vol';
-  const m = metricOf(c, S, k);
-  return m ? m.goal : '';
+/* --- Données : séances prévues et faites, jour par jour --- */
+function planIndex(c){
+  if(MC.plan) return MC.plan;
+  const idx = {}, S = MC.S;
+  const add = (pc, meta, ad) => {
+    const main = mainAct(pc), t0 = meta.debut.getTime();
+    const first = logsOf(c).filter(l => l.act === main && ['ef', 'long', undefined].includes(l.type) && tOf(l.date) >= t0 && tOf(l.date) < t0 + 3 * WEEKMS).map(speedOf).filter(Boolean);
+    const v0 = first.length ? avg(first) : null;   // vitesse de départ du programme
+    for(let w = 0; w < meta.weeks; w++) weekPlan(pc, w, meta, ad && w >= meta.cur ? ad : null).forEach(s => {
+      s.k = isoDay(addD(meta.debut, w * 7 + s.day)); s.wk = w; s.v0 = s.act === main && ['ef', 'long'].includes(s.type) ? v0 : null;
+      (idx[s.k] = idx[s.k] || []).push(s);
+    });
+  };
+  (c.programmes || []).forEach(p => { const pc = progCoach(c, p), meta = planMeta(pc); meta.weeks = clamp(Math.round((tOf(p.fin) - meta.debut.getTime()) / WEEKMS), 1, 40); add(pc, meta, null); });
+  add(c, S.meta, S.ad);
+  return MC.plan = idx;
 }
-function renderObjective(box, c, S){
-  const meta = S.meta, card = box.querySelector('.cc.cur');
-  // barre découpée en phases, remplie jusqu'à la semaine en cours
+function logIndex(c){
+  if(MC.logs) return MC.logs;
+  const idx = {};
+  logsOf(c).forEach(l => (idx[isoDay(l.date)] = idx[isoDay(l.date)] || []).push(l));
+  return MC.logs = idx;
+}
+function upcoming(c, S, n){
+  const meta = S.meta, today = (new Date().getDay() + 6) % 7, out = [], ws = w => meta.debut.getTime() + w * WEEKMS;
+  S.plan.filter(s => !s.done && s.day >= today).forEach(s => out.push(Object.assign(s, { wsT:ws(meta.cur), cw:true })));
+  for(let w = meta.cur + 1; w < meta.weeks && out.length < n; w++) weekPlan(c, w, meta, S.ad).forEach(s => out.push(Object.assign(s, { wsT:ws(w) })));
+  return out.slice(0, n);
+}
+
+/* --- Indicateurs : définitions, agrégats par période, marge prévue --- */
+function IND(c){
+  if(MC.ind) return MC.ind;
+  const b = bilan(c), o = c.objectif, main = mainAct(c), S = MC.S, logs = logsOf(c);
+  const rpeT = s => ['ef', 'long'].includes(s.type) ? [3, 5] : [6, 8];
+  const spd = act => { const v = logs.filter(l => l.act === act && ['ef', 'long', undefined].includes(l.type)).map(speedOf).filter(Boolean); return v.length ? avg(v.slice(-8)) : (cfg.speeds[act] || 5); };
+  const SP = { marche:spd('marche'), course:spd('course'), velo:spd('velo') };
+  const efOf = l => l.act === main && ['ef', 'long', undefined].includes(l.type) && !!speedOf(l);
+  const list = [
+    { k:'seances', ico:'✅', lbl:'Séances', kind:'count', fmt:v => String(Math.round(v)), note:'séances faites (et prévues)' },
+    { k:'duree', ico:'⏱️', lbl:'Temps d\'activité', kind:'sum', fmt:hm, val:l => l.duree, plan:s => [s.duree * 0.85, s.duree * 1.08], note:'temps total' },
+    { k:'dist', ico:'📏', lbl:'Distance', kind:'sum', fmt:v => r1(v) + ' km', val:l => l.dist || 0, plan:s => { const v = SP[s.act] * s.duree / 60; return [v * 0.85, v * 1.1]; }, note:'toutes activités' },
+    { k:'vit', ico:'⚡', lbl:'Vitesse endurance', kind:'mean', fmt:v => r1(v) + ' km/h', filter:efOf, val:speedOf, plan:s => s.v0 ? [s.v0 * (1 + 0.001 * s.wk), s.v0 * (1 + 0.005 * s.wk)] : null, note:ACT[main].split(' ')[1].toLowerCase() + ', séances d\'endurance' },
+    { k:'charge', ico:'🔋', lbl:'Charge', kind:'sum', fmt:v => String(Math.round(v)), val:l => l.duree * (l.rpe || 5), plan:s => { const r = rpeT(s); return [s.duree * 0.85 * r[0], s.duree * 1.08 * r[1]]; }, note:'durée (min) × effort ressenti' },
+    { k:'rpe', ico:'😮‍💨', lbl:'Effort ressenti', kind:'mean', fmt:v => r1(v) + '/10', filter:l => !!l.rpe, val:l => l.rpe, plan:rpeT, note:'1 = très facile, 10 = maximal' },
+    { k:'fc', ico:'❤️', lbl:'FC moyenne', kind:'mean', fmt:v => Math.round(v) + ' bpm', filter:l => !!l.fc, val:l => l.fc, plan:s => ['ef', 'long'].includes(s.type) ? [b.fcmax * 0.6, b.fcmax * 0.72] : [b.fcmax * 0.8, b.fcmax * 0.9], note:'fréquence cardiaque moyenne des séances' },
+    { k:'kcal', ico:'🔥', lbl:'Dépense', kind:'sum', fmt:v => Math.round(v) + ' kcal', val:l => kcalOf(c, l.act, l.type || 'ef', l.duree), plan:s => { const k = kcalOf(c, s.act, s.type, s.duree); return [k * 0.85, k * 1.08]; }, note:'calories dépensées en séance (estimation)' },
+    { k:'dplus', ico:'⛰️', lbl:'Dénivelé +', kind:'sum', fmt:v => Math.round(v) + ' m', val:l => l.dplus || 0, note:'dénivelé positif cumulé' }
+  ].filter(m => m.kind !== 'mean' || logs.some(m.filter));
+  if((c.poids || []).length >= 2){
+    const t0 = S.meta.debut.getTime(), t1 = o.date ? tOf(o.date) : t0 + S.meta.weeks * WEEKMS;
+    list.push({ k:'poids', ico:'⚖️', lbl:'Poids', kind:'state', lowGood:true, fmt:v => r1(v) + ' kg', pts:c.poids.map(x => [tOf(x.date), x.kg]).sort((a, x) => a[0] - x[0]), target:o.type === 'poids' ? o.poids : null, note:'pesées',
+      planT:o.type === 'poids' ? t => { if(t < t0) return null; const v = c.profil.poids + (o.poids - c.profil.poids) * clamp((t - t0) / (t1 - t0), 0, 1); return [v - 0.5, v + 0.5]; } : null });
+  }
+  const vh = vmaHist(c);
+  if(vh.length && vmaNow(c)){
+    const pts = vh.concat([[Date.now(), vmaNow(c)]]), t0 = S.meta.debut.getTime(), v0 = interp(pts, t0);
+    const planT = t => t < t0 ? null : [v0 * 0.97 * (1 + 0.002 * (t - t0) / WEEKMS), v0 * 1.03 * (1 + 0.006 * (t - t0) / WEEKMS)];
+    list.push({ k:'vma', ico:'🫁', lbl:'VMA', kind:'state', fmt:v => r1(v) + ' km/h', pts, planT, note:'vitesse maximale aérobie estimée' });
+    if(o.type === 'course' && o.dist) list.push({ k:'race', ico:'🏁', lbl:'Temps ' + r1(o.dist) + ' km', kind:'state', lowGood:true, fmt:hm, pts:pts.map(p => [p[0], raceTime(p[1], o.dist)]), target:o.temps || null, note:'temps de course estimé',
+      planT:t => { const r = planT(t); return r ? [raceTime(r[1], o.dist), raceTime(r[0], o.dist)] : null; } });
+  }
+  return MC.ind = list;
+}
+// Agrégat d'un indicateur sur [from, to)
+function agg(c, m, from, to){
+  const a = from.getTime(), b = to.getTime(), now = Date.now();
+  const L = logsOf(c).filter(l => { const t = tOf(l.date); return t >= a && t < b; });
+  const P = [], tEnd = d0(now).getTime() + DAYMS;
+  for(let d = new Date(from); d < to; d = addD(d, 1)) (planIndex(c)[isoDay(d)] || []).forEach(s => { s.past = d.getTime() < tEnd; P.push(s); });
+  const r = { logs:L, n:L.length, planN:P.length, vals:[] };
+  if(m.kind === 'state'){
+    const inR = m.pts.filter(p => p[0] >= a && p[0] < b), end = Math.min(b - 1, now);
+    r.v = a <= now && m.pts.length && end >= m.pts[0][0] - 3 * DAYMS ? interp(m.pts, end) : null;
+    r.vals = inR.map(p => p[1]); r.pts = inR; r.dot = inR.length > 0;
+    r.start = a <= now && m.pts.length ? interp(m.pts, a) : null;
+    r.plan = m.planT ? m.planT(b - 1) : null;
+  } else {
+    const LL = m.filter ? L.filter(m.filter) : L;
+    r.logsF = LL;
+    if(m.kind === 'count'){ r.v = L.length; r.vals = L.map(() => 1); r.plan = P.length ? [P.length, P.length] : null; r.planNPast = P.filter(s => s.past).length; }
+    else {
+      r.vals = LL.map(m.val);
+      const pr = m.plan ? P.map(m.plan).filter(Boolean) : [];
+      if(m.kind === 'sum'){
+        r.v = r.vals.reduce((x, y) => x + y, 0); r.plan = pr.length ? [pr.reduce((x, p) => x + p[0], 0), pr.reduce((x, p) => x + p[1], 0)] : null;
+        const pd = m.plan ? P.filter(s => s.past).map(m.plan).filter(Boolean) : [];
+        r.planPast = pd.length ? [pd.reduce((x, p) => x + p[0], 0), pd.reduce((x, p) => x + p[1], 0)] : null;
+      }
+      else { r.v = r.vals.length ? avg(r.vals) : null; r.plan = pr.length ? [avg(pr.map(p => p[0])), avg(pr.map(p => p[1]))] : null; }
+    }
+    if(a > now){ r.v = null; }
+  }
+  if(r.vals.length){ r.min = Math.min(...r.vals); r.max = Math.max(...r.vals); }
+  return r;
+}
+function bucketsOf(g, date){
+  const d = d0(date), B = [];
+  if(g === 'jour'){
+    for(let i = 13; i >= 0; i--){ const x = addD(d, -i); B.push({ from:x, to:addD(x, 1), lbl:String(x.getDate()), sel:i === 0 }); }
+    return { B, from:d, to:addD(d, 1), title:cap(d.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' })), sub:'14 derniers jours' };
+  }
+  if(g === 'semaine'){
+    const s = wkStart(d);
+    for(let i = 0; i < 7; i++){ const x = addD(s, i); B.push({ from:x, to:addD(x, 1), lbl:JOURS[i].charAt(0), sel:isoDay(x) === isoDay(d) }); }
+    return { B, from:s, to:addD(s, 7), title:'Semaine du ' + fmtD(s) + ' au ' + fmtD(addD(s, 6)), sub:'par jour' };
+  }
+  if(g === 'mois'){
+    const s = new Date(d.getFullYear(), d.getMonth(), 1), e = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+    for(let x = new Date(s); x < e; x = addD(x, 1)) B.push({ from:new Date(x), to:addD(x, 1), lbl:String(x.getDate()), sel:isoDay(x) === isoDay(d) });
+    return { B, from:s, to:e, title:cap(s.toLocaleDateString('fr-FR', { month:'long', year:'numeric' })), sub:'par jour' };
+  }
+  for(let i = 0; i < 12; i++){ const x = new Date(d.getFullYear(), i, 1); B.push({ from:x, to:new Date(d.getFullYear(), i + 1, 1), lbl:x.toLocaleDateString('fr-FR', { month:'narrow' }), sel:i === d.getMonth() }); }
+  return { B, from:new Date(d.getFullYear(), 0, 1), to:new Date(d.getFullYear() + 1, 0, 1), title:String(d.getFullYear()), sub:'par mois' };
+}
+// Graphique par période : barres (cumuls) ou courbe (moyennes, mesures) ; la marge prévue en cases teintées
+function bucketChart(c, m, B, opt){
+  opt = opt || {};
+  const mini = !!opt.mini, W = 320, H = opt.h || 120, top = mini ? 4 : 10, l = mini ? 2 : 42, r = 2, bot = mini ? 12 : 18;
+  const A = B.map(x => Object.assign({}, x, agg(c, m, x.from, x.to))), bars = m.kind === 'sum' || m.kind === 'count';
+  const ys = [];
+  A.forEach(x => { if(x.v != null) ys.push(x.v); if(x.plan) ys.push(x.plan[0], x.plan[1]); });
+  if(m.target != null && !mini) ys.push(m.target);
+  if(!ys.length) ys.push(0, 1);
+  let y0 = bars ? 0 : Math.min(...ys), y1 = Math.max(...ys);
+  if(!bars){ const sp = (y1 - y0) || Math.abs(y1) * 0.05 || 1; y0 -= sp * 0.12; y1 += sp * 0.12; } else y1 = y1 * 1.08 || 1;
+  const bw = (W - l - r) / A.length, X = i => l + i * bw, Y = v => top + (1 - (v - y0) / (y1 - y0 || 1)) * H;
+  let s = '<svg viewBox="0 0 ' + W + ' ' + (top + H + bot) + '" class="chart' + (mini ? ' mini' : '') + '" role="img" aria-label="' + m.lbl + '">';
+  A.forEach((x, i) => { if(x.sel) s += '<rect x="' + X(i) + '" y="' + top + '" width="' + bw + '" height="' + H + '" fill="#f3f4f6" rx="3"/>'; });
+  if(m.kind === 'count') y1 = Math.max(2, Math.ceil(y1));
+  if(!mini) (m.kind === 'count' ? [0, Math.round(y1 / 2), y1].filter((v, i, a) => a.indexOf(v) === i) : [y0 + (y1 - y0) * (bars ? 0 : 0.1), (y0 + y1) / 2, y1 - (y1 - y0) * 0.08]).forEach(v => { s += '<line x1="' + l + '" x2="' + (W - r) + '" y1="' + Y(v) + '" y2="' + Y(v) + '" stroke="#ececec"/><text x="' + (l - 4) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + m.fmt(v).replace(/ (km\/h|bpm|kcal|kg|km|m|\/10)$/, '') + '</text>'; });
+  // marge prévue
+  A.forEach((x, i) => { if(!x.plan) return; const hi = Math.max(x.plan[0], x.plan[1]), lo = Math.min(x.plan[0], x.plan[1]), hh = Math.max(2, Y(lo) - Y(hi)); s += '<rect x="' + (X(i) + bw * 0.12) + '" y="' + (Y(hi) - (hh === 2 ? 1 : 0)) + '" width="' + (bw * 0.76) + '" height="' + hh + '" rx="2" fill="#14b8a6" fill-opacity=".16" stroke="#14b8a6" stroke-opacity=".55" stroke-dasharray="2 2"/>'; });
+  if(m.target != null && !mini) s += '<line x1="' + l + '" x2="' + (W - r) + '" y1="' + Y(m.target) + '" y2="' + Y(m.target) + '" stroke="#f59e0b" stroke-dasharray="4 3"/>';
+  if(bars) A.forEach((x, i) => { if(x.v) s += '<rect x="' + (X(i) + bw * 0.24) + '" y="' + Y(x.v) + '" width="' + (bw * 0.52) + '" height="' + Math.max(1, Y(0) - Y(x.v)) + '" rx="' + Math.min(3, bw * 0.2) + '" fill="' + (x.sel ? '#14b8a6' : '#0f766e') + '"/>'; });
+  else {
+    const pts = A.map((x, i) => x.v == null ? null : [X(i) + bw / 2, Y(x.v), x]).filter(Boolean);
+    if(pts.length > 1) s += '<polyline fill="none" stroke="#0f766e" stroke-width="2" stroke-linejoin="round" points="' + pts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ') + '"/>';
+    pts.forEach(p => { if(m.kind === 'mean' || p[2].dot || p[2].sel) s += '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="' + (p[2].sel ? 3.6 : 2.6) + '" fill="' + (p[2].sel ? '#14b8a6' : '#0f766e') + '"/>'; });
+  }
+  const every = A.length > 16 ? 5 : 1;
+  A.forEach((x, i) => { if(i % every === 0 || x.sel) s += '<text x="' + (X(i) + bw / 2) + '" y="' + (top + H + (mini ? 10 : 14)) + '" text-anchor="middle"' + (x.sel ? ' font-weight="700" fill="#0f766e"' : '') + '>' + x.lbl + '</text>'; });
+  return s + '</svg>';
+}
+const deltaTxt = (m, d) => Math.abs(d) < 1e-9 || m.fmt(Math.abs(d)) === m.fmt(0) ? '=' : (d > 0 ? '+' : '−') + m.fmt(Math.abs(d));
+const deltaCls = (m, d) => Math.abs(d) < 1e-9 || m.fmt(Math.abs(d)) === m.fmt(0) ? '' : (m.lowGood ? d < 0 : d > 0) ? 'up' : 'down';
+// Valeur au jour choisi (semaine en cours jusqu'à ce jour) et comparaison avec aujourd'hui
+function tileVal(c, m, sel){
+  const today = d0(Date.now()), same = isoDay(sel) === isoDay(today);
+  const A = agg(c, m, wkStart(sel), addD(sel, 1));
+  const R = same ? agg(c, m, addD(wkStart(today), -7), addD(today, -6)) : agg(c, m, wkStart(today), addD(today, 1));
+  return { A, R, same };
+}
+
+/* --- Sections --- */
+function goalLine(c, S){
+  const o = c.objectif, now = Date.now(), a = S.adh4 ?? 0.8, endT = o.date ? tOf(o.date) : S.meta.debut.getTime() + S.meta.weeks * WEEKMS;
+  if(o.type === 'course' && o.dist && vmaNow(c)){
+    const [f0, f1] = raceBand(vmaNow(c), o.dist, Math.max(0, (endT - now) / WEEKMS), a);
+    return '🏁 Jour J : entre ' + hm(f0) + ' et ' + hm(f1) + (o.temps ? ' (objectif ' + hm(o.temps) + (f1 <= o.temps ? ' ✓)' : f0 <= o.temps ? ', dans la marge)' : ')') : '');
+  }
+  if(o.type === 'poids' && (c.poids || []).length >= 2){
+    const pts = c.poids.slice().sort((x, y) => x.date.localeCompare(y.date)), last = pts[pts.length - 1].kg, sl = trendKgWeek(pts.slice(-6));
+    if(sl && sl < -0.05){ const wk = (last - o.poids) / -sl; return '⚖️ ' + r1(last) + ' kg · ' + r1(o.poids) + ' kg entre le ' + fmtD(now + wk / 1.3 * WEEKMS) + ' et le ' + fmtD(now + wk / 0.7 * WEEKMS); }
+    return '⚖️ ' + r1(last) + ' kg — tendance stable pour l\'instant';
+  }
+  const W4 = logsOf(c).filter(l => tOf(l.date) > now - 28 * DAYMS);
+  if(o.type === 'endur'){ const best = Math.max(0, ...W4.filter(l => l.act === mainAct(c)).map(l => l.duree)); return '⏳ Plus longue séance (4 sem.) : ' + hm(best) + (o.duree ? ' / ' + hm(o.duree) + (best >= o.duree ? ' ✓' : '') : ''); }
+  const mn = W4.reduce((x, l) => x + l.duree, 0) / 4, tg = o.type === 'regul' ? o.min || 150 : 150;
+  return '📊 Activité : ' + hm(mn) + ' / sem. en moyenne (repère ' + hm(tg) + ')';
+}
+function renderObjSec(box, c, S){
+  const meta = S.meta, o = c.objectif, p = c.profil;
+  const ed = mk('button', 'sgDet', 'Modifier'); ed.onclick = () => openBilan(3);
+  const cc = ccCard(box, 'obj', '🎯 ' + OBJ[o.type].replace(/^\S+\s/, ''), { extra:[ed], keepQuick:true });
   const phases = [];
   for(let w = 0; w < meta.weeks; w++){ const ph = phaseOf(c, w, meta); if(!phases.length || phases[phases.length - 1].n !== ph) phases.push({ n:ph, a:w, b:w + 1 }); else phases[phases.length - 1].b = w + 1; }
   const bar = mk('div', 'phb');
   phases.forEach(ph => {
-    const f = clamp((meta.cur + 1 - ph.a) / (ph.b - ph.a), 0, 1), seg = mk('div', 'phs' + (meta.cur >= ph.a && meta.cur < ph.b ? ' on' : ''), '<i style="width:' + Math.round(f * 100) + '%"></i><small></small>');
-    seg.style.flex = ph.b - ph.a; seg.querySelector('small').textContent = ph.b - ph.a >= meta.weeks / 4 || (meta.cur >= ph.a && meta.cur < ph.b) ? ph.n : ''; seg.title = ph.n + ' : semaines ' + (ph.a + 1) + ' à ' + ph.b;
+    const f = clamp((meta.cur + 1 - ph.a) / (ph.b - ph.a), 0, 1), on = meta.cur >= ph.a && meta.cur < ph.b;
+    const seg = mk('div', 'phs' + (on ? ' on' : ''), '<i style="width:' + Math.round(f * 100) + '%"></i><small></small>');
+    seg.style.flex = ph.b - ph.a; seg.querySelector('small').textContent = ph.b - ph.a >= meta.weeks / 4 || on ? ph.n : ''; seg.title = ph.n + ' : semaines ' + (ph.a + 1) + ' à ' + ph.b;
     bar.appendChild(seg);
   });
-  card.appendChild(bar);
-  const line = mk('p', 'ccsub'); line.textContent = 'Semaine ' + (meta.cur + 1) + ' / ' + meta.weeks + ' · ' + phaseOf(c, meta.cur, meta);
-  card.appendChild(line);
-  const g = goalLine(c, S);
-  if(g){ const p = mk('p', 'goal'); p.textContent = g; card.appendChild(p); }
+  cc.q.appendChild(bar);
+  cc.q.appendChild(mk('p', 'ccsub', 'Semaine ' + (meta.cur + 1) + ' / ' + meta.weeks + ' · ' + phaseOf(c, meta.cur, meta)));
+  cc.q.appendChild(mk('p', 'goal')).textContent = goalLine(c, S);
+  if(cc.d){
+    cc.d.appendChild(mk('p', 'ccsub')).textContent = objDetail(o, p) + ' · ' + c.activite.acts.map(a => ACT[a]).join(', ') + ' · ' + c.activite.seances + ' séance' + (c.activite.seances > 1 ? 's' : '') + '/sem. de ' + hm(c.activite.duree) + ' max.';
+    cc.d.appendChild(mk('p', 'ccsub')).textContent = 'Phases : ' + phases.map(ph => ph.n + ' (S' + (ph.a + 1) + (ph.b - ph.a > 1 ? '–S' + ph.b : '') + ')').join(' → ') + '. Une semaine sur 4 est allégée.';
+    if(S.ad.why) cc.d.appendChild(mk('p', 'ccsub')).textContent = '🔄 ' + S.ad.why;
+  }
 }
-
-/* --- Indicateurs : séries hebdomadaires, marges et projections --- */
-function progAtT(c, t){
-  const cm = planMeta(c);
-  if(t >= cm.debut.getTime()) return { pc:c, meta:cm, cur:true };
-  for(const p of c.programmes || []){
-    const pc = progCoach(c, p), meta = planMeta(pc);
-    meta.weeks = clamp(Math.round((tOf(p.fin) - meta.debut.getTime()) / WEEKMS), 1, 40);
-    if(t >= meta.debut.getTime() && t < meta.debut.getTime() + meta.weeks * WEEKMS) return { pc, meta };
-  }
-  return null;
+// Prochaine séance : carte visible en permanence quand le tiroir est replié
+function nextCard(c, s){
+  const date = d0(s.wsT + s.day * DAYMS + 12 * 3600e3), v = sessSpeed(c, s), km = v * s.duree / 60;
+  const d = mk('div', 'it sg cur nxc', '<span class="th nxi"></span><div><b></b><small></small></div><span class="km"></span><button class="vbtn">Voir parcours</button>');
+  d.querySelector('.nxi').textContent = ICO[s.act];
+  d.querySelector('.nxi').style.background = ACT_BG[s.act];
+  d.querySelector('b').textContent = s.label;
+  d.querySelector('div small').textContent = dayLbl(date);
+  d.querySelector('.km').innerHTML = '≈ ' + r1(km) + ' km<small>' + hm(s.duree) + '</small>';
+  d.querySelector('.vbtn').onclick = e => { e.stopPropagation(); sessParcours(s); };
+  d.title = s.detail;
+  return d;
 }
-function weekly(c){
-  if(MC.weekly) return MC.weekly;
-  const t0 = wkStart(histStart(c)).getTime(), nowW = wkStart(Date.now()).getTime(), logs = logsOf(c), out = [];
-  for(let t = t0; t <= nowW; t += WEEKMS){
-    const wl = logs.filter(l => tOf(l.date) >= t && tOf(l.date) < t + WEEKMS), x = { t, mid:t + 3.5 * DAYMS, logs:wl, cur:t === nowW };
-    x.min = wl.reduce((a, l) => a + l.duree, 0);
-    x.load = wl.reduce((a, l) => a + l.duree * (l.rpe || 5), 0);
-    const r = wl.filter(l => l.rpe).map(l => l.rpe); x.rpe = r.length ? [r.reduce((a, v) => a + v, 0) / r.length, Math.min(...r), Math.max(...r)] : null;
-    const sp = wl.filter(l => l.act === mainAct(c) && ['ef', 'long', undefined].includes(l.type)).map(speedOf).filter(Boolean);
-    x.vit = sp.length ? [sp.reduce((a, v) => a + v, 0) / sp.length, Math.min(...sp), Math.max(...sp)] : null;
-    const lg = wl.filter(l => l.act === mainAct(c)).map(l => l.duree); x.long = lg.length ? Math.max(...lg) : null;
-    const pr = progAtT(c, t);
-    if(pr && !x.cur){ const w = Math.round((t - pr.meta.debut.getTime()) / WEEKMS), pl = weekPlan(pr.pc, w, pr.meta); matchWeek(pl, wl.slice()); x.adh = pl.length ? pl.filter(s => s.done).length / pl.length * 100 : null; }
-    out.push(x);
-  }
-  return MC.weekly = out;
-}
-const avg = a => a.reduce((x, y) => x + y, 0) / a.length;
-function metricOf(c, S, k){
-  if(MC['m' + k] !== undefined) return MC['m' + k];
-  const W = weekly(c), meta = S.meta, o = c.objectif, now = Date.now(), a = S.adh4 ?? 0.8;
-  const endT = meta.debut.getTime() + meta.weeks * WEEKMS, futW = Math.max(0, (endT - now) / WEEKMS);
-  const goalT = o.date ? tOf(o.date) : endT, goalW = Math.max(0, (goalT - now) / WEEKMS);
-  const steps = (t1, f) => { const r = []; for(let i = 0; i <= 8; i++){ const t = now + (t1 - now) * i / 8; r.push([t].concat(f((t - now) / WEEKMS))); } return r; };
-  let m = null;
-  if(k === 'vol'){
-    const pts = W.map(x => [x.mid, x.min]), plan = [], proj = [];
-    for(let w = 0; w < meta.weeks; w++){ const t = meta.debut.getTime() + w * WEEKMS + 3.5 * DAYMS, v = weekPlan(c, w, meta, w >= meta.cur ? S.ad : null).reduce((x, s) => x + s.duree, 0); plan.push([t, v]); if(w >= meta.cur) proj.push([t, v * 0.85, v * 1.08]); }
-    const cw = W[W.length - 1].min, pw = (plan[meta.cur] || [0, 0])[1], last4 = W.filter(x => !x.cur).slice(-4).map(x => x.min);
-    const target = o.type === 'regul' ? o.min || 150 : o.type === 'forme' ? 150 : null;
-    m = { lbl:'Activité', unit:'min / semaine', fmt:hm, pts, plan, proj, target,
-      tile:{ val:hm(cw), sub:'sur ' + hm(pw) + ' prévu cette semaine' },
-      goal: target ? '📊 Moyenne ' + (last4.length ? hm(avg(last4)) : '—') + ' / sem. (repère ' + hm(target) + ')' : '',
-      sum:'Moyenne des 4 dernières semaines : ' + (last4.length ? hm(avg(last4)) : '—') + '. D\'ici la fin du programme, entre ' + rng(...[0.85, 1.08].map(f => avg(plan.slice(meta.cur).map(p => p[1])) * f), hm).replace(' – ', ' et ') + ' par semaine selon ton assiduité (le programme s\'ajuste).' };
-  }
-  if(k === 'adh'){
-    const pts = W.filter(x => x.adh != null).map(x => [x.mid, x.adh]);
-    if(pts.length){
-      const t0 = pts[0][0], t1 = pts[pts.length - 1][0];
-      m = { lbl:'Régularité', unit:'% des séances prévues', fmt:v => Math.round(v) + ' %', pts, zone:[[t0, 80, 100], [t1, 80, 100]], dots:true,
-        tile:{ val:S.adh4 == null ? '—' : Math.round(S.adh4 * 100) + ' %', sub:'sur 4 semaines · cible ≥ 80 %', warn:S.adh4 != null && S.adh4 < 0.6 },
-        sum:'La zone verte (80 à 100 %) est la cible : c\'est la régularité qui fait progresser, plus que l\'intensité.' };
-    }
-  }
-  if(k === 'load'){
-    const pts = W.map(x => [x.mid, x.load]), zone = [];
-    W.forEach((x, i) => { const prev = W.slice(Math.max(0, i - 4), i).map(y => y.load); if(prev.length >= 2 && avg(prev) > 0) zone.push([x.mid, avg(prev) * 0.8, avg(prev) * 1.3]); });
-    const r = S.ratio;
-    m = { lbl:'Charge d\'entraînement', unit:'durée × effort ressenti', fmt:v => String(Math.round(v)), pts, zone, dots:true,
-      tile:{ val:r == null ? '—' : (r >= 1 ? '+' : '') + Math.round((r - 1) * 100) + ' %', sub:'vs ta moyenne · idéal −20 à +30 %', warn:r != null && (r > 1.3 || r < 0.7) },
-      sum:'La zone verte correspond à ta charge habituelle (−20 % à +30 %). Au-dessus, le risque de blessure ou de fatigue augmente ; en dessous, la forme stagne.' };
-  }
-  if(k === 'rpe'){
-    const ws = W.filter(x => x.rpe), pts = ws.map(x => [x.mid, x.rpe[0]]), band = ws.map(x => [x.mid, x.rpe[1], x.rpe[2]]);
-    if(pts.length){
-      const rec = S.logs.slice(-6).filter(l => l.rpe).map(l => l.rpe), v = rec.length ? avg(rec) : null;
-      m = { lbl:'Effort ressenti', unit:'sur 10 (moyenne et écart par semaine)', fmt:r1, pts, band, dots:true,
-        tile:{ val:v == null ? '—' : r1(v) + ' / 10', sub:v == null ? '' : v < 5 ? 'confortable' : v < 7 ? 'modéré' : 'élevé', warn:v != null && v >= 7.5 },
-        sum:'Trait : effort moyen de la semaine ; zone : de la séance la plus facile à la plus dure. En endurance, vise 4 à 5 / 10.' };
-    }
-  }
-  if(k === 'vit'){
-    const ws = W.filter(x => x.vit), pts = ws.map(x => [x.mid, x.vit[0]]), band = ws.map(x => [x.mid, x.vit[1], x.vit[2]]);
-    if(pts.length >= 2){
-      const v = avg(pts.slice(-3).map(p => p[1])), cp = ws.filter(x => x.t >= meta.debut.getTime()), v0 = cp.length ? cp[0].vit[0] : pts[0][1];
-      const proj = steps(endT, w => [v * (1 + 0.001 * w * a), v * (1 + 0.005 * w * a)]), [p0, p1] = proj[proj.length - 1].slice(1);
-      const f = x => mainAct(c) === 'course' ? allure(x) : r1(x) + ' km/h';
-      m = { lbl:'Vitesse en endurance', unit:'km/h · ' + ACT[mainAct(c)].split(' ')[1].toLowerCase(), fmt:r1, pts, band, proj,
-        tile:{ val:r1(v) + ' km/h', sub:(v >= v0 ? '+' : '') + r1((v / v0 - 1) * 100) + ' % depuis le début du programme' },
-        goal:'⚡ Vitesse en endurance : ' + rng(p0, p1, r1) + ' km/h prévus en fin de programme',
-        sum:'Aujourd\'hui ≈ ' + f(v) + '. En fin de programme, plutôt entre ' + f(p0) + ' et ' + f(p1) + ' selon ta régularité. La zone autour du trait montre l\'écart entre tes séances de la semaine.' };
-    }
-  }
-  const vh = vmaHist(c);
-  if(k === 'vma' && vh.length && vmaNow(c)){
-    const v = vmaNow(c), pts = vh.concat([[now, v]]), band = pts.map(p => [p[0], p[1] * 0.97, p[1] * 1.03]);
-    const proj = steps(goalT, w => [v * 0.97 * (1 + 0.002 * w * a), v * 1.03 * (1 + 0.006 * w * a)]), last = proj[proj.length - 1];
-    m = { lbl:'VMA', unit:'km/h', fmt:r1, pts, band, proj, dots:true,
-      tile:{ val:rng(v * 0.97, v * 1.03, r1), sub:'km/h · ' + (o.date ? 'jour J ' : 'fin ') + rng(last[1], last[2], r1) },
-      sum:'Estimée à ±3 % d\'après ton test puis ton allure en endurance. Projection ' + (o.date ? 'au jour J' : 'en fin de programme') + ' : ' + rng(last[1], last[2], r1) + ' km/h.' };
-  }
-  if(k === 'race' && o.type === 'course' && o.dist && vh.length && vmaNow(c)){
-    const v = vmaNow(c), d = o.dist, pts = vh.concat([[now, v]]).map(p => [p[0], raceTime(p[1], d)]);
-    const band = vh.concat([[now, v]]).map(p => [p[0], raceTime(p[1] * 1.03, d), raceTime(p[1] * 0.97, d)]);
-    const proj = steps(goalT, w => raceBand(v, d, w, a)), [n0, n1] = raceBand(v, d, 0, a), [f0, f1] = raceBand(v, d, goalW, a);
-    m = { lbl:'Temps sur ' + r1(d) + ' km', unit:'temps estimé', fmt:hm, pts, band, proj, target:o.temps || null, dots:true, lowGood:true,
-      tile:{ val:rng(f0, f1, hm), sub:'jour J · aujourd\'hui ' + rng(n0, n1, hm), warn:o.temps && f0 > o.temps },
-      goal:'🏁 Jour J : entre ' + hm(f0) + ' et ' + hm(f1) + (o.temps ? ' (objectif ' + hm(o.temps) + (f1 <= o.temps ? ' ✓)' : f0 <= o.temps ? ', dans la marge)' : ')') : ''),
-      sum:'Aujourd\'hui entre ' + hm(n0) + ' et ' + hm(n1) + '. Le jour J, entre ' + hm(f0) + ' (progression forte) et ' + hm(f1) + ' (progression faible). Plus tu es régulier, plus tu te rapproches du bas de la fourchette.' };
-  }
-  if(k === 'kg' && (c.poids || []).length >= 2){
-    const raw = c.poids.slice().sort((x, y) => x.date.localeCompare(y.date)).map(x => [tOf(x.date), x.kg]);
-    const band = raw.map((p, i) => { const n = raw.slice(Math.max(0, i - 1), i + 2).map(q => q[1]), mm = avg(n); return [p[0], mm - 0.5, mm + 0.5]; });
-    const sl = trendKgWeek(c.poids.slice(-6)), last = raw[raw.length - 1], goal = o.type === 'poids';
-    const proj = goal && sl && sl < -0.05 ? kgBand(last, sl, o.poids) : [];
-    let gtxt = '';
-    if(goal && proj.length){ const wk = (last[1] - o.poids) / -sl; gtxt = '⚖️ ' + r1(o.poids) + ' kg entre le ' + fmtD(now + wk / 1.3 * WEEKMS) + ' et le ' + fmtD(now + wk / 0.7 * WEEKMS); }
-    else if(goal) gtxt = '⚖️ ' + r1(last[1]) + ' kg — tendance stable pour l\'instant';
-    m = { lbl:'Poids', unit:'kg', fmt:r1, pts:raw, band, proj, target:goal ? o.poids : null, dots:true, lowGood:true,
-      tile:{ val:r1(last[1]) + ' kg', sub:sl == null ? '' : 'tendance ' + (sl < 0 ? '−' + r1(-sl * 0.7) + ' à −' + r1(-sl * 1.3) : '+' + r1(Math.max(0, sl) * 0.7) + ' à +' + r1(Math.max(0, sl) * 1.3)) + ' kg/sem.' },
-      goal:gtxt,
-      sum:'Le poids varie naturellement de ±0,5 kg d\'un jour à l\'autre (zone autour des pesées) : seule la tendance compte.' + (gtxt ? ' Projection au rythme actuel ±30 %.' : '') };
-  }
-  if(k === 'long'){
-    const ws = W.filter(x => x.long), pts = ws.map(x => [x.mid, x.long]);
-    if(pts.length){
-      const plan = [];
-      for(let w = meta.cur; w < meta.weeks; w++){ const l = weekPlan(c, w, meta, S.ad).find(s => s.type === 'long'); if(l) plan.push([meta.debut.getTime() + w * WEEKMS + 3.5 * DAYMS, l.duree]); }
-      const best = Math.max(...pts.slice(-4).map(p => p[1]));
-      m = { lbl:'Plus longue séance', unit:'par semaine', fmt:hm, pts, plan, target:o.duree || null, dots:true,
-        tile:{ val:hm(best), sub:'sur 4 sem.' + (o.duree ? ' · objectif ' + hm(o.duree) : '') },
-        goal:'⏳ Plus longue séance : ' + hm(best) + (o.duree ? ' / ' + hm(o.duree) + (best >= o.duree ? ' ✓' : '') : ''),
-        sum:'Pointillés : sorties longues prévues par le programme. Elles s\'allongent progressivement pour t\'amener vers ton objectif.' };
-    }
-  }
-  return MC['m' + k] = m;
-}
-function spark(m){
-  const p = m.pts.slice(-10);
-  if(p.length < 2) return '';
-  const ys = p.map(x => x[1]), y0 = Math.min(...ys), y1 = Math.max(...ys);
-  const pt = p.map((x, i) => (i / (p.length - 1) * 60).toFixed(1) + ',' + (16 - (y1 > y0 ? (x[1] - y0) / (y1 - y0) : 0.5) * 14).toFixed(1)).join(' ');
-  return '<svg class="spk" viewBox="0 0 60 18" aria-hidden="true"><polyline points="' + pt + '" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>';
-}
-function metricChart(m){
-  const now = Date.now(), x0 = metPer ? now - metPer * DAYMS : -Infinity;
-  const inW = p => p[0] >= x0;
-  const series = [], bands = [];
-  if(m.zone && m.zone.length) bands.push({ pts:m.zone.filter(inW), color:'#16a34a' });
-  if(m.band) bands.push({ pts:m.band.filter(inW), color:'#0f766e' });
-  if(m.proj && m.proj.length) bands.push({ pts:m.proj, color:'#14b8a6' });
-  if(m.plan) series.push({ pts:m.plan.filter(inW), color:'#9fd6cd', dash:true });
-  series.push({ pts:m.pts.filter(inW), color:'#0f766e', dots:m.dots || m.pts.filter(inW).length < 16 });
-  return lineChart(series, { title:m.lbl, fmt:m.fmt, bands, target:m.target, today:now });
-}
-function legendOf(m){
-  const it = [['ln', 'mesuré']];
-  if(m.band) it.push(['bd', 'marge / écart']);
-  if(m.zone) it.push(['zn', 'zone idéale']);
-  if(m.plan) it.push(['pl', 'prévu']);
-  if(m.proj && m.proj.length) it.push(['pj', 'projection']);
-  if(m.target != null) it.push(['tg', 'objectif']);
-  return '<div class="lgd">' + it.map(([k, t]) => '<span><i class="' + k + '"></i>' + t + '</span>').join('') + '</div>';
-}
-
-/* --- Sections --- */
-function renderSemaine(box, c, S){
-  const meta = S.meta, ws = meta.debut.getTime() + meta.cur * WEEKMS, today = (new Date().getDay() + 6) % 7;
-  const done = S.plan.filter(s => s.done).length, pm = S.plan.reduce((a, s) => a + s.duree, 0), dm = S.plan.filter(s => s.done).reduce((a, s) => a + s.done.duree, 0) + S.extra.reduce((a, l) => a + l.duree, 0);
-  const wk = ccCard(box, 'wk', '📅 Cette semaine', { badge:done + ' / ' + S.plan.length, keepQuick:true });
-  // bande des 7 jours
-  const strip = mk('div', 'wstrip');
-  for(let d = 0; d < 7; d++){
-    const ss = S.plan.filter(s => s.day === d), ex = S.extra.filter(l => (new Date(l.date).getDay() + 6) % 7 === d);
-    let cls = 'rest', ico = '';
-    if(ss.length){ const s = ss[0]; cls = s.done ? 'ok' : d < today ? 'late' : 'plan'; ico = ICO[s.act]; }
-    else if(ex.length){ cls = 'ok'; ico = ICO[ex[0].act]; }
-    const cell = mk('div', 'wd ' + cls + (d === today ? ' today' : ''), '<small>' + JOURS[d] + '</small><span>' + (ico || '–') + '</span>');
-    cell.title = ss.length ? ss[0].label + (cls === 'ok' ? ' — fait' : cls === 'late' ? ' — non faite' : '') : ex.length ? 'Séance en plus' : 'Repos';
-    strip.appendChild(cell);
-  }
-  wk.q.appendChild(strip);
-  wk.q.insertAdjacentHTML('beforeend', '<div class="pbar"><i style="width:' + Math.round(clamp(dm / (pm || 1), 0, 1) * 100) + '%"></i></div><p class="ccsub">' + hm(dm) + ' faites sur ' + hm(pm) + ' prévues</p>');
-  if(!wk.open){
-    const nx = S.plan.find(s => !s.done && s.day >= today);
-    if(nx){ const r = sessRow(nx, ws, today); r.classList.add('next'); r.querySelector('.sd').textContent = nx.day === today ? 'Auj.' : JOURS[nx.day]; wk.q.appendChild(mk('p', 'chh', 'Prochaine séance')); wk.q.appendChild(r); }
-    else wk.q.appendChild(mk('p', 'ccsub', '✓ Rien d\'autre de prévu cette semaine.'));
+function renderNextSec(box, c, S){
+  const open = !!ccOpen.nx, up = upcoming(c, S, open ? 7 : 3), today = (new Date().getDay() + 6) % 7;
+  const card = mk('div', 'cc nxs' + (open ? ' open' : ''), '<div class="cch"><b class="cct">⏭️ Prochaines activités</b><span class="cchr"></span></div>');
+  const t = mk('button', 'sgDet'); t.textContent = open ? 'Réduire' : 'Détails';
+  t.onclick = () => { ccOpen.nx = !open; store.set('coachOpen2', ccOpen); renderCoach(); };
+  card.querySelector('.cchr').appendChild(t);
+  if(up.length){
+    card.appendChild(nextCard(c, up[0]));
+    card.appendChild(mk('p', 'nxd')).textContent = up[0].detail;
+    up.slice(1).forEach(s => card.appendChild(sessRow(s, s.wsT, s.cw ? today : null, true)));
   } else {
-    S.plan.forEach(s => wk.d.appendChild(sessRow(s, ws, today)));
-    S.extra.forEach(l => { const r = logRow(l); r.classList.add('ok'); wk.d.appendChild(r); });
+    const e = mk('div', 'it sg cur nxc', '<span class="th nxi">✓</span><div><b>Rien de prévu pour l\'instant</b><small>Programme terminé : refais un bilan pour en lancer un nouveau</small></div><button class="vbtn">Bilan</button>');
+    e.querySelector('.vbtn').onclick = () => openBilan(3);
+    card.appendChild(e);
+  }
+  if(open){
+    // Programme complet, semaine par semaine
+    const meta = S.meta, wrap = mk('div', 'weeks');
+    card.appendChild(mk('p', 'kgrp', '🗓️ Programme · ' + meta.weeks + ' semaines'));
+    for(let w = 0; w < meta.weeks; w++){
+      const pl = weekPlan(c, w, meta, w >= meta.cur ? S.ad : null), d = meta.debut.getTime() + w * WEEKMS;
+      let doneTxt = '';
+      if(w <= meta.cur){ const cp = pl.map(s => Object.assign({}, s)); matchWeek(cp, logsWeek(c, meta, w)); doneTxt = ' · ' + cp.filter(s => s.done).length + '/' + cp.length + ' faites'; }
+      const r = mk('div', 'wk' + (w === meta.cur ? ' cur' : w < meta.cur ? ' past' : ''), '<b>S' + (w + 1) + '</b><span></span><em>' + hm(pl.reduce((a, s) => a + s.duree, 0)) + '</em><small></small>');
+      r.querySelector('span').textContent = fmtD(d) + ' · ' + phaseOf(c, w, meta) + ((w + 1) % 4 === 0 ? ' (allégée)' : '');
+      r.querySelector('small').textContent = pl.length + ' séance' + (pl.length > 1 ? 's' : '') + doneTxt + ' · ' + pl.map(s => ICO[s.act] + ' ' + s.label).join(' · ');
+      r.title = 'Voir les séances';
+      r.onclick = () => { weekOpen = weekOpen === w ? null : w; renderCoach(); };
+      wrap.appendChild(r);
+      if(weekOpen === w){
+        const dt = mk('div', 'wkd');
+        pl.forEach(s => { const x = sessRow(s, d, w === meta.cur ? today : null); if(w < meta.cur) x.querySelector('.sm').innerHTML = '<span>' + hm(s.duree) + '</span>'; dt.appendChild(x); });
+        wrap.appendChild(dt);
+      }
+    }
+    card.appendChild(wrap);
   }
   const acts = mk('div', 'bzrow ccacts', '<button class="sgDet">➕ Séance</button><button class="sgDet">⚖️ Pesée</button>');
   acts.children[0].onclick = () => openLog({}); acts.children[1].onclick = () => openKg();
-  wk.card.appendChild(acts);
-
-  // Analyse
-  const ins = insights(c, S).sort((a, b) => INS_ORDER.indexOf(a.ico) - INS_ORDER.indexOf(b.ico));
-  const alerts = ins.filter(x => x.ico === '⚠️').length;
-  const an = ccCard(box, 'an', '🔍 Analyse', { badge:alerts ? alerts + ' alerte' + (alerts > 1 ? 's' : '') : '', detail:ins.length > 2 });
-  (an.d || an.q).appendChild(insList(an.open ? ins : ins.slice(0, 2)));
-
-  // Programme
-  const pr = ccCard(box, 'pg', '🗓️ Programme · ' + meta.weeks + ' sem.');
-  const target = pr.d || pr.q, from = pr.open ? 0 : meta.cur, to = pr.open ? meta.weeks : Math.min(meta.weeks, meta.cur + 3);
-  const wrap = mk('div', 'weeks');
-  for(let w = from; w < to; w++){
-    const pl = weekPlan(c, w, meta, w >= meta.cur ? S.ad : null), d = meta.debut.getTime() + w * WEEKMS;
-    let doneTxt = '';
-    if(w <= meta.cur){ const cp = pl.map(s => Object.assign({}, s)); matchWeek(cp, logsWeek(c, meta, w)); doneTxt = ' · ' + cp.filter(s => s.done).length + '/' + cp.length + ' faites'; }
-    const r = mk('div', 'wk' + (w === meta.cur ? ' cur' : w < meta.cur ? ' past' : ''), '<b>S' + (w + 1) + '</b><span></span><em>' + hm(pl.reduce((a, s) => a + s.duree, 0)) + '</em><small></small>');
-    r.querySelector('span').textContent = fmtD(d) + ' · ' + phaseOf(c, w, meta) + ((w + 1) % 4 === 0 ? ' (allégée)' : '');
-    r.querySelector('small').textContent = pr.open ? pl.map(s => ICO[s.act] + ' ' + s.label).join(' · ') : pl.length + ' séance' + (pl.length > 1 ? 's' : '') + doneTxt + ' · ' + [...new Set(pl.map(s => ICO[s.act]))].join(' ');
-    r.title = 'Voir les séances';
-    r.onclick = () => { weekOpen = weekOpen === w ? null : w; renderCoach(); };
-    wrap.appendChild(r);
-    if(weekOpen === w){
-      const dt = mk('div', 'wkd');
-      pl.forEach(s => { const x = sessRow(s, d, w === meta.cur ? today : null); if(w < meta.cur) x.querySelector('.sm').innerHTML = '<span>' + hm(s.duree) + '</span>'; dt.appendChild(x); });
-      wrap.appendChild(dt);
-    }
-  }
-  target.appendChild(wrap);
+  card.appendChild(acts);
+  box.appendChild(card);
 }
-function renderIndic(box, c, S){
-  const o = c.objectif;
-  const objK = { course:'race', poids:'kg', endur:'long', vitesse:'vit' }[o.type] || 'vol';
-  const groups = [
-    ['🎯 Objectif', [objK]],
-    ['📆 Assiduité', ['adh', 'vol'].filter(k => k !== objK)],
-    ['🔋 Charge et ressenti', ['load', 'rpe']],
-    ['💪 Forme', ['vit', 'vma', 'kg'].filter(k => k !== objK)]
-  ];
-  const all = groups.flatMap(g => g[1]).filter(k => metricOf(c, S, k));
-  if(!all.includes(metSel)) metSel = all[0];
-  const db = mk('div', 'cc');
-  db.innerHTML = '<div class="cch"><b class="cct">📈 Tableau de bord</b><span class="ccsub">touche un indicateur</span></div>';
-  groups.forEach(([gt, ks]) => {
-    const ms = ks.filter(k => metricOf(c, S, k));
-    if(!ms.length) return;
-    db.appendChild(mk('p', 'kgrp', gt));
-    const grid = mk('div', 'kpis');
-    ms.forEach(k => {
-      const m = metricOf(c, S, k), t = mk('button', 'kpi' + (k === metSel ? ' on' : '') + (m.tile.warn ? ' warn' : '') + (gt.startsWith('🎯') ? ' big' : '') + (/–/.test(metricOf(c, S, k).tile.val) ? ' rg' : ''), '<small></small><b></b><span></span>' + spark(m));
-      t.type = 'button';
-      t.querySelector('small').textContent = m.lbl; t.querySelector('b').textContent = m.tile.val; t.querySelector('span').textContent = m.tile.sub;
-      t.onclick = () => { metSel = k; renderCoach(); };
-      grid.appendChild(t);
-    });
-    db.appendChild(grid);
-  });
-  box.appendChild(db);
-  // Courbe de l'indicateur choisi
-  const m = metricOf(c, S, metSel);
-  if(m){
-    const ch = mk('div', 'cc');
-    ch.innerHTML = '<b class="cct"></b><div class="cch chp"><p class="chh"></p><div class="bzc per"></div></div><div class="chw"></div><p class="msum"></p>';
-    ch.querySelector('.cct').textContent = m.lbl;
-    ch.querySelector('.chh').textContent = m.unit;
-    [['3 mois', 91], ['6 mois', 182], ['Tout', 0]].forEach(([t, v]) => { const b = mk('button'); b.type = 'button'; b.textContent = t; b.classList.toggle('on', metPer === v); b.onclick = () => { metPer = v; renderCoach(); }; ch.querySelector('.per').appendChild(b); });
-    ch.querySelector('.chw').innerHTML = metricChart(m) + legendOf(m);
-    ch.querySelector('.msum').textContent = m.sum;
-    box.appendChild(ch);
-  }
-  // Comparer deux dates
-  const cmp = ccCard(box, 'cmp', '🧬 Évolution physique');
-  if(cmp.q){
-    const t0 = S.meta.debut.getTime(), A = stateAt(c, t0), B = stateAt(c, Date.now());
-    cmp.q.appendChild(mk('p', 'chh', 'Depuis le début du programme (' + fmtD(t0) + ')'));
-    const weighed = (c.poids || []).length > 1, list = mk('div', 'evq');
-    EVO_METRICS.filter(x => A[x.k] != null && B[x.k] != null && (weighed || !['kg', 'imc'].includes(x.k)) && !['imc', 'vo2', 'nb'].includes(x.k)).slice(0, 4).forEach(x => {
-      const d = B[x.k] - A[x.k], good = x.lowGood ? d < 0 : d > 0, r = mk('div', '', '<span></span><b></b><em></em>');
-      r.children[0].textContent = x.lbl; r.children[1].textContent = x.fmt(A[x.k]) + ' → ' + x.fmt(B[x.k]) + (x.u && x.u !== 'par sem.' ? ' ' + x.u : '');
-      r.children[2].textContent = Math.abs(d) < Math.abs(A[x.k]) * 0.01 ? '=' : (d > 0 ? '↗' : '↘');
-      r.children[2].className = Math.abs(d) < Math.abs(A[x.k]) * 0.01 ? '' : good ? 'up' : 'down';
-      list.appendChild(r);
-    });
-    cmp.q.appendChild(list);
-  } else {
-    const ev = cmp.card; ev.classList.add('evo');
-    cmp.d.innerHTML = '<p class="ccsub evoD"></p><input type="range" class="evoR" aria-label="Date"><div class="bzc evoQ"></div><div class="evoTab"></div><div class="evoC"></div>';
-    const now = Date.now(), t0 = histStart(c), curD = S.meta.debut.getTime(), R = cmp.d.querySelector('.evoR');
-    R.min = t0; R.max = now; R.step = DAYMS; R.value = evoT == null ? curD : evoT;
-    R.oninput = () => { evoT = +R.value; cmp.d.querySelectorAll('.evoQ button').forEach(b => b.classList.remove('on')); renderEvo(ev); };
-    const progs = (c.programmes || []).slice().sort((a, b) => a.debut.localeCompare(b.debut)), quick = [['Aujourd\'hui', now], ['Début actuel', curD]];
-    progs.forEach((p, i) => quick.push(['Début P' + (i + 1), tOf(p.debut)], ['Fin P' + (i + 1), tOf(p.fin)]));
-    quick.sort((a, b) => a[1] - b[1]).forEach(([lbl, t]) => {
-      const b = mk('button'); b.type = 'button'; b.textContent = lbl;
-      b.classList.toggle('on', Math.abs((evoT == null ? curD : evoT) - t) < DAYMS);
-      b.onclick = () => { evoT = t; R.value = t; cmp.d.querySelectorAll('.evoQ button').forEach(x => x.classList.toggle('on', x === b)); renderEvo(ev); };
-      cmp.d.querySelector('.evoQ').appendChild(b);
-    });
-    renderEvo(ev);
-  }
-}
-function renderCal(box, c, S){
-  const now = new Date(), meta = S.meta, key = d => isoDay(d);
-  if(!calM) calM = new Date(now.getFullYear(), now.getMonth(), 1);
-  if(!calSel) calSel = key(now);
-  // séances faites, prévues et pesées par jour
-  const byDay = {}, plan = {}, kg = {};
-  logsOf(c).forEach(l => (byDay[key(l.date)] = byDay[key(l.date)] || []).push(l));
-  (c.poids || []).forEach(x => kg[key(x.date)] = x.kg);
-  for(let w = meta.cur; w < meta.weeks; w++){
-    const pl = weekPlan(c, w, meta, S.ad);
-    if(w === meta.cur) matchWeek(pl, logsWeek(c, meta, w));
-    pl.filter(s => !s.done).forEach(s => { const t = meta.debut.getTime() + w * WEEKMS + s.day * DAYMS + 12 * 3600e3; if(t >= wkStart(now).getTime()) (plan[key(t)] = plan[key(t)] || []).push(Object.assign(s, { wsT:meta.debut.getTime() + w * WEEKMS, cw:w === meta.cur })); });
-  }
+function renderCalSec(box, c, S){
+  const meta = S.meta, sel = selDate(), today = d0(Date.now()), L = logIndex(c), P = planIndex(c);
+  if(!calM) calM = new Date(sel.getFullYear(), sel.getMonth(), 1);
+  const cc = ccCard(box, 'cal', '🗓️ Calendrier'), host = cc.host;
+  // séances encore à faire cette semaine (les autres sont faites ou remplacées)
+  const curWs = wkStart(today), todo = new Set(S.plan.filter(s => !s.done).map(s => isoDay(addD(curWs, s.day))));
   const progs = (c.programmes || []).map(p => [wkStart(p.debut).getTime(), tOf(p.fin) + DAYMS, 'pp']).concat([[meta.debut.getTime(), meta.debut.getTime() + meta.weeks * WEEKMS, 'pc']]);
   const pOf = t => (progs.find(p => t >= p[0] && t < p[1]) || [])[2] || '';
-  const card = mk('div', 'cc cal');
-  const mname = calM.toLocaleDateString('fr-FR', { month:'long', year:'numeric' });
-  card.innerHTML = '<div class="cch"><button class="sgDet nav" aria-label="Mois précédent">‹</button><b class="cct"></b><button class="sgDet nav nx" aria-label="Mois suivant">›</button></div><div class="cgrid"></div><div class="lgd"></div><p class="ccsub msm"></p>';
-  card.querySelector('.cct').textContent = mname.charAt(0).toUpperCase() + mname.slice(1);
-  const [bp, bn] = card.querySelectorAll('.nav');
-  const minM = new Date(histStart(c)), maxM = new Date(meta.debut.getTime() + meta.weeks * WEEKMS);
-  bp.disabled = calM <= new Date(minM.getFullYear(), minM.getMonth(), 1);
-  bn.disabled = calM >= new Date(maxM.getFullYear(), maxM.getMonth(), 1);
-  bp.onclick = () => { calM = new Date(calM.getFullYear(), calM.getMonth() - 1, 1); renderCoach(); };
-  bn.onclick = () => { calM = new Date(calM.getFullYear(), calM.getMonth() + 1, 1); renderCoach(); };
-  const g = card.querySelector('.cgrid');
+  const kg = {}; (c.poids || []).forEach(x => kg[isoDay(x.date)] = x.kg);
+  const nav = mk('div', 'cnav', '<button class="sgDet nav" aria-label="Précédent">‹</button><b></b><button class="sgDet nav" aria-label="Suivant">›</button>');
+  const [bp, bn] = nav.querySelectorAll('button');
+  let days;
+  if(cc.open){
+    const ml = calM.toLocaleDateString('fr-FR', { month:'long', year:'numeric' });
+    nav.querySelector('b').textContent = cap(ml);
+    bp.onclick = () => { calM = new Date(calM.getFullYear(), calM.getMonth() - 1, 1); renderCoach(); };
+    bn.onclick = () => { calM = new Date(calM.getFullYear(), calM.getMonth() + 1, 1); renderCoach(); };
+    days = [];
+    const last = new Date(calM.getFullYear(), calM.getMonth() + 1, 0);
+    for(const d = wkStart(calM); d <= last || (d.getDay() + 6) % 7 !== 0; d.setDate(d.getDate() + 1)) days.push(new Date(d));
+  } else {
+    const ws = wkStart(sel);
+    nav.querySelector('b').textContent = fmtD(ws) + ' – ' + fmtD(addD(ws, 6)) + ' ' + addD(ws, 6).getFullYear();
+    bp.onclick = () => { calSel = isoDay(addD(sel, -7)); calM = null; renderCoach(); };
+    bn.onclick = () => { calSel = isoDay(addD(sel, 7)); calM = null; renderCoach(); };
+    days = [0, 1, 2, 3, 4, 5, 6].map(i => addD(ws, i));
+  }
+  host.appendChild(nav);
+  const g = mk('div', 'cgrid');
   JOURS.forEach(j => g.appendChild(mk('span', 'cdh', j.charAt(0))));
-  const first = wkStart(calM), last = new Date(calM.getFullYear(), calM.getMonth() + 1, 0);
-  let nb = 0, mn = 0, km = 0;
-  const days = [];   // jours par date civile (évite le décalage des changements d'heure)
-  for(const d = new Date(first); d <= last || (d.getDay() + 6) % 7 !== 0; d.setDate(d.getDate() + 1)) days.push(new Date(d));
-  for(const d of days){
-    const t = d.getTime(), k = key(d), out = d.getMonth() !== calM.getMonth(), ls = byDay[k] || [], ps = plan[k] || [];
-    const cell = mk('button', 'cd ' + pOf(t + 12 * 3600e3) + (out ? ' out' : '') + (k === key(now) ? ' today' : '') + (k === calSel ? ' sel' : ''), '<span>' + d.getDate() + '</span><i></i>');
+  days.forEach(d => {
+    const k = isoDay(d), ls = L[k] || [], fut = d >= today, ps = (P[k] || []).filter(s => !ls.length && (d >= curWs ? (fut || todo.has(k)) : false));
+    const out = cc.open && d.getMonth() !== calM.getMonth();
+    const cell = mk('button', 'cd ' + pOf(d.getTime() + 12 * 3600e3) + (out ? ' out' : '') + (k === isoDay(today) ? ' today' : '') + (k === isoDay(sel) ? ' sel' : ''), '<span>' + d.getDate() + '</span><i></i>');
     cell.type = 'button';
     const dots = cell.querySelector('i');
     ls.slice(0, 3).forEach(l => { const b = mk('b'); b.style.background = ACT_COL[l.act]; dots.appendChild(b); });
-    ps.slice(0, 3 - Math.min(3, ls.length)).forEach(s => { const b = mk('b', 'pl'); b.style.borderColor = ACT_COL[s.act]; dots.appendChild(b); });
+    ps.slice(0, 3).forEach(s => { const b = mk('b', 'pl' + (fut ? '' : ' miss')); b.style.borderColor = fut ? ACT_COL[s.act] : '#f59e0b'; dots.appendChild(b); });
     if(kg[k] != null) cell.classList.add('kg');
-    cell.title = (ls.length ? ls.length + ' séance(s) faite(s)' : ps.length ? ps.length + ' séance(s) prévue(s)' : '') + (kg[k] != null ? ' · pesée ' + r1(kg[k]) + ' kg' : '');
     cell.onclick = () => { calSel = k; renderCoach(); };
     g.appendChild(cell);
-    if(!out) ls.forEach(l => { nb++; mn += l.duree; km += l.dist || 0; });
+  });
+  host.appendChild(g);
+  if(cc.open){
+    let nb = 0, mn = 0, km = 0;
+    days.filter(d => d.getMonth() === calM.getMonth()).forEach(d => (L[isoDay(d)] || []).forEach(l => { nb++; mn += l.duree; km += l.dist || 0; }));
+    host.appendChild(mk('div', 'lgd', Object.entries(ACT_COL).filter(([a]) => c.activite.acts.includes(a) || logsOf(c).some(l => l.act === a)).map(([a, col]) => '<span><i class="dt" style="background:' + col + '"></i>' + ACT[a].split(' ')[1] + '</span>').join('') + '<span><i class="plc"></i>prévue</span><span><i class="pcc"></i>programme</span><span><i class="kgc"></i>pesée</span>'));
+    host.appendChild(mk('p', 'ccsub msm', 'Ce mois-ci : ' + nb + ' séance' + (nb > 1 ? 's' : '') + ' · ' + hm(mn) + ' · ' + r1(km) + ' km'));
   }
-  card.querySelector('.lgd').innerHTML = Object.entries(ACT_COL).filter(([a]) => c.activite.acts.includes(a) || logsOf(c).some(l => l.act === a)).map(([a, col]) => '<span><i style="background:' + col + '"></i>' + ACT[a].split(' ')[1] + '</span>').join('') + '<span><i class="plc"></i>prévue</span><span><i class="pcc"></i>programme</span><span><i class="kgc"></i>pesée</span>';
-  card.querySelector('.msm').textContent = 'Ce mois-ci : ' + nb + ' séance' + (nb > 1 ? 's' : '') + ' · ' + hm(mn) + ' · ' + r1(km) + ' km';
   // détail du jour choisi
-  const sd = new Date(calSel + 'T12:00'), day = mk('div', 'cday');
-  const dl = sd.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' });
-  day.innerHTML = '<div class="cch"><b></b><button class="sgDet">➕ Séance ce jour</button></div>';
-  day.querySelector('b').textContent = dl.charAt(0).toUpperCase() + dl.slice(1);
-  day.querySelector('button').onclick = () => openLog({ date:new Date(calSel + 'T12:00') });
-  const ls = byDay[calSel] || [], ps = plan[calSel] || [];
+  const k = isoDay(sel), day = mk('div', 'cday', '<div class="cch"><b></b><button class="sgDet">➕ Séance ce jour</button></div>');
+  day.querySelector('b').textContent = dayLbl(sel);
+  day.querySelector('button').hidden = sel > today;
+  day.querySelector('button').onclick = () => openLog({ date:new Date(k + 'T12:00') });
+  const ls = L[k] || [];
   ls.forEach(l => day.appendChild(logRow(l)));
-  ps.forEach(s => day.appendChild(sessRow(s, s.wsT, s.cw ? (now.getDay() + 6) % 7 : null)));
-  if(kg[calSel] != null) day.appendChild(mk('p', 'ccsub', '⚖️ Pesée : ' + r1(kg[calSel]) + ' kg'));
-  if(!ls.length && !ps.length && kg[calSel] == null) day.appendChild(mk('p', 'ccsub', sd > now ? 'Repos prévu.' : 'Aucune séance ce jour.'));
-  card.appendChild(day);
-  box.appendChild(card);
-
-  // Historique : programmes et séances
-  const h = ccCard(box, 'hist', '📚 Historique');
+  const ps = (P[k] || []).filter(s => !ls.length);
+  ps.forEach(s => {
+    if(sel >= curWs){ const w = S.plan.find(x => x.day === s.day && x.act === s.act); if(w && w.done) return; day.appendChild(sessRow(s, wkStart(sel).getTime(), isoDay(wkStart(sel)) === isoDay(curWs) ? (today.getDay() + 6) % 7 : null)); }
+    else day.appendChild(mk('p', 'ccsub', '○ Prévue, non enregistrée : ' + ICO[s.act] + ' ' + s.label + ' · ' + hm(s.duree)));
+  });
+  if(kg[k] != null) day.appendChild(mk('p', 'ccsub', '⚖️ Pesée : ' + r1(kg[k]) + ' kg'));
+  if(!ls.length && !ps.length && kg[k] == null) day.appendChild(mk('p', 'ccsub', sel > today ? 'Repos prévu.' : 'Aucune séance ce jour.'));
+  host.appendChild(day);
+}
+function renderIndSec(box, c, S){
+  const sel = selDate(), today = d0(Date.now()), same = isoDay(sel) === isoDay(today);
+  const cc = ccCard(box, 'ind', '📈 Indicateurs'), host = cc.host;
+  host.appendChild(mk('p', 'chh', 'Semaine du ' + fmtD(wkStart(sel)) + ', jusqu\'au ' + (same ? 'jour même' : dayLbl(sel).toLowerCase()) + ' · comparé ' + (same ? 'à la semaine dernière' : 'à aujourd\'hui') + ' · touche un indicateur pour son détail'));
+  const grid = mk('div', 'itl' + (cc.open ? ' full' : ''));
+  IND(c).forEach(m => {
+    const T = tileVal(c, m, sel), t = mk('button', 'it2', '<small></small><b></b><span></span>');
+    t.type = 'button';
+    t.querySelector('small').textContent = m.ico + ' ' + m.lbl;
+    t.querySelector('b').textContent = T.A.v == null ? '—' : m.kind === 'count' ? T.A.v + (T.A.planN ? ' / ' + T.A.planN : '') : m.fmt(T.A.v);
+    const sp = t.querySelector('span');
+    if(T.R.v != null && T.A.v != null){
+      const d = same ? T.A.v - T.R.v : T.R.v - T.A.v;   // toujours : plus récent − plus ancien
+      sp.innerHTML = '<em></em>';
+      sp.querySelector('em').textContent = deltaTxt(m, d); sp.querySelector('em').className = deltaCls(m, d);
+      sp.title = (same ? 'Semaine dernière au même jour : ' : 'Aujourd\'hui : ') + (m.kind === 'count' ? T.R.v : m.fmt(T.R.v));
+    } else sp.textContent = T.R.v != null ? (same ? 'sem. dern. ' : 'auj. ') + (m.kind === 'count' ? T.R.v : m.fmt(T.R.v)) : '';
+    if(cc.open) t.insertAdjacentHTML('beforeend', bucketChart(c, m, bucketsOf('semaine', sel).B, { mini:true, h:44 }));
+    t.onclick = () => openInd(m.k);
+    grid.appendChild(t);
+  });
+  host.appendChild(grid);
+  if(cc.open) host.appendChild(mk('div', 'lgd', '<span><i class="ln"></i>réalisé</span><span><i class="pj"></i>marge prévue par le programme</span>'));
+}
+function renderAnSec(box, c, S){
+  const ins = insights(c, S).sort((a, b) => INS_ORDER.indexOf(a.ico) - INS_ORDER.indexOf(b.ico)), alerts = ins.filter(x => x.ico === '⚠️').length;
+  const cc = ccCard(box, 'an', '🔍 Analyse', { badge:alerts ? alerts + ' alerte' + (alerts > 1 ? 's' : '') : '', detail:ins.length > 2 });
+  cc.host.appendChild(insList(cc.open ? ins : ins.slice(0, 2)));
+}
+function renderHistSec(box, c, S){
+  const meta = S.meta, now = new Date(), all = logsOf(c);
+  const cc = ccCard(box, 'hist', '📚 Historique', { badge:all.length + ' séances' });
+  if(!cc.open){
+    all.slice(-3).reverse().forEach(l => cc.q.appendChild(logRow(l)));
+    if(!all.length) cc.q.appendChild(mk('p', 'ccsub', 'Aucune séance enregistrée pour l\'instant.'));
+    return;
+  }
   const curP = { objectif:c.objectif, debut:meta.debut.toISOString(), fin:now.toISOString(), cur:true };
   const progsL = [curP].concat((c.programmes || []).slice().sort((a, b) => b.debut.localeCompare(a.debut)));
-  if(h.q){
-    progsL.forEach((p, i) => {
-      const s = progStats(c, p), r = mk('div', 'pq', '<b></b><span></span><em></em>');
-      r.querySelector('b').textContent = (p.cur ? 'En cours' : 'P' + (progsL.length - i)) + ' · ' + progTitle(p);
-      r.querySelector('span').textContent = fmtD(p.debut) + ' → ' + (p.cur ? 'auj.' : fmtD(p.fin));
-      r.querySelector('em').textContent = s.prev ? Math.round(s.done / s.prev * 100) + ' %' : '—';
-      h.q.appendChild(r);
-    });
-    const tot = logsOf(c);
-    h.q.appendChild(mk('p', 'ccsub', tot.length + ' séances au total · ' + hm(tot.reduce((a, l) => a + l.duree, 0)) + ' · ' + r1(tot.reduce((a, l) => a + (l.dist || 0), 0)) + ' km'));
-  } else {
-    h.d.appendChild(mk('p', 'chh', 'Programmes — touche-en un pour filtrer ses séances'));
-    const pw = mk('div', 'progs');
-    progsL.forEach((p, i) => {
-      const s = progStats(c, p), key2 = p.cur ? 'cur' : p.debut, r = mk('button', 'prog' + (histProg === key2 ? ' on' : ''), '<b></b><span></span><small></small>');
-      r.type = 'button';
-      r.querySelector('b').textContent = (p.cur ? 'En cours' : 'P' + (progsL.length - i)) + ' · ' + progTitle(p);
-      r.querySelector('span').textContent = fmtD(p.debut) + (p.cur ? ' → aujourd\'hui' : ' → ' + fmtD(p.fin)) + ' · ' + s.done + ' / ' + s.prev + ' séances' + (s.prev ? ' (' + Math.round(s.done / s.prev * 100) + ' %)' : '');
-      r.querySelector('small').textContent = s.res.join(' · ');
-      r.onclick = () => { histProg = histProg === key2 ? null : key2; histAll = false; renderCoach(); };
-      pw.appendChild(r);
-    });
-    h.d.appendChild(pw);
-    let logs = logsOf(c).slice().reverse();
-    const sel = progsL.find(p => (p.cur ? 'cur' : p.debut) === histProg);
-    if(sel){ const a = sel.cur ? meta.debut.getTime() : wkStart(sel.debut).getTime(), b = tOf(sel.fin) + DAYMS; logs = logs.filter(l => tOf(l.date) >= a && tOf(l.date) < b); }
-    const hh = mk('div', 'cch hsh', '<p class="chh"></p><button class="sgDet"></button>');
-    hh.querySelector('.chh').textContent = (sel ? (sel.cur ? 'Programme en cours' : progTitle(sel)) : 'Toutes les séances') + ' : ' + logs.length + ' · ' + hm(logs.reduce((a, l) => a + l.duree, 0)) + ' · ' + r1(logs.reduce((a, l) => a + (l.dist || 0), 0)) + ' km';
-    const more = hh.querySelector('button'); more.hidden = logs.length <= 8; more.textContent = histAll ? 'Moins' : 'Toutes';
-    more.onclick = () => { histAll = !histAll; renderCoach(); };
-    h.d.appendChild(hh);
-    (histAll ? logs : logs.slice(0, 8)).forEach(l => h.d.appendChild(logRow(l)));
-    if(!logs.length) h.d.appendChild(mk('p', 'ccsub', 'Aucune séance enregistrée pour l\'instant.'));
+  cc.d.appendChild(mk('p', 'chh', 'Programmes — touche-en un pour filtrer ses séances'));
+  const pw = mk('div', 'progs');
+  progsL.forEach((p, i) => {
+    const s = progStats(c, p), key2 = p.cur ? 'cur' : p.debut, r = mk('button', 'prog' + (histProg === key2 ? ' on' : ''), '<b></b><span></span><small></small>');
+    r.type = 'button';
+    r.querySelector('b').textContent = (p.cur ? 'En cours' : 'P' + (progsL.length - i)) + ' · ' + progTitle(p);
+    r.querySelector('span').textContent = fmtD(p.debut) + (p.cur ? ' → aujourd\'hui' : ' → ' + fmtD(p.fin)) + ' · ' + s.done + ' / ' + s.prev + ' séances' + (s.prev ? ' (' + Math.round(s.done / s.prev * 100) + ' %)' : '');
+    r.querySelector('small').textContent = s.res.join(' · ');
+    r.onclick = () => { histProg = histProg === key2 ? null : key2; histAll = false; renderCoach(); };
+    pw.appendChild(r);
+  });
+  cc.d.appendChild(pw);
+  let logs = all.slice().reverse();
+  const sel = progsL.find(p => (p.cur ? 'cur' : p.debut) === histProg);
+  if(sel){ const a = sel.cur ? meta.debut.getTime() : wkStart(sel.debut).getTime(), b = tOf(sel.fin) + DAYMS; logs = logs.filter(l => tOf(l.date) >= a && tOf(l.date) < b); }
+  const hh = mk('div', 'cch hsh', '<p class="chh"></p><button class="sgDet"></button>');
+  hh.querySelector('.chh').textContent = (sel ? (sel.cur ? 'Programme en cours' : progTitle(sel)) : 'Toutes les séances') + ' : ' + logs.length + ' · ' + hm(logs.reduce((a, l) => a + l.duree, 0)) + ' · ' + r1(logs.reduce((a, l) => a + (l.dist || 0), 0)) + ' km';
+  const more = hh.querySelector('button'); more.hidden = logs.length <= 8; more.textContent = histAll ? 'Moins' : 'Toutes';
+  more.onclick = () => { histAll = !histAll; renderCoach(); };
+  cc.d.appendChild(hh);
+  (histAll ? logs : logs.slice(0, 8)).forEach(l => cc.d.appendChild(logRow(l)));
+}
+function renderBilanSec(box, c){
+  const b = bilan(c), redo = mk('button', 'sgDet', 'Refaire'); redo.onclick = () => openBilan(0);
+  const cc = ccCard(box, 'bil', '🩺 Bilan du ' + new Date(c.date).toLocaleDateString('fr-FR'), { extra:[redo] });
+  const rows = [['IMC', r1(b.imc) + ' — ' + b.imcCat]];
+  if(b.vo2 != null) rows.push(['Endurance (VO2max estimée)', r1(b.vo2) + ' ml/kg/min — ' + b.niveau]); else if(b.niveau) rows.push(['Niveau à vélo', b.niveau]);
+  if(b.vma) rows.push(['Vitesse max. aérobie (VMA)', r1(b.vma) + ' km/h']);
+  if(cc.open) rows.push(['Métabolisme de base', Math.round(b.base) + ' kcal / jour'], ['Dépense quotidienne estimée', Math.round(b.jour) + ' kcal / jour'], ['Fréquence cardiaque max. estimée', b.fcmax + ' bpm']);
+  if(cc.open && b.vma) rows.push(['Allure footing (65–70 % VMA)', allure(b.vma * 0.7) + ' · ' + r1(b.vma * 0.675) + ' km/h']);
+  const tb = mk('table', 'cctab');
+  rows.forEach(([k, v]) => { const tr = mk('tr', '', '<td></td><td></td>'); tr.cells[0].textContent = k; tr.cells[1].textContent = v; tb.appendChild(tr); });
+  cc.host.appendChild(tb);
+  if(cc.open){
+    if(!c.test){ const t = mk('button', 'vbtn wide', '⏱️ Faire le test de terrain'); t.onclick = () => openBilan(4); cc.d.appendChild(t); }
+    cc.d.appendChild(mk('small', 'ccs', 'Estimations à titre indicatif — ce n\'est pas un avis médical.'));
   }
 }
+
+/* --- Fenêtre d'un indicateur : période (jour, semaine, mois, année), date, statistiques complètes --- */
+function openInd(k){ indK = k; indG = indG || 'semaine'; indD = selDate(); indAll = false; renderInd(); $('indModal').classList.remove('hidden'); }
+function renderInd(){
+  MC = {}; MC.S = coachStats(coach);
+  const c = coach, m = IND(c).find(x => x.k === indK);
+  if(!m) return;
+  const P = bucketsOf(indG, indD), A = agg(c, m, P.from, P.to), today = d0(Date.now());
+  const prevD = indG === 'jour' ? addD(indD, -1) : indG === 'semaine' ? addD(indD, -7) : indG === 'mois' ? new Date(indD.getFullYear(), indD.getMonth() - 1, 1) : new Date(indD.getFullYear() - 1, indD.getMonth(), 1);
+  const nextD = indG === 'jour' ? addD(indD, 1) : indG === 'semaine' ? addD(indD, 7) : indG === 'mois' ? new Date(indD.getFullYear(), indD.getMonth() + 1, 1) : new Date(indD.getFullYear() + 1, indD.getMonth(), 1);
+  const PP = bucketsOf(indG, prevD), Ap = agg(c, m, PP.from, PP.to);
+  const PT = bucketsOf(indG, today), At = agg(c, m, PT.from, addD(today, 1)), isCur = isoDay(P.from) === isoDay(PT.from);
+  const body = $('indBody');
+  body.innerHTML = '<h2></h2><p class="ccsub inote"></p><div class="bzc igr"></div><div class="inav"><button class="sgDet" aria-label="Période précédente">‹</button><div><b></b><input type="date" aria-label="Choisir une date"></div><button class="sgDet" aria-label="Période suivante">›</button></div>' +
+    '<div class="ibig"><b></b><span></span></div><div class="ich"></div><div class="lgd"></div><div class="istat"></div><div class="ises"></div>';
+  body.querySelector('h2').textContent = m.ico + ' ' + m.lbl;
+  body.querySelector('.inote').textContent = m.note || '';
+  [['jour', 'Jour'], ['semaine', 'Semaine'], ['mois', 'Mois'], ['annee', 'Année']].forEach(([g, t]) => { const b = mk('button'); b.type = 'button'; b.textContent = t; b.classList.toggle('on', indG === g); b.onclick = () => { indG = g; renderInd(); }; body.querySelector('.igr').appendChild(b); });
+  const [bp, bn] = body.querySelectorAll('.inav > button');
+  body.querySelector('.inav b').textContent = P.title;
+  const di = body.querySelector('.inav input'); di.value = isoDay(indD); di.max = isoDay(addD(today, 365));
+  di.onchange = () => { if(di.value){ indD = new Date(di.value + 'T12:00'); renderInd(); } };
+  bp.onclick = () => { indD = prevD; renderInd(); };
+  bn.onclick = () => { indD = nextD; renderInd(); };
+  const fv = v => v == null ? '—' : m.kind === 'count' ? String(Math.round(v)) : m.fmt(v);
+  body.querySelector('.ibig b').textContent = fv(A.v) + (m.kind === 'count' && A.planN ? ' / ' + A.planN : '');
+  body.querySelector('.ibig span').textContent = { count:'séances faites' + (A.planN ? ' / prévues' : ''), sum:'au total sur la période', mean:'en moyenne sur la période', state:'en fin de période' }[m.kind];
+  body.querySelector('.ich').innerHTML = '<p class="chh">' + P.sub + '</p>' + bucketChart(c, m, P.B, { h:130 });
+  body.querySelector('.lgd').innerHTML = '<span><i class="ln"></i>réalisé</span><span><i class="pj"></i>marge prévue</span>' + (m.target != null ? '<span><i class="tg"></i>objectif</span>' : '');
+  // Statistiques
+  const rows = [], add = (k, v, cls) => rows.push([k, v, cls]);
+  const cmp = (lbl, R) => { if(R.v == null || A.v == null) return add(lbl, R.v == null ? '—' : fv(R.v)); const d = A.v - R.v; add(lbl, fv(R.v) + ' (' + (Math.abs(d) < 1e-9 ? '=' : (d > 0 ? '+' : '−') + (m.kind === 'count' ? Math.round(Math.abs(d)) : m.fmt(Math.abs(d)))) + ')', deltaCls(m, d)); };
+  const allL = logsOf(c).filter(l => !m.filter || m.filter(l));
+  const bestOf = (L, f, hi) => L.reduce((b, l) => b == null || (hi ? f(l) > f(b) : f(l) < f(b)) ? l : b, null);
+  const future = P.to > addD(today, 1), refPlan = m.kind === 'sum' && future ? A.planPast : A.plan;
+  const inPlan = refPlan && A.v != null ? (A.v < Math.min(...refPlan) ? 'sous la marge' : A.v > Math.max(...refPlan) ? 'au-dessus de la marge' : 'dans la marge ✓') : null;
+  const BA = P.B.map(x => agg(c, m, x.from, x.to)).filter((x, i) => P.B[i].from <= today);
+  if(m.kind === 'count'){
+    add('Séances faites', String(A.n)); if(A.planN) add('Séances prévues', A.planN + (future && A.planNPast !== A.planN ? ' (dont ' + A.planNPast + ' à ce jour)' : ''));
+    const pn = future ? A.planNPast : A.planN;
+    if(pn) add('Régularité', Math.round(Math.min(A.n, pn) / pn * 100) + ' %', A.n >= pn * 0.8 ? 'up' : 'down');
+    add('Jours actifs', String(new Set(A.logs.map(l => isoDay(l.date))).size));
+    add('Temps total', hm(A.logs.reduce((x, l) => x + l.duree, 0)));
+    add('Distance totale', r1(A.logs.reduce((x, l) => x + (l.dist || 0), 0)) + ' km');
+    const acts = {}; A.logs.forEach(l => acts[l.act] = (acts[l.act] || 0) + 1);
+    if(A.n) add('Par activité', Object.entries(acts).map(([a, n]) => ICO[a] + ' ' + n).join('  '));
+    const types = {}; A.logs.forEach(l => types[TYPE_LBL[l.type] || 'Séance'] = (types[TYPE_LBL[l.type] || 'Séance'] || 0) + 1);
+    if(A.n) add('Par type', Object.entries(types).map(([t, n]) => t + ' ' + n).join(' · '));
+  } else if(m.kind === 'sum' || m.kind === 'mean'){
+    const L = A.logsF || [];
+    if(m.kind === 'sum') add('Total', fv(A.v)); else add('Moyenne', fv(A.v));
+    if(future && m.kind === 'sum'){
+      if(A.planPast) add('Prévu à ce jour (marge)', rng(A.planPast[0], A.planPast[1], fv) + (inPlan ? ' · ' + inPlan : ''), inPlan && inPlan.includes('✓') ? 'up' : inPlan ? 'down' : '');
+      if(A.plan) add('Prévu sur toute la période', rng(A.plan[0], A.plan[1], fv));
+    } else if(A.plan) add('Prévu (marge)', rng(A.plan[0], A.plan[1], fv) + (inPlan ? ' · ' + inPlan : ''), inPlan && inPlan.includes('✓') ? 'up' : inPlan ? 'down' : '');
+    add('Séances prises en compte', String(L.length));
+    if(L.length){
+      if(m.kind === 'sum') add('Moyenne par séance', fv(A.v / L.length));
+      const sorted = L.map(m.val).sort((a, b) => a - b), med = sorted.length % 2 ? sorted[(sorted.length - 1) / 2] : (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2;
+      add('Médiane', fv(med));
+      const hi = bestOf(L, m.val, true), lo = bestOf(L, m.val, false);
+      add('Maximum', fv(m.val(hi)) + ' · ' + fmtD(hi.date));
+      add('Minimum', fv(m.val(lo)) + ' · ' + fmtD(lo.date));
+      if(L.length > 1){ const mu = avg(sorted), sd = Math.sqrt(avg(sorted.map(v => (v - mu) ** 2))); add('Écart-type', fv(sd)); }
+    }
+    const act = BA.filter(x => x.v);
+    if(m.kind === 'sum' && act.length > 1){ add('Moyenne par ' + (indG === 'annee' ? 'mois actif' : 'jour actif'), fv(act.reduce((x, y) => x + y.v, 0) / act.length)); const bb = P.B[BA.indexOf(act.reduce((x, y) => y.v > x.v ? y : x))]; add('Meilleur ' + (indG === 'annee' ? 'mois' : 'jour'), fv(Math.max(...act.map(x => x.v))) + ' · ' + (indG === 'annee' ? cap(bb.from.toLocaleDateString('fr-FR', { month:'long' })) : fmtD(bb.from))); }
+    const rec = bestOf(allL, m.val, !m.lowGood);
+    if(rec) add('Record (tout l\'historique)', fv(m.val(rec)) + ' · ' + fmtD(rec.date));
+  } else {
+    add('Valeur en fin de période', fv(A.v));
+    if(A.start != null && A.v != null){ const d = A.v - A.start; add('Début de période', fv(A.start)); add('Variation sur la période', deltaTxt(m, d), deltaCls(m, d)); }
+    if(A.plan) add('Prévu (marge)', rng(A.plan[0], A.plan[1], fv) + (inPlan ? ' · ' + inPlan : ''), inPlan && inPlan.includes('✓') ? 'up' : inPlan ? 'down' : '');
+    if(m.target != null) add('Objectif', fv(m.target) + (A.v != null ? ' · écart ' + deltaTxt(m, A.v - m.target) : ''));
+    add('Mesures sur la période', String(A.vals.length));
+    if(A.vals.length){ add('Plus haut', fv(A.max)); add('Plus bas', fv(A.min)); add('Moyenne des mesures', fv(avg(A.vals))); }
+    if(A.pts && A.pts.length > 1){ const sl = (A.pts[A.pts.length - 1][1] - A.pts[0][1]) / ((A.pts[A.pts.length - 1][0] - A.pts[0][0]) / WEEKMS || 1); add('Tendance', deltaTxt(m, sl) + ' / semaine', deltaCls(m, sl)); }
+    const all = m.pts.map(p => p[1]);
+    add(m.lowGood ? 'Meilleur (historique)' : 'Record (historique)', fv(m.lowGood ? Math.min(...all) : Math.max(...all)));
+  }
+  if(!A.n && !(A.vals || []).length && A.v == null) rows.unshift(['Aucune donnée sur cette période', '']);
+  cmp('Période précédente', Ap);
+  if(!isCur) cmp(indG === 'jour' ? 'Aujourd\'hui' : 'Période en cours (à ce jour)', At);
+  const st = body.querySelector('.istat');
+  rows.forEach(([k, v, cls]) => { const r = mk('div', '', '<span></span><b></b>'); r.children[0].textContent = k; r.children[1].textContent = v; if(cls) r.children[1].className = cls; st.appendChild(r); });
+  // Séances de la période
+  const L = (m.kind === 'mean' ? A.logsF : A.logs || []).slice().reverse(), ses = body.querySelector('.ises');
+  if(L.length){
+    const hh = mk('div', 'cch', '<p class="chh">Séances de la période (' + L.length + ')</p><button class="sgDet"></button>');
+    const b = hh.querySelector('button'); b.hidden = L.length <= 5; b.textContent = indAll ? 'Moins' : 'Toutes'; b.onclick = () => { indAll = !indAll; renderInd(); };
+    ses.appendChild(hh);
+    (indAll ? L : L.slice(0, 5)).forEach(l => ses.appendChild(logRow(l)));
+  }
+}
+
+/* --- Assemblage de l'onglet --- */
 function renderProgram(box){
   MC = {};
   const c = coach, S = coachStats(c);
-  renderObjective(box, c, S);
-  const nav = mk('div', 'csec');
-  SECS.forEach(([k, i, t]) => { const b = mk('button', k === coachSec ? 'on' : '', '<span>' + i + '</span>' + t); b.type = 'button'; b.onclick = () => { coachSec = k; store.set('coachSec', k); $('coach').scrollTop = 0; renderCoach(); }; nav.appendChild(b); });
-  box.appendChild(nav);
-  if(coachSec === 'semaine') renderSemaine(box, c, S);
-  if(coachSec === 'indic') renderIndic(box, c, S);
-  if(coachSec === 'cal') renderCal(box, c, S);
-  return coachSec;
+  MC.S = S;
+  renderObjSec(box, c, S);
+  renderNextSec(box, c, S);
+  renderCalSec(box, c, S);
+  renderIndSec(box, c, S);
+  renderAnSec(box, c, S);
+  renderHistSec(box, c, S);
+  renderBilanSec(box, c);
 }
 
 /* --- Saisie d'une séance / d'une pesée --- */
@@ -4141,6 +4256,8 @@ function openKg(){
   $('logModal').classList.remove('hidden');
 }
 $('logCancel').onclick = () => $('logModal').classList.add('hidden');
+$('indClose').onclick = () => $('indModal').classList.add('hidden');
+$('indModal').onclick = e => { if(e.target === $('indModal')) $('indModal').classList.add('hidden'); };
 $('logSave').onclick = () => {
   if(lz.mode === 'kg'){
     if(!(lz.kg >= 30 && lz.kg <= 250)){ $('logErr').textContent = 'Indique un poids valide.'; return; }
