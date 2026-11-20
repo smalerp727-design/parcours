@@ -73,6 +73,21 @@
   .sr div{flex:1;min-width:0}
   .sr b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .sr small{color:var(--mu);font-size:12px}
+  .srh{display:flex;align-items:center;justify-content:space-between;padding:8px 10px 4px}
+  .srh b{font-size:12px;color:var(--mu);text-transform:uppercase;letter-spacing:.03em}
+  .srh button{border:none;background:none;color:var(--c);font:600 13px system-ui,sans-serif;cursor:pointer;padding:2px 0}
+  .sr.hr{cursor:pointer;transition:background .15s}
+  .sr.hr small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hb{flex:none;font:700 10px system-ui,sans-serif;text-transform:uppercase;letter-spacing:.03em;padding:3px 6px;border-radius:6px;width:74px;text-align:center}
+  .hb.parcours{background:var(--sel-bg);color:var(--c)}
+  .hb.suggestion{background:#f3e8ff;color:#7e22ce}
+  .dark .hb.suggestion{background:#2e1f45;color:#d8b4fe}
+  #histBody .sr.hr{border:1px solid var(--bd);border-radius:10px;margin-bottom:6px}
+  #histBody .hdel{flex:none;padding:6px 8px}
+  .bzc.hcat{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin:0 0 4px}
+  .hcat button{padding:7px 2px;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #histClear.sure{background:#dc2626;color:#fff;border-color:#dc2626}
+  @media (hover:hover){ .sr.hr:hover{background:var(--hov-bg)} }
   .sr button{border:1px solid var(--bd);background:var(--bg);border-radius:8px;padding:6px 8px;font-size:12px;color:var(--tx)}
   #destChip{flex:none;display:none !important;align-items:center;justify-content:space-between;gap:8px;background:#fef2f2;color:#991b1b;border-radius:10px;padding:6px 6px 6px 12px;font-size:14px;margin-top:8px}
   #destName{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -770,6 +785,14 @@
     <div id="bzBody"></div>
     <p id="bzErr"></p>
     <div class="btns"><button id="bzPrev">Précédent</button><button id="bzNext" class="primary">Suivant</button></div>
+  </div>
+</div>
+
+<div id="histModal" class="modal hidden">
+  <div class="card">
+    <h2>Historique des recherches</h2>
+    <div id="histBody"></div>
+    <div class="btns"><button id="histClear">Effacer</button><button id="histClose" class="primary">Fermer</button></div>
   </div>
 </div>
 
@@ -1563,6 +1586,7 @@ async function generate(){
     if(target > 100000){ msg('Objectif limité à 100 km.', true); return; }
   }
   const run = ++genRun, base = PROFILES[st.mode];
+  logHist('parcours');
   if(tab !== 'parcours') setTab('parcours');
   const keepSize = keepSheetOnce; keepSheetOnce = false;
   if(!WIDE.matches && sheetReady && !keepSize){ $('panel').classList.remove('open'); setSheet('peek'); }
@@ -1686,9 +1710,101 @@ async function searchPlaces(q){
   box.hidden = false;
 }
 function closeSearch(){ $('sres').hidden = true; $('q').value = ''; $('q').blur(); }
+/* ---------- Historique des recherches : parcours générés et suggestions ---------- */
+let hist = store.get('hist', []), histCat = 'tout';
+const HIST_MAX = 100;   // les plus anciennes s'effacent d'elles-mêmes
+function histLabel(e){
+  return MODE_ICO[e.mode] + ' ' + (e.type === 'boucle' ? 'Boucle' : 'Aller') + ' · ' + (e.dest ? '→ ' + e.dest.name : e.unit === 'km' ? r1(e.val) + ' km' : fmtMin(e.val));
+}
+function histWhen(t){
+  const d = new Date(t), m = Math.round((Date.now() - d) / 60000);
+  if(m < 1) return 'à l\'instant';
+  if(m < 60) return 'il y a ' + m + ' min';
+  if(isoDay(d) === isoDay(new Date())) return 'aujourd\'hui ' + d.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
+  return d.toLocaleDateString('fr-FR', { day:'numeric', month:'short' }) + ' ' + d.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
+}
+function logHist(kind){
+  if(!start) return;
+  const e = { id:Date.now().toString(36) + Math.random().toString(36).slice(2, 5), t:new Date().toISOString(), kind, mode:st.mode, type:st.type, unit:st.unit, val:st.val,
+    start:[+start[0].toFixed(5), +start[1].toFixed(5)], dest:dest ? { ll:dest.ll, name:dest.name } : null };
+  // même recherche déjà faite (mêmes réglages, départ à moins de 150 m) : elle remonte en tête au lieu d'être dupliquée
+  const same = x => x.kind === e.kind && x.mode === e.mode && x.type === e.type && (e.dest ? x.dest && hav(x.dest.ll, e.dest.ll) < 50 : !x.dest && x.unit === e.unit && x.val === e.val) && hav(x.start, e.start) < 150;
+  const old = hist.find(same);
+  if(old){ e.name = old.name; hist = hist.filter(x => x !== old); }
+  hist.unshift(e); hist = hist.slice(0, HIST_MAX); store.set('hist', hist);
+  if(!e.name) nameOf(e.start).then(n => { e.name = n; store.set('hist', hist); });
+}
+// Relancer une recherche de l'historique : mêmes réglages, même départ (et arrivée)
+function replayHist(e){
+  closeSearch(); $('histModal').classList.add('hidden');
+  const click = (seg, v) => { const b = document.querySelector('#' + seg + ' [data-v="' + v + '"]'); if(b && !b.classList.contains('on')) b.click(); };
+  click('segMode', e.mode);
+  if(!e.dest){ clearDest(); click('segType', e.type); click('segUnit', e.unit); st.val = e.val; store.set('st', st); setVal(e.val); hint(); }
+  setStart(e.start);
+  if(e.dest) setDest(e.dest.ll, e.dest.name);
+  else centerVisible(e.start, Math.max(map.getZoom(), 14));
+  if(e.kind === 'suggestion'){ setTab('sugg'); applySugg(); } else generate();
+}
+function histRow(e, compact){
+  const r = mk('div', 'sr hr', '<span class="hb"></span><div><b></b><small></small></div>');
+  const bd = r.querySelector('.hb'); bd.className = 'hb ' + e.kind; bd.textContent = e.kind === 'suggestion' ? 'Suggestion' : 'Parcours';
+  r.querySelector('b').textContent = histLabel(e);
+  r.querySelector('small').textContent = [e.name, histWhen(e.t)].filter(Boolean).join(' · ');
+  r.title = 'Relancer cette recherche';
+  r.onclick = () => replayHist(e);
+  if(!compact){
+    const del = mk('button', 'hdel', '🗑'); del.type = 'button'; del.title = 'Retirer de l\'historique';
+    del.onclick = ev => { ev.stopPropagation(); hist = hist.filter(x => x !== e); store.set('hist', hist); renderHist(); };
+    r.appendChild(del);
+  }
+  return r;
+}
+// Dans la barre de recherche (vide) : les 4 dernières + accès à tout l'historique
+function showRecent(){
+  if(!hist.length || $('q').value.trim()) return;
+  const box = $('sres'); box.innerHTML = '';
+  const hd = mk('div', 'srh', '<b>Récent</b><button type="button">Tout l\'historique ›</button>');
+  hd.querySelector('button').onmousedown = ev => ev.preventDefault();
+  hd.querySelector('button').onclick = () => { closeSearch(); openHist(); };
+  box.appendChild(hd);
+  hist.slice(0, 4).forEach(e => box.appendChild(histRow(e, true)));
+  box.hidden = false;
+}
+function openHist(){ histCat = 'tout'; renderHist(); $('histModal').classList.remove('hidden'); }
+function renderHist(){
+  const box = $('histBody'); box.innerHTML = '';
+  const bar = mk('div', 'bzc hcat');
+  [['tout', 'Tout'], ['parcours', 'Parcours'], ['suggestion', 'Suggestions']].forEach(([k, t]) => {
+    const n = k === 'tout' ? hist.length : hist.filter(e => e.kind === k).length;
+    const b = mk('button', k === histCat ? 'on' : ''); b.type = 'button'; b.textContent = t + (n ? ' ' + n : '');
+    b.onclick = () => { histCat = k; renderHist(); };
+    bar.appendChild(b);
+  });
+  box.appendChild(bar);
+  const list = hist.filter(e => histCat === 'tout' || e.kind === histCat);
+  if(!list.length){ box.appendChild(mk('p', 'empty', 'Aucune recherche pour l\'instant.<br>Chaque génération de parcours et chaque recherche de suggestions s\'ajoute ici.')); }
+  let day = '';
+  list.forEach(e => {
+    const d = new Date(e.t), k = isoDay(d), y = isoDay(addD(new Date(), -1));
+    if(k !== day){ day = k; box.appendChild(mk('p', 'kgrp', k === isoDay(new Date()) ? 'Aujourd\'hui' : k === y ? 'Hier' : cap(d.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' })))); }
+    box.appendChild(histRow(e));
+  });
+  $('histClear').hidden = !hist.length;
+}
+$('histClose').onclick = () => $('histModal').classList.add('hidden');
+$('histModal').onclick = e => { if(e.target.id === 'histModal') $('histModal').classList.add('hidden'); };
+$('histClear').onclick = () => {
+  const b = $('histClear');
+  if(!b.classList.contains('sure')){ b.classList.add('sure'); b.textContent = 'Tout effacer ?'; setTimeout(() => { b.classList.remove('sure'); b.textContent = 'Effacer'; }, 3000); return; }
+  hist = []; store.set('hist', hist); b.classList.remove('sure'); b.textContent = 'Effacer'; renderHist();
+};
+$('q').addEventListener('focus', showRecent);
+document.addEventListener('pointerdown', e => { if(!$('sres').hidden && !e.target.closest('#search') && !$('q').value.trim()) $('sres').hidden = true; });
+
 $('q').addEventListener('input', () => {
   clearTimeout(sTimer);
   const v = $('q').value.trim();
+  if(!v){ $('sres').hidden = true; showRecent(); return; }
   if(v.length < 3){ $('sres').hidden = true; return; }
   sTimer = setTimeout(() => searchPlaces(v), 350);
 });
@@ -3137,6 +3253,7 @@ async function runSugg(){
   const key = [start[0].toFixed(4), start[1].toFixed(4), st.mode, st.type, Math.round(target)].join('|');
   if(key === suggKey){ renderSugg(); return; }
   const run = ++suggRun;
+  logHist('suggestion');
   suggKey = key; suggPlaces = []; suggTours = []; sugIdx = 0; sugHead = '';
   const radius = loop ? target * 0.42 : target / 1.3;
   sugBusy = '🔎 Recherche des lieux à visiter à moins de ' + fmtKm(radius) + '…';
