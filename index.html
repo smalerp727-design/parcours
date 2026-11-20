@@ -24,18 +24,13 @@
   .fab{display:flex;align-items:center;justify-content:center;padding:0}
   .fab svg{width:24px;height:24px;fill:var(--tx2);display:block}
   #search{position:relative}
-  #mic{position:absolute;right:4px;top:0;height:38px;width:38px;border:none;background:none;border-radius:50%;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
-  #mic svg{width:22px;height:22px;fill:var(--tx2)}
-  #mic.on svg{fill:#fff}
-  #mic.on{background:#dc2626;animation:pulse 1.2s infinite}
+  #mic.on svg{fill:#fff !important}
+  #mic.on{background:#dc2626 !important;animation:pulse 1.2s infinite}
   @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(220,38,38,.5)}100%{box-shadow:0 0 0 12px rgba(220,38,38,0)}}
-  #search.has-mic #q{padding-right:44px}
-  #btnPlan{position:absolute;right:42px;top:0;height:38px;width:38px;border:none;background:none;border-radius:50%;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
+  #btnPlan{position:absolute;right:4px;top:0;height:38px;width:38px;border:none;background:none;border-radius:50%;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
   #btnPlan svg{width:22px;height:22px;fill:var(--c)}
-  #q{padding-right:84px !important}
-  #search.floating #btnPlan{top:4px;right:44px}
-  #search:not(.has-mic) #btnPlan{right:4px}
-  #search:not(.has-mic) #q{padding-right:44px !important}
+  #q{padding-right:44px !important}
+  #search.floating #btnPlan{top:4px;right:5px}
   #ctxMenu{position:fixed;z-index:1500;background:var(--bg);border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,.3);padding:6px;display:flex;flex-direction:column;min-width:210px}
   #ctxMenu[hidden]{display:none}
   #ctxMenu button{border:none;background:none;text-align:left;padding:11px 12px;border-radius:8px;font:500 15px system-ui,sans-serif;color:var(--tx);cursor:pointer}
@@ -63,7 +58,6 @@
   .pbtns button{flex:1;padding:9px;border:1px solid var(--bd);background:var(--bg);border-radius:9px;font-size:14px;color:var(--tx);cursor:pointer}
   #planSum{text-align:center;font-size:15px;margin:12px 0 4px;min-height:20px}
   .stp{width:26px;height:26px;border-radius:50%;background:#7c3aed;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);color:#fff;font:700 12px/22px system-ui,sans-serif;text-align:center}
-  #search.floating #mic{top:4px;right:5px}
   #q{width:100%;font-size:15px;padding:9px 12px;border:1px solid var(--bd);border-radius:10px;margin-bottom:10px;background:var(--n1)}
   #sres{position:absolute;left:0;right:0;top:44px;z-index:5;background:var(--bg);border:1px solid var(--bd);border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.18);max-height:260px;overflow-y:auto}
   .sr{display:flex;align-items:center;gap:6px;padding:8px 10px;border-bottom:1px solid var(--n3)}
@@ -85,12 +79,14 @@
   .chk small{display:block;font-size:12px;color:var(--mu)}
   .tag.elev{background:#eef2ff;color:#3730a3}
   #tabs{flex:none;display:flex;gap:6px;margin-top:8px}
-  #tabs button{flex:1;border:none;background:none;padding:7px 4px;border-radius:9px;font:600 14px system-ui,sans-serif;color:var(--mu);border-bottom:2px solid transparent;border-radius:0}
+  #tabs button{flex:1;min-width:0;border:none;background:none;padding:7px 2px;border-radius:9px;font:600 14px system-ui,sans-serif;color:var(--mu);border-bottom:2px solid transparent;border-radius:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #tabs button i{font-style:normal;margin-right:5px}
+  @media (max-width:380px){ #tabs button{font-size:13px} #tabs button i{margin-right:3px} }
   #tabs button.on{color:var(--c);border-bottom-color:var(--c)}
   #coach{flex:1 1 auto;min-height:0;overflow-y:auto;margin:8px -14px 0;padding:0 14px 14px;overscroll-behavior:contain}
-  #panel[data-state=peek] #coach > :not(.nxs){display:none}
-  #panel[data-state=peek] #coach .nxs > :not(.cur){display:none}
-  #panel[data-state=peek] #coach .nxs{border:none;padding:0;margin:0;background:none}
+  body:not(.wide) #panel[data-state=peek] #coach > :not(.nxs){display:none}
+  body:not(.wide) #panel[data-state=peek] #coach .nxs > :not(.cur){display:none}
+  body:not(.wide) #panel[data-state=peek] #coach .nxs{border:none;padding:0;margin:0;background:none}
   #demoList{display:flex;flex-direction:column;gap:6px}
   #demoList button{text-align:left;border:1px solid var(--bd);background:var(--bg);border-radius:9px;padding:8px 10px;font-size:14px;color:var(--tx);cursor:pointer}
   #demoList button.on{border-color:var(--c);background:var(--sel-bg);color:var(--c);font-weight:600}
@@ -124,7 +120,8 @@
   .ses .sm{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-size:13px;font-weight:600;text-align:right}
   .ses .sm small{font-weight:400}
   .sok{color:var(--c);font-size:18px;line-height:1}
-  .ccacts{margin-top:8px}
+  .ccacts{margin-top:8px;display:grid !important;grid-template-columns:1fr 1fr;gap:8px}
+  .ccacts .sgDet{margin:0;width:100%;padding:8px 6px}
   .kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:8px 0}
   .kpi{background:var(--n1);border:1px solid var(--n3);border-radius:10px;padding:8px 10px}
   .kpi small{display:block;color:var(--mu);font-size:12px}
@@ -158,7 +155,7 @@
   .sessbar > div{flex:1;min-width:0}
   .sessbar b{display:block;font-size:14px}
   .sessbar small{display:block;color:var(--mu);font-size:12px}
-  #panel[data-state=peek] .sessbar{display:none}
+  body:not(.wide) #panel[data-state=peek] .sessbar{display:none}
   .evoR{width:100%;accent-color:var(--c);margin:10px 0 4px}
   .evoQ{flex-wrap:wrap;gap:6px;margin-bottom:6px}
   .evoQ button{padding:5px 10px;font-size:13px}
@@ -265,7 +262,7 @@
   .cal .nav:disabled{opacity:.35;cursor:default}
   .cgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;margin-top:8px}
   .cdh{text-align:center;font-size:11px;font-weight:700;color:var(--mu);padding-bottom:2px}
-  .cd{position:relative;min-width:0;aspect-ratio:1 / 1.05;border:1px solid transparent;border-radius:9px;background:none;font:600 13px system-ui,sans-serif;color:var(--tx);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:0;transition:border-color .15s, background .15s}
+  .cd{position:relative;min-width:0;height:46px;border:1px solid transparent;border-radius:9px;background:none;font:600 13px system-ui,sans-serif;color:var(--tx);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:0;transition:border-color .15s, background .15s}
   .cd.pp{background:var(--n2)}
   .cd.pc{background:var(--c-soft)}
   .cd.out{opacity:.38}
@@ -290,7 +287,7 @@
   /* Coach : prochaine séance, calendrier semaine / mois, indicateurs, fenêtre d'indicateur */
   .nxc{margin:10px 0 0;gap:8px;padding:6px 8px}
   .nxc .nxi{display:flex;align-items:center;justify-content:center;font-size:24px}
-  .nxc div small{white-space:normal}
+  .it.sg.nxc div small{white-space:normal;overflow:visible;text-overflow:clip}
   .nxc b{line-height:1.25}
   .nxd{font-size:13px !important;color:var(--mu);margin:6px 2px 4px !important}
   .nxs .ses.hs .sd{font-size:12px}
@@ -352,7 +349,11 @@
   .dark .chart text{fill:var(--mu)}
   .dark .modal{background:rgba(0,0,0,.6)}
   .dark .fab svg{fill:var(--tx2)}
+  .dark .nxc .nxi{background:var(--n2) !important}
   .dark .ferr, .dark #info .err{color:#fca5a5}
+  .sv input{text-overflow:ellipsis}
+  #segType button, #segMode button, #segUnit button{white-space:nowrap}
+  .istat b{white-space:nowrap}
   .bzc.rpe{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
   .bzc.rpe button{min-width:0;padding:7px 0}
   @media (hover:hover){ .ses:not(.ok):hover{background:var(--hov-bg)} }
@@ -384,10 +385,10 @@
   .sg-h{font-weight:700;font-size:15px;margin:4px 0 8px}
   #sugg .it.sg{margin-bottom:8px;padding:6px 8px;gap:8px}
   #sugg .it.sg.cur,#sugg .pc.cur{border-color:var(--c);background:var(--sel-bg);box-shadow:0 0 0 1px var(--c) inset}
-  #panel[data-state=peek] #sugg .it.sg.cur{background:var(--bg);box-shadow:none;border-color:var(--bd)}
+  body:not(.wide) #panel[data-state=peek] #sugg .it.sg.cur{background:var(--bg);box-shadow:none;border-color:var(--bd)}
   .pc{cursor:pointer}
-  #panel[data-state=peek] #sugg > :not(.cur):not(.sg-msg){display:none}
-  #panel[data-state=peek] #sugg .cur{touch-action:none;will-change:transform}
+  body:not(.wide) #panel[data-state=peek] #sugg > :not(.cur):not(.sg-msg){display:none}
+  body:not(.wide) #panel[data-state=peek] #sugg .cur{touch-action:none;will-change:transform}
   .sg-h{display:flex;align-items:center;gap:8px}
   .sgDet{flex:none;order:2;margin-left:auto;border:1px solid var(--bd);background:var(--bg);border-radius:8px;padding:5px 9px;font:600 13px system-ui,sans-serif;color:var(--tx);cursor:pointer}
   .sgDet.on{background:var(--sel-bg);border-color:var(--c);color:var(--c)}
@@ -436,7 +437,8 @@
   .tag.warn{background:#fef3c7;color:#92400e}
   #btnCfg{top:calc(12px + env(safe-area-inset-top))}
   #btnLoc{top:auto;bottom:calc(var(--sheet, 170px) + 12px);transition:bottom .28s cubic-bezier(.2,.8,.2,1),opacity .2s}
-  body.sheet-drag #btnLoc,body.sheet-drag #routeActs{transition:none}
+  #mic{top:auto;bottom:calc(var(--sheet, 170px) + 66px);transition:bottom .28s cubic-bezier(.2,.8,.2,1),opacity .2s,background-color .15s}
+  body.sheet-drag #btnLoc,body.sheet-drag #mic,body.sheet-drag #routeActs{transition:none}
   /* Survol à la souris : pré-sélection discrète, dans le même style que la sélection */
   .fab,.seg button,#tabs button,.it,.pc,.tc,.primary,.vbtn,#chip,.star,.sgDet,.pill,#styles button,.sr,.psr button,.pa button,.btns button,.sv button,#ctxMenu button,#vPrev,#vNext,#navStop,#navMaps,.step button{transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,filter .15s}
   /* Règles de design communes :
@@ -502,6 +504,7 @@
   body.nav #navbar{display:block}
   body.nav #panel,body.nav #search,body.nav #btnCfg,body.nav #btnPhoto,body.nav #btnSaved{display:none !important}
   body.nav #btnLoc{bottom:calc(112px + env(safe-area-inset-bottom)) !important;opacity:1;pointer-events:auto}
+  body.nav #mic{bottom:calc(166px + env(safe-area-inset-bottom)) !important;opacity:1;pointer-events:auto}
   #navTrack{height:5px;background:var(--bd);border-radius:3px;margin:12px 0 10px;overflow:hidden}
   #navProg{height:100%;width:0;background:var(--c);transition:width .5s}
   .nvr{display:flex;align-items:center;gap:8px}
@@ -511,7 +514,7 @@
   #navMaps{font-size:13px;color:var(--c);text-decoration:none;border:1px solid var(--bd);border-radius:9px;padding:9px 10px;white-space:nowrap}
   #navStop{border:none;background:#b91c1c;color:#fff;border-radius:10px;padding:10px 14px;font:700 15px system-ui,sans-serif;cursor:pointer}
   #navAlert{position:fixed;top:calc(12px + env(safe-area-inset-top));left:12px;right:12px;z-index:1100;background:#fef3c7;color:#92400e;border-radius:12px;padding:12px 14px;font:600 15px system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.25);text-align:center}
-  body.sheet-tall #btnLoc{opacity:0;pointer-events:none}
+  body.sheet-tall #btnLoc, body.sheet-tall #mic{opacity:0;pointer-events:none}
   #panel{position:fixed;left:0;right:0;bottom:0;z-index:1000;background:var(--bg);border-radius:18px 18px 0 0;box-shadow:0 -2px 12px rgba(0,0,0,.2);padding:0 14px env(safe-area-inset-bottom);display:flex;flex-direction:column;height:170px;max-height:100%;transition:height .28s cubic-bezier(.2,.8,.2,1)}
   #panel.dragging{transition:none}
   #info .cnt{color:var(--mu)}
@@ -641,6 +644,7 @@
   /* Écran large (PC, tablette) ou téléphone en paysage : panneau sur le côté */
   @media (min-width:800px), (orientation:landscape) and (max-height:520px){
     #btnLoc{bottom:calc(24px + env(safe-area-inset-bottom)) !important;opacity:1 !important;pointer-events:auto !important}
+    #mic{bottom:calc(78px + env(safe-area-inset-bottom)) !important;opacity:1 !important;pointer-events:auto !important}
     #routeActs{bottom:calc(26px + env(safe-area-inset-bottom)) !important}
     body.sheet-tall:not(.nav) #routeActs{opacity:1}
     body.sheet-tall:not(.nav) #routeActs > button.vis{pointer-events:auto !important}
@@ -657,9 +661,15 @@
     #list .it{flex:none}
     #panel{top:calc(12px + env(safe-area-inset-top));bottom:auto;left:calc(12px + env(safe-area-inset-left));right:auto;width:340px;height:auto !important;max-height:calc(100% - 24px);overflow:visible;display:flex;flex-direction:column;border-radius:18px;padding:14px;transition:none;box-shadow:0 2px 12px rgba(0,0,0,.2)}
   }
+  @media (min-width:1100px){ #panel{width:390px} }
+  @media (min-width:1600px){ #panel{width:420px} }
   /* Téléphone en paysage : panneau plus compact */
   @media (orientation:landscape) and (max-height:520px){
-    #panel{width:300px;padding:10px}
+    #panel{width:380px;padding:10px;overflow-y:auto !important;scrollbar-width:thin}
+    /* peu de hauteur : tout le panneau défile d'un bloc, les onglets restent visibles */
+    #list, #sugg, #coach{overflow:visible !important;flex:none !important;max-height:none !important}
+    #tabs{position:sticky;top:-10px;z-index:4;background:var(--bg);padding-top:4px}
+    #tabs button i{display:none}
     .seg{margin-bottom:6px}
     .seg button{padding:6px 4px;font-size:14px}
     #val{font-size:17px;padding:4px 0}
@@ -686,6 +696,7 @@
     <button id="navStop">■ Arrêter</button>
   </div>
 </div>
+<button id="mic" class="fab" title="Commande vocale" hidden><svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5.3-3a5.3 5.3 0 0 1-10.6 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-1.7z"/></svg></button>
 <button id="btnLoc" class="fab" title="Ma position"><svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm8.94 3A8.99 8.99 0 0 0 13 3.06V1h-2v2.06A8.99 8.99 0 0 0 3.06 11H1v2h2.06A8.99 8.99 0 0 0 11 20.94V23h2v-2.06A8.99 8.99 0 0 0 20.94 13H23v-2h-2.06zM12 19a7 7 0 1 1 0-14 7 7 0 0 1 0 14z"/></svg></button>
 <button id="btnPhoto" class="fab" title="Ajouter des photos ou vidéos"><svg viewBox="0 0 24 24" style="transform:translate(1px,0)"><path d="M3 4V1h2v3h3v2H5v3H3V6H0V4h3zm3 6V7h3V4h7l1.83 2H21a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V10h3zm7 9a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm-3.2-5a3.2 3.2 0 1 0 6.4 0 3.2 3.2 0 0 0-6.4 0z"/></svg></button>
 <input id="mediaIn" type="file" accept="image/*,video/*" multiple hidden>
@@ -782,7 +793,6 @@
   <div id="search">
     <input id="q" type="search" placeholder="Rechercher un lieu, une adresse…" autocomplete="off" enterkeyhint="search">
     <button id="btnPlan" title="Itinéraire avec étapes"><svg viewBox="0 0 24 24"><path d="M21.71 11.29l-9-9a1 1 0 0 0-1.42 0l-9 9a1 1 0 0 0 0 1.42l9 9a1 1 0 0 0 1.42 0l9-9a1 1 0 0 0 0-1.42zM14 14.5V12h-4v3H8v-4a1 1 0 0 1 1-1h5V7.5l3.5 3.5-3.5 3.5z"/></svg></button>
-    <button id="mic" title="Recherche vocale" hidden><svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5.3-3a5.3 5.3 0 0 1-10.6 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-1.7z"/></svg></button>
     <div id="sres" hidden></div>
   </div>
   <div class="row1">
@@ -816,7 +826,7 @@
   </div>
   <div id="destChip" hidden><span id="destName"></span><button id="destClear" title="Retirer l'arrivée">✕ Retirer</button></div>
   <div id="info"></div>
-  <div id="tabs"><button data-t="parcours" class="on">🗺️ Parcours</button><button data-t="sugg">✨ Suggestions</button><button data-t="coach">💪 Coach</button></div>
+  <div id="tabs"><button data-t="parcours" class="on"><i>🗺️</i>Parcours</button><button data-t="sugg"><i>✨</i>Suggestions</button><button data-t="coach"><i>💪</i>Coach</button></div>
   <div id="sessBar" class="sessbar" hidden></div>
   <div id="list"></div>
   <div id="sugg" hidden></div>
@@ -876,6 +886,8 @@ const THEMES = {
 };
 let theme = store.get('theme', { t:'emeraude', m:'clair' });
 const TC = {};
+function r1(x){ return (Math.round(x * 10) / 10).toString().replace('.', ','); }
+const d1 = x => x.toFixed(1).replace('.', ',');   // toujours un chiffre après la virgule (5,0 km)
 function mixHex(a, b, t){
   const p = x => [1, 3, 5].map(i => parseInt(x.slice(i, i + 2), 16));
   const A = p(a), B = p(b);
@@ -980,6 +992,8 @@ flashAttribution();
 
 /* ---------- Mise en page selon la taille de la fenêtre ---------- */
 const WIDE = window.matchMedia('(min-width:800px), (orientation:landscape) and (max-height:520px)');
+const syncWide = () => document.body.classList.toggle('wide', WIDE.matches);
+syncWide(); WIDE.addEventListener && WIDE.addEventListener('change', syncWide);
 // Marges = ce qui recouvre la carte : barre de recherche, boutons ronds, tiroir (sa hauteur finale) ou panneau PC
 function visPad(){
   const p = $('panel');
@@ -1108,7 +1122,7 @@ function targetMeters(){
 }
 function fmtMin(m){
   m = Math.round(m);
-  return m < 60 ? m + ' min' : Math.floor(m/60) + ' h ' + String(m % 60).padStart(2, '0');
+  return m < 60 ? m + '\u00a0min' : Math.floor(m/60) + '\u00a0h\u00a0' + String(m % 60).padStart(2, '0');   // espaces insécables : jamais coupé
 }
 function hint(){
   const t = targetMeters();
@@ -1414,7 +1428,7 @@ function renderList(){
     b.setAttribute('role', 'button'); b.tabIndex = 0;
     const tag = elevTag(c);
     b.innerHTML = '<span class="n">' + (i + 1) + '</span><div><b></b><small></small>' + tag + '</div>' +
-      '<span class="km">' + km.toFixed(1) + ' km<small>' + (s.r ? 'A/R · ' : '') + '≈ ' + fmtMin(km / speed() * 60) + '</small></span>';
+      '<span class="km">' + d1(km) + ' km<small>' + (s.r ? 'A/R · ' : '') + '≈ ' + fmtMin(km / speed() * 60) + '</small></span>';
     b.querySelector('b').textContent = titleOf(c, i);
     b.querySelector('div small').textContent = subOf(c);
     b.onclick = () => pick(c);
@@ -1622,7 +1636,7 @@ async function searchPlaces(q){
     row.className = 'sr';
     row.innerHTML = '<div><b></b><small></small></div><button data-a="start">Départ</button><button data-a="dest">Arrivée</button>';
     row.querySelector('b').textContent = lb.name;
-    row.querySelector('small').textContent = [lb.sub, (km < 10 ? km.toFixed(1) : Math.round(km)) + ' km'].filter(Boolean).join(' · ');
+    row.querySelector('small').textContent = [lb.sub, (km < 10 ? d1(km) : Math.round(km)) + ' km'].filter(Boolean).join(' · ');
     row.querySelector('[data-a=start]').onclick = () => {
       setStart(ll); centerVisible(ll, 15); closeSearch(); msg('Départ : ' + lb.name);
     };
@@ -1642,7 +1656,6 @@ $('q').addEventListener('input', () => {
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 if(SR){
   $('mic').hidden = false;
-  $('search').classList.add('has-mic');
   let rec = null;
   $('mic').onclick = () => {
     if(rec){ rec.stop(); return; }
@@ -1731,7 +1744,7 @@ function elevTag(c){
 }
 function routeInfo(c){
   const s = statsOf(c), km = s.dist / 1000;
-  return '<b>' + km.toFixed(1) + ' km</b>' + (s.r ? ' A/R' : '') + ' · ≈ ' + fmtMin(km / speed() * 60) +
+  return '<b>' + d1(km) + ' km</b>' + (s.r ? ' A/R' : '') + ' · ≈ ' + fmtMin(km / speed() * 60) +
     (s.up != null ? ' · ↗ ' + s.up + ' m' : '') +
     (candidates.length > 1 && candidates.includes(c) ? ' · <span class="cnt">' + (candidates.indexOf(c) + 1) + '/' + candidates.length + '</span>' : '');
 }
@@ -1857,7 +1870,7 @@ function renderSaved(){
       candidates.forEach(c => { if(c.savedId === s.id) c.savedName = s.name; });
       renderList();
     };
-    row.querySelector('small').textContent = [MODE_ICO[s.mode] || '', (s.distance / 1000).toFixed(1) + ' km', s.kind === 'boucle' ? 'boucle' : 'aller simple', d].filter(Boolean).join(' · ');
+    row.querySelector('small').textContent = [MODE_ICO[s.mode] || '', d1(s.distance / 1000) + ' km', s.kind === 'boucle' ? 'boucle' : 'aller simple', d].filter(Boolean).join(' · ');
     row.querySelector('.see').onclick = () => showSaved(s);
     const del = row.querySelector('.del');
     del.onclick = () => {   // 1er appui : demande confirmation, 2e appui : supprime
@@ -2099,7 +2112,7 @@ async function loadPhotos(rt){
     return m.on('click', () => openGallery([p], 0));
   });
   photoLayer.addLayers(markers);
-  $('info').innerHTML = base + ' · 📷 ' + (all.length ? all.length + ' photo' + (all.length > 1 ? 's' : '') : 'aucune photo');
+  $('info').innerHTML = base + (all.length ? ' · 📷 ' + all.length + ' photo' + (all.length > 1 ? 's' : '') : '');
 }
 
 
@@ -2340,8 +2353,8 @@ function stopNav(){
 }
 function navBar(main){
   const el = Math.round((Date.now() - nav.t0) / 60000), done = nav.arc[nav.idx], left = Math.max(0, nav.total - done);
-  $('navMain').textContent = main || (fmtKm(left) + ' restants · ≈ ' + fmtMin(left / 1000 / speed() * 60));
-  $('navSub').textContent = '⏱ ' + fmtMin(el) + ' · ' + fmtKm(done) + ' parcourus';
+  $('navMain').textContent = main || (fmtKm(left).replace(' ', '\u00a0') + '\u00a0restants\u00a0· ≈\u00a0' + fmtMin(left / 1000 / speed() * 60).replace(/ /g, '\u00a0'));
+  $('navSub').textContent = '⏱\u00a0' + fmtMin(el) + ' · ' + fmtKm(done).replace(' ', '\u00a0') + '\u00a0parcourus';
   $('navProg').style.width = Math.min(100, done / nav.total * 100) + '%';
 }
 function navUpdate(ll){
@@ -2809,7 +2822,7 @@ function tourCard(c){
   const km = c.distance / 1000, n = c.places.length;
   return miniCard(c.places[0].thumb, 'Visite · ' + c.places.slice(0, 2).map(p => p.title).join(', ') + (n > 2 ? ' +' + (n - 2) : ''),
     n + ' lieu' + (n > 1 ? 'x' : '') + ' à voir · côté ' + dirOf(c.brg),
-    km.toFixed(1) + ' km<small>≈ ' + fmtMin(km / speed() * 60) + '</small>',
+    d1(km) + ' km<small>≈ ' + fmtMin(km / speed() * 60) + '</small>',
     () => viewTour(c),
     () => openGallery(c.places.map(x => ({ img:x.thumb, link:x.url, title:x.title, credit:x.extract + ' — Wikipédia' })), 0));
 }
@@ -2834,7 +2847,7 @@ function placeBig(p){
 function tourBig(c){
   const km = c.distance / 1000, d = document.createElement('div');
   d.className = 'tc';
-  d.innerHTML = '<div class="tch"><div><b></b><small></small></div><span class="km">' + km.toFixed(1) + ' km<small>≈ ' +
+  d.innerHTML = '<div class="tch"><div><b></b><small></small></div><span class="km">' + d1(km) + ' km<small>≈ ' +
     fmtMin(km / speed() * 60) + '</small></span></div><div class="tcp"></div><div class="tcl"></div><button class="vbtn wide">Voir parcours</button>';
   d.querySelector('b').textContent = 'Balade · ' + c.places.length + ' lieu' + (c.places.length > 1 ? 'x' : '') + ' à voir';
   d.querySelector('small').textContent = 'côté ' + dirOf(c.brg);
@@ -3019,7 +3032,7 @@ function bilan(c){
   const fcmax = Math.round(208 - 0.7 * p.age);
   return { imc, imcCat, base, jour, vo2, vma, niveau, fcmax, alerte: c.sante.some(Boolean) };
 }
-const r1 = x => (Math.round(x * 10) / 10).toString().replace('.', ',');
+
 const allure = kmh => { const m = 60 / kmh, s = Math.round((m % 1) * 60); return Math.floor(m) + '\'' + String(s).padStart(2, '0') + '" /km'; };
 
 /* --- Tableau de bord --- */
@@ -3943,27 +3956,27 @@ function IND(c){
   const SP = { marche:spd('marche'), course:spd('course'), velo:spd('velo') };
   const efOf = l => l.act === main && ['ef', 'long', undefined].includes(l.type) && !!speedOf(l);
   const list = [
-    { k:'seances', ico:'✅', lbl:'Séances', kind:'count', fmt:v => String(Math.round(v)), note:'séances faites (et prévues)' },
-    { k:'duree', ico:'⏱️', lbl:'Temps d\'activité', kind:'sum', fmt:hm, val:l => l.duree, plan:s => [s.duree * 0.85, s.duree * 1.08], note:'temps total' },
-    { k:'dist', ico:'📏', lbl:'Distance', kind:'sum', fmt:v => r1(v) + ' km', val:l => l.dist || 0, plan:s => { const v = SP[s.act] * s.duree / 60; return [v * 0.85, v * 1.1]; }, note:'toutes activités' },
-    { k:'vit', ico:'⚡', lbl:'Vitesse endurance', kind:'mean', fmt:v => r1(v) + ' km/h', filter:efOf, val:speedOf, plan:s => s.v0 ? [s.v0 * (1 + 0.001 * s.wk), s.v0 * (1 + 0.005 * s.wk)] : null, note:ACT[main].split(' ')[1].toLowerCase() + ', séances d\'endurance' },
-    { k:'charge', ico:'🔋', lbl:'Charge', kind:'sum', fmt:v => String(Math.round(v)), val:l => l.duree * (l.rpe || 5), plan:s => { const r = rpeT(s); return [s.duree * 0.85 * r[0], s.duree * 1.08 * r[1]]; }, note:'durée (min) × effort ressenti' },
-    { k:'rpe', ico:'😮‍💨', lbl:'Effort ressenti', kind:'mean', fmt:v => r1(v) + '/10', filter:l => !!l.rpe, val:l => l.rpe, plan:rpeT, note:'1 = très facile, 10 = maximal' },
-    { k:'fc', ico:'❤️', lbl:'FC moyenne', kind:'mean', fmt:v => Math.round(v) + ' bpm', filter:l => !!l.fc, val:l => l.fc, plan:s => ['ef', 'long'].includes(s.type) ? [b.fcmax * 0.6, b.fcmax * 0.72] : [b.fcmax * 0.8, b.fcmax * 0.9], note:'fréquence cardiaque moyenne des séances' },
-    { k:'kcal', ico:'🔥', lbl:'Dépense', kind:'sum', fmt:v => Math.round(v) + ' kcal', val:l => kcalOf(c, l.act, l.type || 'ef', l.duree), plan:s => { const k = kcalOf(c, s.act, s.type, s.duree); return [k * 0.85, k * 1.08]; }, note:'calories dépensées en séance (estimation)' },
-    { k:'dplus', ico:'⛰️', lbl:'Dénivelé +', kind:'sum', fmt:v => Math.round(v) + ' m', val:l => l.dplus || 0, note:'dénivelé positif cumulé' }
+    { k:'seances', ico:'✅', lbl:'Séances', sh:'Séances', kind:'count', fmt:v => String(Math.round(v)), note:'séances faites (et prévues)' },
+    { k:'duree', ico:'⏱️', lbl:'Temps d\'activité', sh:'Temps', kind:'sum', fmt:hm, val:l => l.duree, plan:s => [s.duree * 0.85, s.duree * 1.08], note:'temps total' },
+    { k:'dist', ico:'📏', lbl:'Distance', sh:'Distance', kind:'sum', fmt:v => r1(v) + ' km', val:l => l.dist || 0, plan:s => { const v = SP[s.act] * s.duree / 60; return [v * 0.85, v * 1.1]; }, note:'toutes activités' },
+    { k:'vit', ico:'⚡', lbl:'Vitesse endurance', sh:'Vitesse', kind:'mean', fmt:v => r1(v) + ' km/h', filter:efOf, val:speedOf, plan:s => s.v0 ? [s.v0 * (1 + 0.001 * s.wk), s.v0 * (1 + 0.005 * s.wk)] : null, note:ACT[main].split(' ')[1].toLowerCase() + ', séances d\'endurance' },
+    { k:'charge', ico:'🔋', lbl:'Charge', sh:'Charge', kind:'sum', fmt:v => String(Math.round(v)), val:l => l.duree * (l.rpe || 5), plan:s => { const r = rpeT(s); return [s.duree * 0.85 * r[0], s.duree * 1.08 * r[1]]; }, note:'durée (min) × effort ressenti' },
+    { k:'rpe', ico:'😮‍💨', lbl:'Effort ressenti', sh:'Effort', kind:'mean', fmt:v => r1(v) + '/10', filter:l => !!l.rpe, val:l => l.rpe, plan:rpeT, note:'1 = très facile, 10 = maximal' },
+    { k:'fc', ico:'❤️', lbl:'FC moyenne', sh:'FC moy.', kind:'mean', fmt:v => Math.round(v) + ' bpm', filter:l => !!l.fc, val:l => l.fc, plan:s => ['ef', 'long'].includes(s.type) ? [b.fcmax * 0.6, b.fcmax * 0.72] : [b.fcmax * 0.8, b.fcmax * 0.9], note:'fréquence cardiaque moyenne des séances' },
+    { k:'kcal', ico:'🔥', lbl:'Dépense', sh:'Dépense', kind:'sum', fmt:v => Math.round(v) + ' kcal', val:l => kcalOf(c, l.act, l.type || 'ef', l.duree), plan:s => { const k = kcalOf(c, s.act, s.type, s.duree); return [k * 0.85, k * 1.08]; }, note:'calories dépensées en séance (estimation)' },
+    { k:'dplus', ico:'⛰️', lbl:'Dénivelé +', sh:'Dénivelé', kind:'sum', fmt:v => Math.round(v) + ' m', val:l => l.dplus || 0, note:'dénivelé positif cumulé' }
   ].filter(m => m.kind !== 'mean' || logs.some(m.filter));
   if((c.poids || []).length >= 2){
     const t0 = S.meta.debut.getTime(), t1 = o.date ? tOf(o.date) : t0 + S.meta.weeks * WEEKMS;
-    list.push({ k:'poids', ico:'⚖️', lbl:'Poids', kind:'state', lowGood:true, fmt:v => r1(v) + ' kg', pts:c.poids.map(x => [tOf(x.date), x.kg]).sort((a, x) => a[0] - x[0]), target:o.type === 'poids' ? o.poids : null, note:'pesées',
+    list.push({ k:'poids', ico:'⚖️', lbl:'Poids', sh:'Poids', kind:'state', lowGood:true, fmt:v => r1(v) + ' kg', pts:c.poids.map(x => [tOf(x.date), x.kg]).sort((a, x) => a[0] - x[0]), target:o.type === 'poids' ? o.poids : null, note:'pesées',
       planT:o.type === 'poids' ? t => { if(t < t0) return null; const v = c.profil.poids + (o.poids - c.profil.poids) * clamp((t - t0) / (t1 - t0), 0, 1); return [v - 0.5, v + 0.5]; } : null });
   }
   const vh = vmaHist(c);
   if(vh.length && vmaNow(c)){
     const pts = vh.concat([[Date.now(), vmaNow(c)]]), t0 = S.meta.debut.getTime(), v0 = interp(pts, t0);
     const planT = t => t < t0 ? null : [v0 * 0.97 * (1 + 0.002 * (t - t0) / WEEKMS), v0 * 1.03 * (1 + 0.006 * (t - t0) / WEEKMS)];
-    list.push({ k:'vma', ico:'🫁', lbl:'VMA', kind:'state', fmt:v => r1(v) + ' km/h', pts, planT, note:'vitesse maximale aérobie estimée' });
-    if(o.type === 'course' && o.dist) list.push({ k:'race', ico:'🏁', lbl:'Temps ' + r1(o.dist) + ' km', kind:'state', lowGood:true, fmt:hm, pts:pts.map(p => [p[0], raceTime(p[1], o.dist)]), target:o.temps || null, note:'temps de course estimé',
+    list.push({ k:'vma', ico:'🫁', lbl:'VMA', sh:'VMA', kind:'state', fmt:v => r1(v) + ' km/h', pts, planT, note:'vitesse maximale aérobie estimée' });
+    if(o.type === 'course' && o.dist) list.push({ k:'race', ico:'🏁', lbl:'Temps ' + r1(o.dist) + ' km', sh:r1(o.dist) + ' km', kind:'state', lowGood:true, fmt:hm, pts:pts.map(p => [p[0], raceTime(p[1], o.dist)]), target:o.temps || null, note:'temps de course estimé',
       planT:t => { const r = planT(t); return r ? [raceTime(r[1], o.dist), raceTime(r[0], o.dist)] : null; } });
   }
   return MC.ind = list;
@@ -4009,7 +4022,7 @@ function bucketsOf(g, date){
   if(g === 'semaine'){
     const s = wkStart(d);
     for(let i = 0; i < 7; i++){ const x = addD(s, i); B.push({ from:x, to:addD(x, 1), lbl:JOURS[i].charAt(0), sel:isoDay(x) === isoDay(d) }); }
-    return { B, from:s, to:addD(s, 7), title:'Semaine du ' + fmtD(s) + ' au ' + fmtD(addD(s, 6)), sub:'par jour' };
+    return { B, from:s, to:addD(s, 7), title:fmtD(s) + ' – ' + fmtD(addD(s, 6)) + ' ' + addD(s, 6).getFullYear(), sub:'par jour' };
   }
   if(g === 'mois'){
     const s = new Date(d.getFullYear(), d.getMonth(), 1), e = new Date(d.getFullYear(), d.getMonth() + 1, 1);
@@ -4078,7 +4091,7 @@ function goalLine(c, S){
 function renderObjSec(box, c, S){
   const meta = S.meta, o = c.objectif, p = c.profil;
   const ed = mk('button', 'sgDet', 'Modifier'); ed.onclick = () => openBilan(3);
-  const cc = ccCard(box, 'obj', '🎯 ' + OBJ[o.type].replace(/^\S+\s/, ''), { extra:[ed], keepQuick:true });
+  const cc = ccCard(box, 'obj', '🎯 ' + progTitle({ objectif:o }), { extra:[ed], keepQuick:true });
   const phases = [];
   for(let w = 0; w < meta.weeks; w++){ const ph = phaseOf(c, w, meta); if(!phases.length || phases[phases.length - 1].n !== ph) phases.push({ n:ph, a:w, b:w + 1 }); else phases[phases.length - 1].b = w + 1; }
   const bar = mk('div', 'phb');
@@ -4100,12 +4113,11 @@ function renderObjSec(box, c, S){
 // Prochaine séance : carte visible en permanence quand le tiroir est replié
 function nextCard(c, s){
   const date = d0(s.wsT + s.day * DAYMS + 12 * 3600e3), v = sessSpeed(c, s), km = v * s.duree / 60;
-  const d = mk('div', 'it sg cur nxc', '<span class="th nxi"></span><div><b></b><small></small></div><span class="km"></span><button class="vbtn">Voir parcours</button>');
+  const d = mk('div', 'it sg cur nxc', '<span class="th nxi"></span><div><b></b><small></small></div><button class="vbtn">Voir parcours</button>');
   d.querySelector('.nxi').textContent = ICO[s.act];
   d.querySelector('.nxi').style.background = ACT_BG[s.act];
   d.querySelector('b').textContent = s.label;
-  d.querySelector('div small').textContent = dayLbl(date);
-  d.querySelector('.km').innerHTML = '≈ ' + r1(km) + ' km<small>' + hm(s.duree) + '</small>';
+  d.querySelector('div small').textContent = dayLbl(date) + ' · ' + hm(s.duree) + ' · ≈ ' + r1(km) + ' km';
   d.querySelector('.vbtn').onclick = e => { e.stopPropagation(); sessParcours(s); };
   d.title = s.detail;
   return d;
@@ -4225,7 +4237,8 @@ function renderIndSec(box, c, S){
   IND(c).forEach(m => {
     const T = tileVal(c, m, sel), t = mk('button', 'it2', '<small></small><b></b><span></span>');
     t.type = 'button';
-    t.querySelector('small').textContent = m.ico + ' ' + m.lbl;
+    t.querySelector('small').textContent = m.ico + ' ' + (cc.open ? m.lbl : m.sh || m.lbl);
+    t.title = m.lbl;
     t.querySelector('b').textContent = T.A.v == null ? '—' : m.kind === 'count' ? T.A.v + (T.A.planN ? ' / ' + T.A.planN : '') : m.fmt(T.A.v);
     const sp = t.querySelector('span');
     if(T.R.v != null && T.A.v != null){
@@ -4346,9 +4359,10 @@ function renderInd(){
     const L = A.logsF || [];
     if(m.kind === 'sum') add('Total', fv(A.v)); else add('Moyenne', fv(A.v));
     if(future && m.kind === 'sum'){
-      if(A.planPast) add('Prévu à ce jour (marge)', rng(A.planPast[0], A.planPast[1], fv) + (inPlan ? ' · ' + inPlan : ''), inPlan && inPlan.includes('✓') ? 'up' : inPlan ? 'down' : '');
+      if(A.planPast) add('Prévu à ce jour', rng(A.planPast[0], A.planPast[1], fv));
+      if(inPlan) add('Par rapport au prévu', cap(inPlan), inPlan.includes('✓') ? 'up' : 'down');
       if(A.plan) add('Prévu sur toute la période', rng(A.plan[0], A.plan[1], fv));
-    } else if(A.plan) add('Prévu (marge)', rng(A.plan[0], A.plan[1], fv) + (inPlan ? ' · ' + inPlan : ''), inPlan && inPlan.includes('✓') ? 'up' : inPlan ? 'down' : '');
+    } else if(A.plan){ add('Prévu (marge)', rng(A.plan[0], A.plan[1], fv)); if(inPlan) add('Par rapport au prévu', cap(inPlan), inPlan.includes('✓') ? 'up' : 'down'); }
     add('Séances prises en compte', String(L.length));
     if(L.length){
       if(m.kind === 'sum') add('Moyenne par séance', fv(A.v / L.length));
@@ -4366,7 +4380,7 @@ function renderInd(){
   } else {
     add('Valeur en fin de période', fv(A.v));
     if(A.start != null && A.v != null){ const d = A.v - A.start; add('Début de période', fv(A.start)); add('Variation sur la période', deltaTxt(m, d), deltaCls(m, d)); }
-    if(A.plan) add('Prévu (marge)', rng(A.plan[0], A.plan[1], fv) + (inPlan ? ' · ' + inPlan : ''), inPlan && inPlan.includes('✓') ? 'up' : inPlan ? 'down' : '');
+    if(A.plan){ add('Prévu (marge)', rng(A.plan[0], A.plan[1], fv)); if(inPlan) add('Par rapport au prévu', cap(inPlan), inPlan.includes('✓') ? 'up' : 'down'); }
     if(m.target != null) add('Objectif', fv(m.target) + (A.v != null ? ' · écart ' + deltaTxt(m, A.v - m.target) : ''));
     add('Mesures sur la période', String(A.vals.length));
     if(A.vals.length){ add('Plus haut', fv(A.max)); add('Plus bas', fv(A.min)); add('Moyenne des mesures', fv(avg(A.vals))); }
@@ -4581,7 +4595,8 @@ function sheetH(){
   // Replié : la ligne de résumé + la ligne d'info + le parcours sélectionné
   const top = $('tabs').getBoundingClientRect().bottom - $('panel').getBoundingClientRect().top;
   const cur = tab === 'parcours' ? first : tab === 'coach' ? $('coach').querySelector('.cur') : ($('sugg').querySelector('.cur') || $('sugg').querySelector('.sg-msg'));
-  const peek = Math.min(Math.round(vh * 0.6), Math.round(top + (cur ? cur.offsetHeight + 24 : 10)));
+  const gap = cur ? clamp(cur.getBoundingClientRect().top - $('tabs').getBoundingClientRect().bottom, 6, 24) : 0;
+  const peek = Math.min(Math.round(vh * 0.6), Math.round(top + (cur ? gap + cur.offsetHeight + 12 : 10)));
   return { peek, half: Math.max(peek + 80, Math.round(vh * 0.58)), full: vh };
 }
 // Le bouton de localisation suit le haut du tiroir (masqué quand le tiroir prend presque tout l'écran)
