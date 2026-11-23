@@ -394,7 +394,7 @@
   body.no-tab:not(.wide) #pills{display:flex}
   body.no-tab:not(.wide) #panel{transform:translateY(calc(100% + 30px));pointer-events:none}
   #panel{transition:height .28s cubic-bezier(.2,.8,.2,1), transform .32s cubic-bezier(.2,.8,.2,1)}
-  body.wide #pills{display:none !important}
+  body.wide:not(.social-open) #pills{display:none !important}
   body.wide.no-tab #panel > :not(#ctrl):not(#tabs), body.wide.no-tab #ctrl > :not(#search){display:none !important}
   /* Coach, Communauté, Compte : pas de réglages de parcours */
   body.tab-coach #sumrow, body.tab-compte #sumrow, body.tab-coach #ctrl > :not(#search), body.tab-compte #ctrl > :not(#search), body.tab-coach #info, body.tab-compte #info, body.tab-coach #destChip, body.tab-compte #destChip{display:none !important}
@@ -422,18 +422,26 @@
   body.immersive .fab{transform:translateX(calc(100% + 30px));pointer-events:none}
   body.immersive #btnHere, body.immersive #routeActs{opacity:0;pointer-events:none}
   /* ---- Communauté : pleine page ---- */
-  #social{position:fixed;inset:0;z-index:1900;background:var(--n1);display:flex;flex-direction:column;transform:translateY(100%);transition:transform .32s cubic-bezier(.2,.8,.2,1)}
+  #social{position:fixed;inset:0;z-index:1900;background:var(--n1);transform:translateY(100%);transition:transform .32s cubic-bezier(.2,.8,.2,1);overflow:hidden}
+  .sotop{position:absolute;top:0;left:0;right:0;z-index:2;box-shadow:0 1px 6px rgba(0,0,0,.08);transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+  body.so-hide .sotop{transform:translateY(-100%)}
+  body.social-open #pills{display:flex !important;z-index:1950}
+  body.social-open.so-hide #pills, body.social-open.so-chat #pills{transform:translate(-50%, calc(100% + 30px))}
+  body.social-open .fab, body.social-open #search{visibility:hidden}
+  #soBody.slide-l{animation:soL .28s cubic-bezier(.2,.8,.2,1)}
+  #soBody.slide-r{animation:soR .28s cubic-bezier(.2,.8,.2,1)}
+  @keyframes soL{from{opacity:.3;transform:translateX(40px)}to{opacity:1;transform:none}}
+  @keyframes soR{from{opacity:.3;transform:translateX(-40px)}to{opacity:1;transform:none}}
   #social.open{transform:none}
   .soh{display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top)) 14px 8px;background:var(--bg)}
   .soh b{flex:1;text-align:center;font-size:17px}
-  .soh > span{width:70px}
-  .soh .sgDet{margin:0;width:70px;order:-1}
   .sochath .sgDet{order:-1}
   .soconv .sgDet{order:0}
   .sotabs{display:grid;grid-template-columns:repeat(3,1fr);background:var(--bg);border-bottom:1px solid var(--bd);padding:0 10px}
   .sotabs button{border:none;background:none;padding:10px 0;font:600 14px system-ui,sans-serif;color:var(--mu);border-bottom:2px solid transparent;cursor:pointer}
   .sotabs button.on{color:var(--c);border-bottom-color:var(--c)}
-  #soBody{flex:1;overflow-y:auto;padding:12px 12px calc(16px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px}
+  #soBody{position:absolute;inset:0;overflow-y:auto;padding:100px 12px calc(90px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px;overscroll-behavior:contain}
+  body.so-chat #soBody{padding-bottom:calc(12px + env(safe-area-inset-bottom))}
   #soBody > *{width:100%;max-width:640px;margin:0 auto;flex:none}
   .sonote{font-size:12px !important;color:var(--mu);background:var(--bg);border:1px dashed var(--bd);border-radius:10px;padding:8px 10px;margin:0 auto !important}
   .sonewb{border:1px dashed var(--c);background:var(--bg);color:var(--c);border-radius:12px;padding:11px;font:600 14px system-ui,sans-serif;cursor:pointer}
@@ -866,8 +874,10 @@
 
 <!-- Communauté : pleine page -->
 <div id="social" hidden>
-  <header class="soh"><button id="soBack" class="sgDet">‹ Carte</button><b>👥 Communauté</b><span></span></header>
-  <nav class="sotabs"><button data-s="fil">Fil</button><button data-s="msg">Messages</button><button data-s="grp">Groupes</button></nav>
+  <div class="sotop">
+    <header class="soh"><b>👥 Communauté</b></header>
+    <nav class="sotabs"><button data-s="fil">Fil</button><button data-s="msg">Messages</button><button data-s="grp">Groupes</button></nav>
+  </div>
   <div id="soBody"></div>
 </div>
 
@@ -3286,7 +3296,7 @@ function placeMarker(p){
 }
 function showPlaces(){
   placeLayer.clearLayers();
-  const list = tab === 'sugg' && !dest
+  const list = (tab || mapTab) === 'sugg' && !dest
     ? (st.type === 'boucle' ? ((suggTours[sugIdx] && suggTours[sugIdx].places) || []) : suggPlaces)
     : (selected && selected.places) || [];
   placeLayer.addLayers(list.map(placeMarker));
@@ -3509,8 +3519,10 @@ async function runSugg(){
   if(!suggTours.length){ sugMsg = 'Pas de balade de cette longueur avec ces ' + places.length + ' lieux. Essaie une autre distance, ou passe en « Aller » pour les voir un par un.'; suggKey = ''; }
   renderSugg(); if(sheetReady && !WIDE.matches) setSheet(sheetState);
 }
+var mapTab = null;   // onglet dont la carte garde l'affichage quand on revient à la pilule
 function setTab(t){
   t = t || null;
+  if(t) mapTab = t; else if(tab) mapTab = tab;
   if(t === 'social'){ openSocial(); document.querySelectorAll('#tabs button, #pills button').forEach(b => b.classList.toggle('on', b.dataset.t === 'social')); return; }
   if(!$('social').hidden) closeSocial(true);
   const wasNone = !tab;
@@ -3533,7 +3545,13 @@ function setTab(t){
   if(sheetReady && !WIDE.matches) setSheet(sheetState);
 }
 // Toucher l'onglet ouvert le referme (retour aux pilules)
-document.querySelectorAll('#tabs button, #pills button').forEach(b => b.onclick = () => setTab(tab === b.dataset.t ? null : b.dataset.t));
+document.querySelectorAll('#tabs button, #pills button').forEach(b => b.onclick = () => {
+  if(!$('social').hidden){   // depuis la Communauté
+    if(b.dataset.t === 'social'){ $('soBody').scrollTo({ top:0, behavior:'smooth' }); document.body.classList.remove('so-hide'); return; }
+    return setTab(b.dataset.t);
+  }
+  setTab(tab === b.dataset.t ? null : b.dataset.t);
+});
 
 /* =====================================================================
    COACH — bilan de départ, objectifs à la carte (partie 1)
@@ -5197,7 +5215,7 @@ function placeSearch(){
 let drag = null, swallowClick = false;
 function dragStart(e){
   if(WIDE.matches || (e.pointerType === 'mouse' && e.button !== 0)) return;
-  if(['list', 'sugg', 'coach'].includes(e.currentTarget.id) && sheetState !== 'peek') return;   // mi-hauteur / plein écran : la liste défile normalement
+  if(['list', 'sugg', 'coach', 'compte'].includes(e.currentTarget.id) && sheetState !== 'peek') return;   // mi-hauteur / plein écran : la liste défile normalement
   drag = { x:e.clientX, y:e.clientY, h:$('panel').offsetHeight, id:e.pointerId, el:e.currentTarget, moved:false, axis:null,
            lastX:e.clientX, lastY:e.clientY, lastT:performance.now(), v:0, vx:0 };
 }
@@ -5221,7 +5239,7 @@ function dragMove(e){
     drag.vx = (e.clientX - drag.lastX) / dt;
   } else {
     const H = sheetH();
-    const hh = Math.max(H.peek * 0.75, Math.min(H.full, drag.h - dy));
+    const hh = Math.max(48, Math.min(H.full, drag.h - dy));   // sous le repli : la carte se range en pilule
     $('panel').style.height = hh + 'px';
     setSheetVar(hh);
     document.body.classList.add('sheet-drag');
@@ -5238,6 +5256,8 @@ function dragEnd(e){
   $('panel').classList.remove('dragging');
   document.body.classList.remove('sheet-drag');
   const H = sheetH(), h = $('panel').offsetHeight, order = ['peek', 'half', 'full'];
+  // Glissée sous la hauteur repliée (ou lancée vers le bas depuis le repli) : on range la carte, la pilule revient
+  if(h < H.peek * 0.72 || (d.v > 0.5 && h < H.peek - 12)){ setTab(null); return; }
   let s;
   if(d.v < -0.4) s = order.find(k => H[k] > h + 10) || 'full';                    // lancé vers le haut
   else if(d.v > 0.4) s = order.slice().reverse().find(k => H[k] < h - 10) || 'peek';   // lancé vers le bas
@@ -5270,7 +5290,7 @@ function swipeEnd(d, dx){
     }
   }, 170);
 }
-['grab', 'sumrow', 'tabs', 'list', 'sugg', 'coach'].forEach(id => $(id).addEventListener('pointerdown', dragStart));
+['grab', 'sumrow', 'tabs', 'list', 'sugg', 'coach', 'compte'].forEach(id => $(id).addEventListener('pointerdown', dragStart));
 // suivi du doigt sur toute la fenêtre (le doigt sort vite de la poignée)
 window.addEventListener('pointermove', dragMove);
 window.addEventListener('pointerup', dragEnd);
@@ -5444,6 +5464,7 @@ function soNewPost(){
 }
 function soChat(c){
   soConv = c.id;
+  document.body.classList.add('so-chat'); document.body.classList.remove('so-hide');
   const box = $('soBody'); box.innerHTML = '';
   const h = mk('div', 'sochath', '<button class="sgDet">‹</button>' + (c.group ? '<span class="soav grp">' + ICO[c.act] + '</span>' : soAvatar(c.who, 36)) + '<div><b></b><small></small></div>');
   h.querySelector('b').textContent = c.nom;
@@ -5482,6 +5503,7 @@ function soNewGroup(){
 }
 function renderSocial(){
   soInit();
+  document.body.classList.remove('so-chat');
   document.querySelectorAll('#social .sotabs button').forEach(b => b.classList.toggle('on', b.dataset.s === soView));
   const box = $('soBody'); box.innerHTML = '';
   if(soConv){ const c = social.convs.find(x => x.id === soConv); if(c) return soChat(c); soConv = null; }
@@ -5536,12 +5558,38 @@ function openSocial(){
 }
 function closeSocial(keep){
   $('social').classList.remove('open');
-  document.body.classList.remove('social-open');
+  document.body.classList.remove('social-open', 'so-hide', 'so-chat');
   setTimeout(() => { if(!$('social').classList.contains('open')) $('social').hidden = true; }, 300);
   if(!keep) setTab(soPrevTab || null);
 }
-$('soBack').onclick = () => closeSocial();
-document.querySelectorAll('#social .sotabs button').forEach(b => b.onclick = () => { soView = b.dataset.s; soConv = null; renderSocial(); $('soBody').scrollTop = 0; });
+const SO_ORDER = ['fil', 'msg', 'grp'];
+function soGo(v, dir){
+  if(v === soView && !soConv) return;
+  soView = v; soConv = null;
+  document.body.classList.remove('so-hide');
+  renderSocial(); $('soBody').scrollTop = 0;
+  if(dir){ const b = $('soBody'); b.classList.remove('slide-l', 'slide-r'); void b.offsetWidth; b.classList.add(dir > 0 ? 'slide-l' : 'slide-r'); }
+}
+document.querySelectorAll('#social .sotabs button').forEach(b => b.onclick = () => soGo(b.dataset.s, Math.sign(SO_ORDER.indexOf(b.dataset.s) - SO_ORDER.indexOf(soView))));
+// Défilement : vers le bas, les barres du haut et du bas sortent de l'écran ; vers le haut, elles reviennent
+let soLastY = 0;
+$('soBody').addEventListener('scroll', () => {
+  const y = $('soBody').scrollTop, dy = y - soLastY;
+  if(Math.abs(dy) < 6) return;
+  document.body.classList.toggle('so-hide', dy > 0 && y > 60);
+  soLastY = y;
+}, { passive:true });
+// Glisser à gauche / à droite : Fil ↔ Messages ↔ Groupes
+let soSw = null;
+$('soBody').addEventListener('touchstart', e => { soSw = e.touches.length === 1 && !soConv ? { x:e.touches[0].clientX, y:e.touches[0].clientY } : null; }, { passive:true });
+$('soBody').addEventListener('touchend', e => {
+  if(!soSw) return;
+  const t = e.changedTouches[0], dx = t.clientX - soSw.x, dy = t.clientY - soSw.y; soSw = null;
+  if(Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+  const i = SO_ORDER.indexOf(soView) + (dx < 0 ? 1 : -1);
+  if(i >= 0 && i < SO_ORDER.length) soGo(SO_ORDER[i], dx < 0 ? 1 : -1);
+}, { passive:true });
+new ResizeObserver(() => { $('soBody').style.paddingTop = ($('social').querySelector('.sotop').offsetHeight + 12) + 'px'; }).observe($('social').querySelector('.sotop'));
 
 sheetReady = true;
 updateChip();
