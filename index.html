@@ -383,6 +383,108 @@
   .sv small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #segType button, #segMode button, #segUnit button{white-space:nowrap}
   .istat b{white-space:nowrap}
+  /* ---- Onglets : 5 entrées, icône au-dessus du libellé ---- */
+  #tabs button, #pills button{display:flex;flex-direction:column;align-items:center;gap:1px;font:600 11px system-ui,sans-serif !important;padding:6px 1px 5px !important;flex:1 1 0 !important;min-width:0}
+  #tabs button i, #pills button i{font-style:normal;font-size:18px;line-height:1.1;margin:0 !important;display:block !important}
+  #tabs{gap:2px}
+  /* Aucun onglet ouvert : pilule flottante en bas, tiroir rangé */
+  #pills{position:fixed;z-index:1001;left:50%;bottom:calc(12px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(440px, calc(100% - 24px));display:none;gap:2px;padding:5px;background:var(--bg);border-radius:999px;box-shadow:0 4px 16px rgba(0,0,0,.22);transition:transform .32s cubic-bezier(.2,.8,.2,1)}
+  #pills button{border:none;background:none;border-radius:999px;color:var(--mu);cursor:pointer}
+  #pills button.on{background:var(--sel-bg);color:var(--c)}
+  body.no-tab:not(.wide) #pills{display:flex}
+  body.no-tab:not(.wide) #panel{transform:translateY(calc(100% + 30px));pointer-events:none}
+  #panel{transition:height .28s cubic-bezier(.2,.8,.2,1), transform .32s cubic-bezier(.2,.8,.2,1)}
+  body.wide #pills{display:none !important}
+  body.wide.no-tab #panel > :not(#ctrl):not(#tabs), body.wide.no-tab #ctrl > :not(#search){display:none !important}
+  /* Coach, Communauté, Compte : pas de réglages de parcours */
+  body.tab-coach #sumrow, body.tab-compte #sumrow, body.tab-coach #ctrl > :not(#search), body.tab-compte #ctrl > :not(#search), body.tab-coach #info, body.tab-compte #info, body.tab-coach #destChip, body.tab-compte #destChip{display:none !important}
+  #compte{flex:1;min-height:0;overflow-y:auto;padding:8px 2px 12px}
+  .cpro{display:flex;align-items:center;gap:12px}
+  .cpro > div{flex:1;min-width:0}
+  .cpro b{display:block;font-size:16px}
+  .cpro small{color:var(--mu);font-size:12px}
+  .csv #savedList{margin-top:6px}
+  .csv .cchr .sgDet, .csv label.btnlike{display:inline-flex !important;align-items:center;margin:0 !important;padding:5px 9px !important;font:600 12px system-ui,sans-serif !important;border:1px solid var(--bd) !important;background:var(--bg) !important;color:var(--tx) !important;border-radius:8px !important;height:auto !important;min-height:0 !important;cursor:pointer;flex:none}
+  .csv .cct{white-space:nowrap}
+  .cmenu{padding:4px 12px}
+  .crow{display:flex;align-items:center;gap:12px;width:100%;border:none;background:none;padding:11px 2px;border-bottom:1px solid var(--n3);font:inherit;color:inherit;text-align:left;cursor:pointer;border-radius:8px;transition:background .15s}
+  .crow:last-child{border-bottom:none}
+  .crow > span{font-size:20px;width:26px;text-align:center}
+  .crow div{flex:1;min-width:0}
+  .crow b{display:block;font-size:15px}
+  .crow small{color:var(--mu);font-size:12px}
+  .crow em{font-style:normal;color:var(--mu);font-size:20px}
+  /* ---- Carte plein écran (téléphone) : l'interface glisse hors de l'écran ---- */
+  #search.floating, .fab, #btnHere, #routeActs{transition-property:transform, opacity, bottom, background-color, box-shadow, filter, color;transition-duration:.32s, .2s, .28s, .15s, .15s, .15s, .15s;transition-timing-function:cubic-bezier(.2,.8,.2,1)}
+  body.immersive #panel, body.immersive #pills{transform:translate(-50%, calc(100% + 40px));pointer-events:none}
+  body.immersive #panel{transform:translateY(calc(100% + 40px))}
+  body.immersive #search.floating{transform:translateY(calc(-100% - 30px));pointer-events:none}
+  body.immersive .fab{transform:translateX(calc(100% + 30px));pointer-events:none}
+  body.immersive #btnHere, body.immersive #routeActs{opacity:0;pointer-events:none}
+  /* ---- Communauté : pleine page ---- */
+  #social{position:fixed;inset:0;z-index:1900;background:var(--n1);display:flex;flex-direction:column;transform:translateY(100%);transition:transform .32s cubic-bezier(.2,.8,.2,1)}
+  #social.open{transform:none}
+  .soh{display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top)) 14px 8px;background:var(--bg)}
+  .soh b{flex:1;text-align:center;font-size:17px}
+  .soh > span{width:70px}
+  .soh .sgDet{margin:0;width:70px;order:-1}
+  .sochath .sgDet{order:-1}
+  .soconv .sgDet{order:0}
+  .sotabs{display:grid;grid-template-columns:repeat(3,1fr);background:var(--bg);border-bottom:1px solid var(--bd);padding:0 10px}
+  .sotabs button{border:none;background:none;padding:10px 0;font:600 14px system-ui,sans-serif;color:var(--mu);border-bottom:2px solid transparent;cursor:pointer}
+  .sotabs button.on{color:var(--c);border-bottom-color:var(--c)}
+  #soBody{flex:1;overflow-y:auto;padding:12px 12px calc(16px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px}
+  #soBody > *{width:100%;max-width:640px;margin:0 auto;flex:none}
+  .sonote{font-size:12px !important;color:var(--mu);background:var(--bg);border:1px dashed var(--bd);border-radius:10px;padding:8px 10px;margin:0 auto !important}
+  .sonewb{border:1px dashed var(--c);background:var(--bg);color:var(--c);border-radius:12px;padding:11px;font:600 14px system-ui,sans-serif;cursor:pointer}
+  .soav{flex:none;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;color:#fff;font-weight:700}
+  .soav.grp{width:40px;height:40px;background:var(--sel-bg);font-size:20px}
+  .sopost{background:var(--bg);border:1px solid var(--bd);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px}
+  .sopost header{display:flex;align-items:center;gap:10px}
+  .sopost header div{flex:1;min-width:0}
+  .sopost header b{display:block;font-size:15px}
+  .sopost header small{color:var(--mu);font-size:12px}
+  .socr{font:700 10px system-ui,sans-serif;text-transform:uppercase;letter-spacing:.03em;background:#f3e8ff;color:#7e22ce;padding:3px 7px;border-radius:6px}
+  .dark .socr{background:#2e1f45;color:#d8b4fe}
+  .sotxt{margin:0 !important;font-size:14px;line-height:1.45}
+  .sostats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+  .sostats span{display:flex;flex-direction:column;min-width:0}
+  .sostats small{font-size:11px;color:var(--mu)}
+  .sostats b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .somapw{cursor:pointer}
+  .somap{width:100%;height:auto;display:block}
+  .sobtns{display:grid;grid-template-columns:auto auto 1fr auto;gap:6px}
+  .sobtns button{display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--bd);background:var(--bg);border-radius:9px;padding:8px 10px;font:600 13px system-ui,sans-serif;color:var(--tx);cursor:pointer;white-space:nowrap}
+  .sobtns .sov{color:var(--c)}
+  .sobtns svg{width:16px;height:16px;fill:currentColor}
+  .sobtns .sos{color:var(--c)}
+  .sobtns .sol.on{border-color:#fda4af;background:#fff1f2}
+  .dark .sobtns .sol.on{background:#3b1a22;border-color:#7f1d1d}
+  .soconv{display:flex;align-items:center;gap:10px;width:100%;background:var(--bg);border:1px solid var(--bd);border-radius:12px;padding:10px;font:inherit;color:inherit;text-align:left;cursor:pointer}
+  .soconv div{flex:1;min-width:0}
+  .soconv b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .soconv small{display:block;color:var(--mu);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .soconv em{font-style:normal;color:var(--mu);font-size:11px;white-space:nowrap}
+  .soconv .sgDet{margin:0}
+  .sochath{display:flex;align-items:center;gap:10px;background:var(--bg);border:1px solid var(--bd);border-radius:12px;padding:8px 10px}
+  .sochath .sgDet{margin:0;width:36px;padding:6px 0}
+  .sochath div{flex:1;min-width:0}
+  .sochath b{display:block}
+  .sochath small{color:var(--mu);font-size:12px}
+  .somsgs{display:flex;flex-direction:column;gap:6px}
+  .somsg{align-self:flex-start;max-width:80%;background:var(--bg);border:1px solid var(--bd);border-radius:14px 14px 14px 4px;padding:7px 10px}
+  .somsg.me{align-self:flex-end;background:var(--c);border-color:var(--c);color:#fff;border-radius:14px 14px 4px 14px}
+  .somsg p{margin:0 !important;font-size:14px;line-height:1.4;word-wrap:break-word}
+  .somsg .sofrom{display:block;font-size:11px;font-weight:700;color:var(--c)}
+  .somsg .sot{display:block;font-size:10px;opacity:.7;text-align:right}
+  .soinp{display:flex;gap:8px;position:sticky;bottom:0;background:var(--n1);padding-top:6px}
+  .soinp input{flex:1;border:1px solid var(--bd);border-radius:999px;padding:10px 14px;font-size:15px;background:var(--bg);color:var(--tx)}
+  .soinp .primary{width:46px;height:46px;border-radius:50%;padding:0;font-size:18px;flex:none}
+  .sonew{display:flex;flex-direction:column;gap:8px}
+  .sonew select, .sonew textarea, .sonew input{border:1px solid var(--bd);border-radius:10px;padding:9px 10px;font:14px system-ui,sans-serif;background:var(--bg);color:var(--tx)}
+  .sonew .bzrow{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .sonew .bzrow .sgDet{margin:0}
+  @media (hover:hover){ #pills button:not(.on):hover, .crow:hover, .soconv:hover{background:var(--hov-bg)} .sotabs button:not(.on):hover{color:var(--tx)} }
   .bzc.rpe{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
   .bzc.rpe button{min-width:0;padding:7px 0}
   @media (hover:hover){ .ses:not(.ok):hover{background:var(--hov-bg)} }
@@ -647,7 +749,8 @@
   .tiles-clair{filter:grayscale(.9) brightness(1.08) contrast(.85)}
   .tiles-sombre{filter:invert(1) hue-rotate(180deg) brightness(.9) contrast(.9) grayscale(.3)}
   .leaflet-container{background:#ddd}
-  #btnPhoto{top:calc(66px + env(safe-area-inset-top))}
+  #btnPhoto{top:calc(12px + env(safe-area-inset-top))}
+  #btnCfg, #btnSaved{display:none !important}   /* réglages et enregistrements : dans l'onglet Compte */
   #btnSaved{top:calc(120px + env(safe-area-inset-top))}
   #btnSaved svg{fill:#f59e0b}
   #svCount{position:absolute;top:-3px;right:-3px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:var(--c);color:#fff;font:700 11px/18px system-ui,sans-serif}
@@ -757,6 +860,16 @@
 <input id="mediaIn" type="file" accept="image/*,video/*" multiple hidden>
 
 <button id="btnSaved" class="fab" title="Mes enregistrements"><svg viewBox="0 0 24 24"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg><span id="svCount" hidden></span></button>
+
+<!-- Onglets en pilule quand aucun n'est ouvert (téléphone) -->
+<nav id="pills" aria-label="Onglets"><button data-t="parcours"><i>🗺️</i>Parcours</button><button data-t="sugg"><i>✨</i>Suggestions</button><button data-t="coach"><i>💪</i>Coach</button><button data-t="social"><i>👥</i>Communauté</button><button data-t="compte"><i>👤</i>Compte</button></nav>
+
+<!-- Communauté : pleine page -->
+<div id="social" hidden>
+  <header class="soh"><button id="soBack" class="sgDet">‹ Carte</button><b>👥 Communauté</b><span></span></header>
+  <nav class="sotabs"><button data-s="fil">Fil</button><button data-s="msg">Messages</button><button data-s="grp">Groupes</button></nav>
+  <div id="soBody"></div>
+</div>
 
 <div id="savedModal" class="modal hidden">
   <div class="card">
@@ -891,11 +1004,12 @@
   </div>
   <div id="destChip" hidden><span id="destName"></span><button id="destClear" title="Retirer l'arrivée">✕ Retirer</button></div>
   <div id="info"></div>
-  <div id="tabs"><button data-t="parcours" class="on"><i>🗺️</i>Parcours</button><button data-t="sugg"><i>✨</i>Suggestions</button><button data-t="coach"><i>💪</i>Coach</button></div>
+  <div id="tabs"><button data-t="parcours"><i>🗺️</i>Parcours</button><button data-t="sugg"><i>✨</i>Suggestions</button><button data-t="coach"><i>💪</i>Coach</button><button data-t="social"><i>👥</i>Communauté</button><button data-t="compte"><i>👤</i>Compte</button></div>
   <div id="sessBar" class="sessbar" hidden></div>
   <div id="list"></div>
   <div id="sugg" hidden></div>
   <div id="coach" hidden></div>
+  <div id="compte" hidden></div>
 
 </div>
 
@@ -1088,7 +1202,7 @@ function applyLayout(){
   const pos = WIDE.matches ? 'bottomright' : 'topleft';
   if(map.attributionControl.getPosition() !== pos){ map.attributionControl.setPosition(pos); resetAttr(); }
   placeSearch();
-  if(WIDE.matches){ $('panel').style.height = ''; [$('list'), $('sugg'), $('coach')].forEach(el => { el.style.overflowY = el.style.touchAction = ''; }); }
+  if(WIDE.matches){ $('panel').style.height = ''; [$('list'), $('sugg'), $('coach'), $('compte')].forEach(el => { el.style.overflowY = el.style.touchAction = ''; }); }
   else setSheet(sheetState);
   map.invalidateSize();
   fitRoute();
@@ -2029,6 +2143,7 @@ function fromSaved(s){
 }
 function showSaved(s){
   $('savedModal').classList.add('hidden');
+  if(tab !== 'parcours') setTab('parcours');
   clearDest();
   if(s.mode && s.mode !== st.mode) document.querySelector('#segMode [data-v="' + s.mode + '"]').click();
   const type = s.kind === 'boucle' ? 'boucle' : 'aller';
@@ -2111,6 +2226,7 @@ function togglePlace(p){
 var savedPlLayer = null;
 function showSavedPlace(s){
   $('savedModal').classList.add('hidden');
+  if(tab === 'compte') setTab(null);
   if(savedPlLayer) map.removeLayer(savedPlLayer);
   savedPlLayer = L.marker(s.ll, { zIndexOffset:950, icon:L.divIcon({ className:'', iconSize:[54,54], iconAnchor:[27,27],
     html:'<div class="pl on" style="background-image:url(' + s.thumb + ')"></div>' }) })
@@ -2981,7 +3097,14 @@ var userMoved = false;   // var : utilisable dès le premier recadrage
 const mapEl = map.getContainer();
 // Déplacement fait à la main (glisser, molette, pincer, double toucher) ≠ recadrage automatique de l'appli
 var manualMove = false;
-const markManual = () => { userMoved = true; manualMove = true; };
+const markManual = () => { userMoved = true; manualMove = true; hideUI(); };
+function hideUI(){
+  if(WIDE.matches || nav || candidates.length || plan.active || !$('social').hidden) return;
+  document.body.classList.add('immersive');
+  $('sres').hidden = true; if($('q') === document.activeElement) $('q').blur();
+}
+function showUI(){ document.body.classList.remove('immersive'); }
+map.on('click contextmenu', showUI);
 map.on('dragstart', markManual);
 map.on('dblclick', markManual);
 ['wheel', 'touchstart'].forEach(ev => mapEl.addEventListener(ev, e => { if(ev === 'wheel' || e.touches.length > 1) markManual(); }, { passive:true }));
@@ -3034,7 +3157,7 @@ $('navStop').onclick = stopNav;
 
 
 /* ---------- Suggestions : lieux à visiter (Wikipédia : photo + description) ---------- */
-let tab = 'parcours', suggKey = '', suggRun = 0, suggPlaces = [], suggTours = [];
+let tab = null, suggKey = '', suggRun = 0, suggPlaces = [], suggTours = [];
 const placeLayer = L.markerClusterGroup({
   maxClusterRadius:55, showCoverageOnHover:false, zoomToBoundsOnClick:false,
   // groupe = photo du lieu le plus intéressant + nombre de lieux ; toucher = zoomer dessus
@@ -3190,6 +3313,7 @@ function sugActions(p, tour){
 }
 // Toucher une suggestion : choisie + ses actions (itinéraire, enregistrer, Wikipédia) ; retoucher : refermer
 function openSugg(i){
+  showUI();
   sugOpen = sugOpen === i && sugIdx === i ? -1 : i;
   sugIdx = i;
   renderSugg();
@@ -3386,12 +3510,21 @@ async function runSugg(){
   renderSugg(); if(sheetReady && !WIDE.matches) setSheet(sheetState);
 }
 function setTab(t){
+  t = t || null;
+  if(t === 'social'){ openSocial(); document.querySelectorAll('#tabs button, #pills button').forEach(b => b.classList.toggle('on', b.dataset.t === 'social')); return; }
+  if(!$('social').hidden) closeSocial(true);
+  const wasNone = !tab;
   tab = t;
-  document.body.classList.toggle('tab-sugg', t === 'sugg');
-  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+  showUI();
+  ['parcours', 'sugg', 'coach', 'compte'].forEach(k => document.body.classList.toggle('tab-' + k, t === k));
+  document.body.classList.toggle('no-tab', !t);
+  document.querySelectorAll('#tabs button, #pills button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
   $('list').hidden = t !== 'parcours';
   $('sugg').hidden = t !== 'sugg';
   $('coach').hidden = t !== 'coach';
+  $('compte').hidden = t !== 'compte';
+  if(t === 'compte') renderCompte();
+  if(t && wasNone && sheetReady && !WIDE.matches) sheetState = t === 'coach' || t === 'compte' ? 'half' : 'peek';
   if(typeof renderSessBar === 'function') renderSessBar();
   if(t === 'sugg') runSugg();
   if(t === 'coach') renderCoach();
@@ -3399,7 +3532,8 @@ function setTab(t){
   showPlaces();
   if(sheetReady && !WIDE.matches) setSheet(sheetState);
 }
-document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => setTab(b.dataset.t));
+// Toucher l'onglet ouvert le referme (retour aux pilules)
+document.querySelectorAll('#tabs button, #pills button').forEach(b => b.onclick = () => setTab(tab === b.dataset.t ? null : b.dataset.t));
 
 /* =====================================================================
    COACH — bilan de départ, objectifs à la carte (partie 1)
@@ -5013,7 +5147,7 @@ function sheetH(){
   const vh = window.innerHeight, first = $('list').querySelector('.it');
   // Replié : la ligne de résumé + la ligne d'info + le parcours sélectionné
   const top = $('tabs').getBoundingClientRect().bottom - $('panel').getBoundingClientRect().top;
-  const cur = tab === 'parcours' ? first : tab === 'coach' ? $('coach').querySelector('.cur') : ($('sugg').querySelector('.cur') || $('sugg').querySelector('.sg-msg'));
+  const cur = tab === 'parcours' ? first : tab === 'coach' ? $('coach').querySelector('.cur') : tab === 'compte' ? $('compte').querySelector('.cpro') : ($('sugg').querySelector('.cur') || $('sugg').querySelector('.sg-msg'));
   const gap = cur ? clamp(cur.getBoundingClientRect().top - $('tabs').getBoundingClientRect().bottom, 6, 24) : 0;
   const peek = Math.min(Math.round(vh * 0.6), Math.round(top + (cur ? gap + cur.offsetHeight + 12 : 10)));
   return { peek, half: Math.max(peek + 80, Math.round(vh * 0.58)), full: vh };
@@ -5026,6 +5160,11 @@ function setSheetVar(px){
 let refitT = null;
 function setSheet(s){
   if(!sheetReady || WIDE.matches) return;
+  if(!tab){   // aucun onglet : tiroir rangé, la pilule d'onglets reste en bas
+    setSheetVar($('pills').offsetHeight + 16);
+    $('panel').dataset.state = 'none'; document.body.dataset.sheet = 'none';
+    return;
+  }
   const wasPeek = sheetState === 'peek', prev = sheetState;
   sheetState = s;
   if(prev !== s && s !== 'full' && selected && !nav && !userMoved){ clearTimeout(refitT); refitT = setTimeout(fitRoute, 320); }
@@ -5038,7 +5177,7 @@ function setSheet(s){
   // Mi-hauteur et plein écran : la liste défile sans changer la taille du tiroir
   // (on change la taille avec la poignée ou la ligne de résumé) ; replié : glisser sur la liste agrandit le tiroir
   const scrolls = s !== 'peek';
-  [l, $('sugg'), $('coach')].forEach(el => {
+  [l, $('sugg'), $('coach'), $('compte')].forEach(el => {
     el.style.touchAction = scrolls ? 'pan-y' : 'none';
     el.style.overflowY = scrolls ? 'auto' : 'hidden';
     if(!scrolls) el.scrollTop = 0;
@@ -5163,10 +5302,251 @@ function syncGo2(){
 new MutationObserver(syncGo2).observe($('btnGo'), { childList:true, characterData:true, subtree:true, attributes:true });
 syncGo2();
 
+/* =====================================================================
+   COMPTE — profil (connexion à venir), enregistrements, historique, réglages
+   ===================================================================== */
+function renderCompte(){
+  const box = $('compte');
+  if(!box.dataset.built){
+    box.dataset.built = '1';
+    box.innerHTML =
+      '<div class="cc cpro"><span class="soav" style="background:var(--c);width:52px;height:52px;font-size:22px">👤</span><div><b>Invité</b><small>Tes données restent sur ce téléphone.</small></div><button class="sgDet" disabled title="Arrive avec la version publique">Se connecter</button></div>' +
+      '<div class="cc csv"><div class="cch"><b class="cct">⭐ Enregistrements</b><span class="cchr"><button class="sgDet" id="svExp2">Exporter</button><label class="sgDet btnlike">Importer<input id="svImp2" type="file" accept=".json,application/json" hidden></label></span></div><div class="svhost"></div></div>' +
+      '<div class="cc cmenu"></div>';
+    box.querySelector('.svhost').appendChild($('savedList'));   // la liste des enregistrements vit maintenant ici
+    $('svExp2').onclick = () => $('svExport').click();
+    $('svImp2').onchange = e => { const f = e.target.files[0]; if(!f) return; const dt = new DataTransfer(); dt.items.add(f); $('svImport').files = dt.files; $('svImport').dispatchEvent(new Event('change')); e.target.value = ''; };
+  }
+  const menu = box.querySelector('.cmenu'); menu.innerHTML = '';
+  [['🕘', 'Historique des recherches', hist.length ? hist.length + '' : '', () => openHist()],
+   ['⚙️', 'Réglages', 'vitesses, carte, thème', () => openCfg()],
+   ['🎨', 'Thème', (THEMES[theme.t] || THEMES.emeraude).lbl + ' · ' + { clair:'clair', sombre:'sombre', auto:'auto' }[theme.m], () => { openCfg(); setTimeout(() => $('themes').scrollIntoView({ block:'center' }), 80); }],
+   ['🧪', 'Profils de test du Coach', '', () => { openCfg(); setTimeout(() => $('demoList').scrollIntoView({ block:'center' }), 80); }]
+  ].forEach(([i, t, s, f]) => {
+    const r = mk('button', 'crow', '<span>' + i + '</span><div><b></b><small></small></div><em>›</em>');
+    r.querySelector('b').textContent = t; r.querySelector('small').textContent = s; r.onclick = f;
+    menu.appendChild(r);
+  });
+  renderSaved();
+}
+
+/* =====================================================================
+   COMMUNAUTÉ — fil de publications, messages, groupes (aperçu hors ligne)
+   Tant que les comptes ne sont pas activés, tout reste sur l'appareil ;
+   les créateurs et groupes de démonstration sont fictifs.
+   ===================================================================== */
+let social = store.get('social', null);
+let soView = 'fil', soConv = null, soPrevTab = null;
+const SO_PEOPLE = {
+  lina:{ nom:'Lina Trail', ini:'LT', col:'#e11d48', bio:'Créatrice · trail & course nature', act:'course', creator:true },
+  max:{ nom:'Max Vélo Urbain', ini:'MV', col:'#2563eb', bio:'Créateur · balades vélo en ville', act:'velo', creator:true },
+  theo:{ nom:'Coach Théo', ini:'CT', col:'#7c3aed', bio:'Créateur · fractionné & conseils', act:'course', creator:true },
+  nina:{ nom:'Nina', ini:'N', col:'#d97706', act:'marche' },
+  sam:{ nom:'Sam', ini:'S', col:'#0891b2', act:'course' }
+};
+function soInit(){
+  if(social) return;
+  const now = Date.now(), H = 3600e3;
+  social = {
+    likes:{}, posts:[],
+    seed:[
+      { id:'d1', who:'lina', t:now - 3 * H, act:'course', km:12.4, min:68, dplus:210, shape:11, txt:'Sortie du matin le long de l\'eau, puis la petite côte pour finir 💪 Le circuit est dans le lien, il est parfait pour une sortie longue tranquille.', likes:128, com:14 },
+      { id:'d2', who:'max', t:now - 9 * H, act:'velo', km:31.0, min:95, dplus:340, shape:23, txt:'Boucle vélo des parcs : presque tout en piste cyclable. Pause café à mi-parcours ☕', likes:86, com:9 },
+      { id:'d3', who:'theo', t:now - 30 * H, act:'course', km:8.0, min:44, dplus:60, shape:37, txt:'Séance du jour : 6 × 1 000 m sur ce tour plat. Récup 1 min 30 entre chaque. Qui le tente cette semaine ?', likes:203, com:31 },
+      { id:'d4', who:'nina', t:now - 52 * H, act:'marche', km:6.2, min:80, dplus:95, shape:41, txt:'Balade du dimanche avec le groupe des Marcheurs 🌳 Merci à tous pour la bonne humeur !', likes:24, com:5 }
+    ],
+    convs:[
+      { id:'c1', nom:'Lina Trail', who:'lina', group:false, msgs:[{ from:'lina', t:now - 26 * H, txt:'Hello ! Tu as testé le circuit des quais ?' }] },
+      { id:'g1', nom:'Running du mardi', group:true, act:'course', members:['sam', 'theo', 'nina'], next:'Mardi 19 h · 10 km tranquille', msgs:[
+        { from:'sam', t:now - 20 * H, txt:'On part du parc comme d\'hab ?' },
+        { from:'theo', t:now - 19 * H, txt:'Oui, 19 h pile. Allure 6 min/km pour tout le monde 🙂' }] }
+    ],
+    groupsSugg:[
+      { id:'g2', nom:'Les Marcheurs du dimanche', act:'marche', members:['nina'], count:38, next:'Dimanche 10 h · 7 km' },
+      { id:'g3', nom:'Vélo du week-end', act:'velo', members:['max'], count:52, next:'Samedi 9 h · 45 km' },
+      { id:'g4', nom:'Trail débutants', act:'course', members:['lina'], count:21, next:'Jeudi 18 h 30 · 6 km nature' }
+    ]
+  };
+  soSave();
+}
+const soSave = () => store.set('social', social);
+// Tracé de démonstration : boucle de la bonne longueur autour de la zone affichée (aucun lieu réel visé)
+function soShape(km, seed){
+  const R = seeded(seed), c = start || [map.getCenter().lat, map.getCenter().lng];
+  const rad = km / (2 * Math.PI) / 1.2, a0 = R() * 6.28, off = [Math.cos(a0) * rad * 0.9, Math.sin(a0) * rad * 0.9], ph = [R() * 6, R() * 6], pts = [];
+  for(let k = 0; k <= 60; k++){
+    const a = a0 + Math.PI + k / 60 * 2 * Math.PI, rr = rad * (1 + 0.16 * Math.sin(3 * a + ph[0]) + 0.08 * Math.sin(5 * a + ph[1]));
+    pts.push([c[0] + (off[1] + Math.sin(a) * rr) / 111, c[1] + (off[0] + Math.cos(a) * rr) / (111 * Math.cos(c[0] * Math.PI / 180))]);
+  }
+  return pts;
+}
+function soMini(pts){   // aperçu du tracé (sans fond de carte)
+  const la = pts.map(p => p[0]), lo = pts.map(p => p[1]), y0 = Math.min(...la), y1 = Math.max(...la), x0 = Math.min(...lo), x1 = Math.max(...lo);
+  const k = Math.cos(((y0 + y1) / 2) * Math.PI / 180), w = (x1 - x0) * k || 1e-6, h = (y1 - y0) || 1e-6, s = Math.min(280 / w, 120 / h);
+  const P = pts.map(p => (20 + ((p[1] - x0) * k) * s + (280 - w * s) / 2).toFixed(1) + ',' + (14 + (y1 - p[0]) * s + (120 - h * s) / 2).toFixed(1)).join(' ');
+  const f = P.split(' ')[0].split(',');
+  return '<svg viewBox="0 0 320 148" class="somap" aria-hidden="true"><rect width="320" height="148" rx="12" fill="var(--n2)"/>' +
+    '<polyline points="' + P + '" fill="none" stroke="#fff" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/>' +
+    '<polyline points="' + P + '" fill="none" stroke="var(--c)" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>' +
+    '<circle cx="' + f[0] + '" cy="' + f[1] + '" r="6" fill="#16a34a" stroke="#fff" stroke-width="2.5"/></svg>';
+}
+function soAvatar(w, size){
+  const p = w === 'me' ? { ini:'Moi', col:'var(--c)' } : SO_PEOPLE[w] || { ini:'?', col:'#9ca3af' };
+  return '<span class="soav" style="background:' + p.col + ';width:' + (size || 40) + 'px;height:' + (size || 40) + 'px;font-size:' + Math.round((size || 40) * 0.36) + 'px">' + p.ini + '</span>';
+}
+const soWhen = t => histWhen(new Date(t).toISOString());
+// Ouvrir le circuit d'une publication sur la carte
+function soOpenRoute(p){
+  const pts = p.pts || soShape(p.km, hashStr(p.id));
+  closeSocial(true);
+  showSaved({ coords:pts.map(q => [q[1], q[0]]), mode:p.act, kind:'boucle', distance:Math.round(p.km * 1000), name:(p.who === 'me' ? 'Mon circuit' : 'Circuit de ' + SO_PEOPLE[p.who].nom) });
+  setTimeout(() => msg('🔗 Circuit de la publication — touche ☆ pour le garder.'), 600);
+}
+function soPostCard(p){
+  const who = p.who === 'me' ? { nom:'Toi', bio:'' } : SO_PEOPLE[p.who];
+  const d = mk('article', 'sopost');
+  d.innerHTML = '<header>' + soAvatar(p.who) + '<div><b></b><small></small></div>' + (who.creator ? '<span class="socr">Créateur</span>' : '') + '</header>' +
+    '<p class="sotxt"></p><div class="sostats"></div><div class="somapw"></div>' +
+    '<div class="sobtns"><button class="sol"></button><button class="soc">💬 ' + (p.com || 0) + '</button><button class="sov">' + ITI_SVG + 'Voir le circuit</button><button class="sos" title="Partager">' + SHARE_SVG + '</button></div>';
+  d.querySelector('header b').textContent = who.nom;
+  d.querySelector('header small').textContent = ACT[p.act] + ' · ' + soWhen(p.t);
+  d.querySelector('.sotxt').textContent = p.txt;
+  d.querySelector('.sostats').innerHTML = '<span><small>Distance</small><b>' + r1(p.km) + ' km</b></span><span><small>Temps</small><b>' + fmtMin(p.min) + '</b></span><span><small>' + (p.act === 'course' ? 'Allure' : 'Vitesse') + '</small><b>' + (p.act === 'course' ? allure(p.km / (p.min / 60)) : r1(p.km / (p.min / 60)) + ' km/h') + '</b></span><span><small>Dénivelé</small><b>' + p.dplus + ' m</b></span>';
+  const pts = p.pts || soShape(p.km, hashStr(p.id));
+  d.querySelector('.somapw').innerHTML = soMini(pts);
+  d.querySelector('.somapw').onclick = () => soOpenRoute(p);
+  const liked = !!social.likes[p.id], lb = d.querySelector('.sol');
+  lb.textContent = (liked ? '❤️ ' : '🤍 ') + ((p.likes || 0) + (liked ? 1 : 0)); lb.classList.toggle('on', liked);
+  lb.onclick = () => { social.likes[p.id] = !liked; soSave(); renderSocial(); };
+  d.querySelector('.soc').onclick = () => msg('💬 Les commentaires arriveront avec les comptes.');
+  d.querySelector('.sov').onclick = () => soOpenRoute(p);
+  d.querySelector('.sos').onclick = () => {
+    const q = new URLSearchParams({ r:encPoly(pts), m:p.act, k:'boucle', d:Math.round(p.km * 1000), n:'Circuit de ' + who.nom });
+    shareIt('Circuit de ' + who.nom, ICO[p.act] + ' Circuit de ' + who.nom + ' — ' + r1(p.km) + ' km (PARS-COURS)', appUrl() + '#' + q.toString());
+  };
+  return d;
+}
+function soNewPost(){
+  const routes = saved.filter(s => catOf(s) !== 'lieu');
+  const box = $('soBody'); box.innerHTML = '';
+  const f = mk('div', 'cc sonew', '<b class="cct">Nouvelle publication</b><p class="ccsub">Partage un de tes circuits enregistrés avec un petit mot.</p><select></select><textarea rows="4" placeholder="Raconte ta sortie, donne tes conseils…"></textarea><div class="bzrow"><button class="sgDet">Annuler</button><button class="primary">Publier</button></div>');
+  const sel = f.querySelector('select');
+  if(!routes.length){ sel.outerHTML = '<p class="empty">Enregistre d\'abord un parcours (☆) pour pouvoir le publier.</p>'; f.querySelector('.primary').disabled = true; }
+  else routes.forEach(s => { const o = mk('option'); o.value = s.id; o.textContent = (MODE_ICO[s.mode] || '') + ' ' + s.name + ' · ' + d1(s.distance / 1000) + ' km'; f.querySelector('select').appendChild(o); });
+  f.querySelector('.sgDet').onclick = () => renderSocial();
+  f.querySelector('.primary').onclick = () => {
+    const s = saved.find(x => x.id === f.querySelector('select').value); if(!s) return;
+    const km = s.distance / 1000;
+    social.posts.unshift({ id:'p' + Date.now().toString(36), who:'me', t:Date.now(), act:s.mode || st.mode, km, min:Math.round(km / (cfg.speeds[s.mode] || 5) * 60), dplus:s.up || 0, txt:f.querySelector('textarea').value.trim() || s.name, pts:s.coords.map(q => [q[1], q[0]]), likes:0, com:0 });
+    soSave(); soView = 'fil'; renderSocial(); msg('✓ Publication ajoutée à ton fil.');
+  };
+  box.appendChild(f);
+}
+function soChat(c){
+  soConv = c.id;
+  const box = $('soBody'); box.innerHTML = '';
+  const h = mk('div', 'sochath', '<button class="sgDet">‹</button>' + (c.group ? '<span class="soav grp">' + ICO[c.act] + '</span>' : soAvatar(c.who, 36)) + '<div><b></b><small></small></div>');
+  h.querySelector('b').textContent = c.nom;
+  h.querySelector('small').textContent = c.group ? (c.members.length + 1) + ' membres' + (c.next ? ' · ' + c.next : '') : SO_PEOPLE[c.who].bio || '';
+  h.querySelector('button').onclick = () => { soConv = null; renderSocial(); };
+  box.appendChild(h);
+  const list = mk('div', 'somsgs');
+  c.msgs.forEach(m => {
+    const b = mk('div', 'somsg' + (m.from === 'me' ? ' me' : ''), (m.from !== 'me' && c.group ? '<small class="sofrom"></small>' : '') + '<p></p><small class="sot"></small>');
+    if(b.querySelector('.sofrom')) b.querySelector('.sofrom').textContent = SO_PEOPLE[m.from] ? SO_PEOPLE[m.from].nom : m.from;
+    b.querySelector('p').textContent = m.txt; b.querySelector('.sot').textContent = soWhen(m.t);
+    list.appendChild(b);
+  });
+  box.appendChild(list);
+  const inp = mk('form', 'soinp', '<input placeholder="Écrire un message…" aria-label="Message"><button class="primary" aria-label="Envoyer">➤</button>');
+  inp.onsubmit = e => {
+    e.preventDefault();
+    const v = inp.querySelector('input').value.trim(); if(!v) return;
+    c.msgs.push({ from:'me', t:Date.now(), txt:v }); soSave(); soChat(c);
+  };
+  box.appendChild(inp);
+  setTimeout(() => { list.scrollTop = list.scrollHeight; box.scrollTop = box.scrollHeight; inp.querySelector('input').focus({ preventScroll:true }); });
+}
+function soNewGroup(){
+  const box = $('soBody'); box.innerHTML = '';
+  const f = mk('div', 'cc sonew', '<b class="cct">Créer un groupe</b><input placeholder="Nom du groupe (ex. : Course du jeudi)"><div class="bzc soact"></div><input placeholder="Prochaine sortie (ex. : jeudi 19 h · 8 km)"><div class="bzrow"><button class="sgDet">Annuler</button><button class="primary">Créer</button></div>');
+  let act = st.mode;
+  Object.entries(ACT).forEach(([k, v]) => { const b = mk('button', k === act ? 'on' : '', v); b.type = 'button'; b.onclick = () => { act = k; f.querySelectorAll('.soact button').forEach(x => x.classList.toggle('on', x === b)); }; f.querySelector('.soact').appendChild(b); });
+  f.querySelector('.sgDet').onclick = () => renderSocial();
+  f.querySelector('.primary').onclick = () => {
+    const [n, nx] = f.querySelectorAll('input'); if(!n.value.trim()){ n.focus(); return; }
+    const g = { id:'g' + Date.now().toString(36), nom:n.value.trim(), group:true, act, members:[], next:nx.value.trim(), msgs:[{ from:'me', t:Date.now(), txt:'Groupe créé 🎉 Invitez vos amis quand les comptes seront actifs !' }] };
+    social.convs.unshift(g); soSave(); soChat(g);
+  };
+  box.appendChild(f);
+}
+function renderSocial(){
+  soInit();
+  document.querySelectorAll('#social .sotabs button').forEach(b => b.classList.toggle('on', b.dataset.s === soView));
+  const box = $('soBody'); box.innerHTML = '';
+  if(soConv){ const c = social.convs.find(x => x.id === soConv); if(c) return soChat(c); soConv = null; }
+  box.appendChild(mk('p', 'sonote', 'Aperçu hors ligne : publications, messages et groupes restent sur ton téléphone jusqu\'à l\'activation des comptes. Les créateurs et groupes affichés sont fictifs.'));
+  if(soView === 'fil'){
+    const nb = mk('button', 'sonewb', '＋ Publier un circuit'); nb.onclick = soNewPost; box.appendChild(nb);
+    social.posts.concat(social.seed).sort((a, b) => b.t - a.t).forEach(p => box.appendChild(soPostCard(p)));
+  }
+  if(soView === 'msg'){
+    social.convs.slice().sort((a, b) => (b.msgs.at(-1) || {}).t - (a.msgs.at(-1) || {}).t).forEach(c => {
+      const last = c.msgs[c.msgs.length - 1] || {}, r = mk('button', 'soconv', (c.group ? '<span class="soav grp">' + ICO[c.act] + '</span>' : soAvatar(c.who)) + '<div><b></b><small></small></div><em></em>');
+      r.querySelector('b').textContent = c.nom + (c.group ? ' · groupe' : '');
+      r.querySelector('small').textContent = (last.from === 'me' ? 'Toi : ' : c.group && SO_PEOPLE[last.from] ? SO_PEOPLE[last.from].nom + ' : ' : '') + (last.txt || '');
+      r.querySelector('em').textContent = last.t ? soWhen(last.t) : '';
+      r.onclick = () => soChat(c);
+      box.appendChild(r);
+    });
+    const cr = mk('p', 'ccsub', 'Les conversations privées avec d\'autres membres arriveront avec les comptes. En attendant, crée un groupe dans l\'onglet Groupes.');
+    box.appendChild(cr);
+  }
+  if(soView === 'grp'){
+    const nb = mk('button', 'sonewb', '＋ Créer un groupe'); nb.onclick = soNewGroup; box.appendChild(nb);
+    const mine = social.convs.filter(c => c.group);
+    box.appendChild(mk('p', 'kgrp', 'Mes groupes'));
+    mine.forEach(c => {
+      const r = mk('button', 'soconv', '<span class="soav grp">' + ICO[c.act] + '</span><div><b></b><small></small></div><em>›</em>');
+      r.querySelector('b').textContent = c.nom; r.querySelector('small').textContent = (c.members.length + 1) + ' membres' + (c.next ? ' · ' + c.next : '');
+      r.onclick = () => soChat(c); box.appendChild(r);
+    });
+    const sug = social.groupsSugg.filter(g => !social.convs.some(c => c.id === g.id));
+    if(sug.length){
+      box.appendChild(mk('p', 'kgrp', 'Groupes à découvrir'));
+      sug.forEach(g => {
+        const r = mk('div', 'soconv', '<span class="soav grp">' + ICO[g.act] + '</span><div><b></b><small></small></div><button class="sgDet">Rejoindre</button>');
+        r.querySelector('b').textContent = g.nom; r.querySelector('small').textContent = g.count + ' membres · ' + g.next;
+        r.querySelector('button').onclick = () => {
+          social.convs.unshift(Object.assign({}, g, { group:true, msgs:[{ from:g.members[0], t:Date.now(), txt:'Bienvenue dans le groupe 👋 Prochaine sortie : ' + g.next }] }));
+          soSave(); renderSocial(); msg('✓ Tu as rejoint « ' + g.nom + ' ».');
+        };
+        box.appendChild(r);
+      });
+    }
+  }
+}
+function openSocial(){
+  soPrevTab = tab === 'social' ? soPrevTab : tab;
+  soInit(); soConv = null;
+  $('social').hidden = false;
+  requestAnimationFrame(() => $('social').classList.add('open'));
+  document.body.classList.add('social-open');
+  renderSocial();
+}
+function closeSocial(keep){
+  $('social').classList.remove('open');
+  document.body.classList.remove('social-open');
+  setTimeout(() => { if(!$('social').classList.contains('open')) $('social').hidden = true; }, 300);
+  if(!keep) setTab(soPrevTab || null);
+}
+$('soBack').onclick = () => closeSocial();
+document.querySelectorAll('#social .sotabs button').forEach(b => b.onclick = () => { soView = b.dataset.s; soConv = null; renderSocial(); $('soBody').scrollTop = 0; });
+
 sheetReady = true;
 updateChip();
+setTab(null);
 applyLayout();
-setSheet('peek');
 setTimeout(openShared, 300);   // lien partagé (#r=… parcours, #p=… lieu)
 window.addEventListener('hashchange', openShared);
 
