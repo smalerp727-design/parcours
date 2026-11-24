@@ -516,6 +516,7 @@
   @media (hover:hover){ .sotag:hover{border-color:var(--hov-bd);background:var(--hov-bg)} }
   body.sheet-full:not(.wide) #panel #tabs{display:none}
   body.sheet-full:not(.wide) #pills{display:flex}
+  body.sheet-full.pills-hide:not(.social-open) #pills{transform:translate(-50%, calc(100% + 30px))}
   body.sheet-full:not(.wide) #list, body.sheet-full:not(.wide) #sugg, body.sheet-full:not(.wide) #coach, body.sheet-full:not(.wide) #compte{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
   #soGrab{width:100%;height:22px;display:flex;align-items:center;justify-content:center;background:var(--bg);cursor:grab;touch-action:none;padding-top:env(safe-area-inset-top)}
   #soGrab::before{content:"";width:44px;height:5px;border-radius:3px;background:var(--bd2)}
@@ -3558,6 +3559,7 @@ function setTab(t){
   if(t) mapTab = t; else if(tab) mapTab = tab;
   if(t === 'social'){ openSocial(); document.querySelectorAll('#tabs button, #pills button').forEach(b => b.classList.toggle('on', b.dataset.t === 'social')); return; }
   if(!$('social').hidden) closeSocial(true);
+  document.body.classList.remove('pills-hide');
   const wasNone = !tab;
   tab = t;
   showUI();
@@ -5223,6 +5225,7 @@ function setSheet(s){
   if(tab === 'sugg' && sugDetail && wasPeek !== (s === 'peek')) renderSugg();
   const p = $('panel'), l = $('list');
   document.body.classList.toggle('sheet-full', s === 'full');   // plein écran : onglets dans la pilule du bas
+  document.body.classList.remove('pills-hide');
   p.style.height = sheetH()[s] + 'px';
   setSheetVar(sheetH()[s]);
   p.dataset.state = s;
@@ -5706,6 +5709,16 @@ $('soBody').addEventListener('touchend', e => {
     if(!moved || dy > 90) down(); };
   g.addEventListener('pointerup', end); g.addEventListener('pointercancel', end);
 })();
+// Plein écran : en faisant défiler vers le bas, la pilule d'onglets sort de l'écran ; vers le haut, elle revient
+['list', 'sugg', 'coach', 'compte'].forEach(id => {
+  let last = 0;
+  $(id).addEventListener('scroll', () => {
+    const y = $(id).scrollTop, dy = y - last;
+    if(Math.abs(dy) < 6) return;
+    if(document.body.classList.contains('sheet-full')) document.body.classList.toggle('pills-hide', dy > 0 && y > 40);
+    last = y;
+  }, { passive:true });
+});
 $('soFab').onclick = () => soFind ? (soFind = null, renderSocial()) : soOpenFind();
 new ResizeObserver(() => { $('soBody').style.paddingTop = ($('social').querySelector('.sotop').offsetHeight + 12) + 'px'; }).observe($('social').querySelector('.sotop'));
 
