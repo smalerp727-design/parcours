@@ -923,6 +923,10 @@
   body.wide:not(.no-tab) #rail, body.wide.social-open #rail{border-radius:18px 0 0 18px;min-height:var(--card-h, 0px);clip-path:inset(-30px 0 -30px -30px);animation:none}
   body.wide #panel, body.wide #social{border-radius:0 18px 18px 0 !important;border-left:1px solid var(--bd);clip-path:inset(-30px -30px -30px 0);min-height:var(--rail-h, 0px)}
   body.wide.social-open #social{bottom:auto;height:calc(100% - 24px)}
+  body.wide #social{transform:none !important}
+  body.wide #pills, body.wide.social-open #panel{display:none !important}
+  body.wide #rail{transition:min-height .3s cubic-bezier(.2,.8,.2,1)}
+  .mghost{position:fixed;z-index:999;background:var(--bg);border-radius:0 18px 18px 0;box-shadow:0 2px 12px rgba(0,0,0,.2);pointer-events:none}
   #rail button.on span{color:var(--c)}
   body.wide.no-tab #panel{display:none !important}
   body.wide #btnPhoto{display:none !important}
@@ -3805,10 +3809,29 @@ function setTab(t){
   if(typeof syncHalo === 'function') syncHalo();
   if(typeof syncCardH === 'function') requestAnimationFrame(syncCardH);
 }
+// PC : changement d'onglet avec un effet de morphose (la carte s'étire / se rétracte vers sa nouvelle taille)
+const curCard = () => !$('social').hidden ? $('social') : tab ? $('panel') : null;
+function morphTab(t){
+  if(!WIDE.matches || matchMedia('(prefers-reduced-motion: reduce)').matches) return setTab(t);
+  const rr = $('rail').getBoundingClientRect(), old = curCard();
+  const flat = { left:rr.right, top:rr.top, width:0, height:rr.height };
+  const r0 = old ? old.getBoundingClientRect() : flat;
+  setTab(t);
+  const nw = curCard();
+  const r1 = nw ? nw.getBoundingClientRect() : flat;
+  if(Math.abs(r0.width - r1.width) < 2 && Math.abs(r0.height - r1.height) < 2 && old === nw && nw){
+    nw.animate([{ opacity:.4 }, { opacity:1 }], { duration:220, easing:'ease-out' }); return;
+  }
+  const g = mk('div', 'mghost'); document.body.appendChild(g);
+  const kf = r => ({ left:r.left + 'px', top:r.top + 'px', width:r.width + 'px', height:r.height + 'px' });
+  g.animate([kf(r0), kf(r1)], { duration:320, easing:'cubic-bezier(.2,.8,.2,1)' }).onfinish = () => g.remove();
+  if(nw) nw.animate([{ opacity:0 }, { opacity:0, offset:.35 }, { opacity:1 }], { duration:340, easing:'ease-out' });
+}
 // Toucher l'onglet ouvert le referme (retour aux pilules)
 document.querySelectorAll('#tabs button, #pills button, #rail button[data-t]').forEach(b => b.onclick = () => {
   document.body.classList.remove('wsearch');
   if(b.dataset.t === 'close') return setTab(null);
+  if(WIDE.matches) return morphTab(!$('social').hidden ? (b.dataset.t === 'social' ? null : b.dataset.t) : tab === b.dataset.t ? null : b.dataset.t);
   if(!$('social').hidden){   // depuis la Communauté
     if(b.dataset.t === 'social' && WIDE.matches) return setTab(null);
     if(b.dataset.t === 'social'){ $('soBody').scrollTo({ top:0, behavior:'smooth' }); document.body.classList.remove('so-hide'); return; }
@@ -3835,12 +3858,14 @@ function syncCardH(){
 }
 const cardRO = new ResizeObserver(() => requestAnimationFrame(syncCardH));
 [$('rail'), $('panel'), $('social')].forEach(el => cardRO.observe(el));
-$('rail').querySelector('[data-r="hide"]').onclick = () => setTab(null);
+$('rail').querySelector('[data-r="hide"]').onclick = () => morphTab(null);
 $('rail').querySelector('[data-r="photo"]').onclick = () => $('btnPhoto').click();
 $('qPhoto').onclick = () => $('btnPhoto').click();
 $('rail').querySelector('[data-r="search"]').onclick = () => {
-  setTab(mapTab && mapTab !== 'social' ? mapTab : 'parcours');
+  const tt = mapTab && mapTab !== 'social' ? mapTab : 'parcours';
+  const h0 = $('panel').offsetHeight;
   document.body.classList.add('wsearch');
+  if(tab !== tt || !$('social').hidden) morphTab(tt); else { const p = $('panel'); requestAnimationFrame(() => p.animate([{ height:h0 + 'px' }, { height:p.offsetHeight + 'px' }], { duration:300, easing:'cubic-bezier(.2,.8,.2,1)' })); }
   $('q').focus(); showRecent();
 };
 // Communauté sur PC : la barre d'onglets se place en haut de la carte Communauté
@@ -6116,7 +6141,8 @@ function openSocial(){
 function closeSocial(keep){
   $('social').classList.remove('open');
   document.body.classList.remove('social-open', 'so-hide', 'so-chat');
-  setTimeout(() => { if(!$('social').classList.contains('open')){ $('social').hidden = true; placePills(); } }, 300);
+  if(WIDE.matches){ $('social').hidden = true; placePills(); }
+  else setTimeout(() => { if(!$('social').classList.contains('open')){ $('social').hidden = true; placePills(); } }, 300);
   if(!keep) setTab(soPrevTab || null);
 }
 const SO_ORDER = ['fil', 'msg', 'grp'];
