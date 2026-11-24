@@ -909,6 +909,43 @@
     #panel{top:calc(12px + env(safe-area-inset-top));bottom:auto;left:calc(12px + env(safe-area-inset-left));right:auto;width:340px;height:auto !important;max-height:calc(100% - 24px);overflow:visible;display:flex;flex-direction:column;border-radius:18px;padding:14px;transition:none;box-shadow:0 2px 12px rgba(0,0,0,.2)}
   }
   @media (min-width:1000px){ #panel{width:390px} }
+  /* ===== PC : pilule verticale (rail) quand aucun onglet n'est ouvert ; un onglet la transforme en carte ===== */
+  #rail, #qPhoto, .tclose{display:none}
+  body:not(.wide) .tclose{display:none !important}
+  body.wide.no-tab:not(.social-open) #rail{display:flex}
+  body.wide.no-tab #panel{display:none !important}
+  body.wide #btnPhoto{display:none !important}
+  #rail{position:fixed;z-index:1001;left:calc(12px + env(safe-area-inset-left));top:calc(12px + env(safe-area-inset-top));flex-direction:column;gap:2px;padding:8px 6px;background:var(--bg);border-radius:30px;box-shadow:0 2px 12px rgba(0,0,0,.2);animation:railIn .22s cubic-bezier(.2,.8,.2,1)}
+  @keyframes railIn{from{opacity:0;transform:scale(.96);transform-origin:top left}}
+  #rail hr{border:0;height:1px;background:var(--bd);margin:4px 8px}
+  #rail button{display:flex;align-items:center;gap:0;height:46px;min-width:46px;padding:0 12px;border:none;background:none;border-radius:23px;color:var(--tx);font:600 14px system-ui,sans-serif;cursor:pointer;white-space:nowrap}
+  #rail button svg{width:22px;height:22px;flex:none;fill:var(--mu)}
+  #rail button[data-r="search"] svg{fill:var(--c)}
+  #rail button i{font-style:normal;font-size:21px;line-height:1;width:22px;text-align:center;flex:none}
+  #rail button span{max-width:0;opacity:0;overflow:hidden;transition:max-width .25s cubic-bezier(.2,.8,.2,1),opacity .2s ease,margin .25s ease}
+  body.rail-open #rail button span{max-width:180px;opacity:1;margin-left:12px;margin-right:6px}
+  @media (hover:hover){ #rail button:hover{background:var(--hov-bg)} }
+  body.wide #qPhoto{display:flex;position:absolute;right:42px;top:0;height:38px;width:38px;border:none;background:none;border-radius:50%;align-items:center;justify-content:center;padding:0;cursor:pointer}
+  body.wide #qPhoto svg{width:21px;height:21px;fill:var(--mu)}
+  @media (hover:hover){ body.wide #qPhoto:hover svg{fill:var(--c)} }
+  body.wide #q{padding-right:84px !important}
+  body.wide #tabs .tclose{display:flex;flex:0 0 34px !important;align-items:center;justify-content:center;border:none;background:none;border-radius:50%;color:var(--mu);font-size:16px !important;cursor:pointer;padding:0 !important}
+  @media (hover:hover){ body.wide .tclose:hover{background:var(--hov-bg);color:var(--tx)} }
+  /* Recherche ouverte depuis la pilule : la carte prend toute la hauteur et montre l'historique */
+  body.wide.wsearch #panel{height:calc(100% - 24px) !important}
+  body.wide.wsearch #ctrl{flex:1 1 auto;min-height:0;display:flex !important;flex-direction:column}
+  body.wide.wsearch #ctrl > :not(#search), body.wide.wsearch #destChip, body.wide.wsearch #info, body.wide.wsearch #sessBar, body.wide.wsearch #list, body.wide.wsearch #sugg, body.wide.wsearch #coach, body.wide.wsearch #compte{display:none !important}
+  body.wide.wsearch #search{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+  body.wide.wsearch #sres{position:static;flex:1 1 auto;max-height:none;box-shadow:none;border:none;border-radius:0;background:none;margin:0 -4px;padding:0 4px}
+  /* Communauté sur PC : une carte plus large, onglets en haut */
+  body.wide #social{left:calc(12px + env(safe-area-inset-left));top:calc(12px + env(safe-area-inset-top));bottom:12px;right:auto;width:min(600px, calc(100% - 100px));border-radius:18px;box-shadow:0 2px 12px rgba(0,0,0,.2);transform:translateX(calc(-100% - 30px))}
+  body.wide #social.open{transform:none}
+  body.wide #social #soGrab, body.wide #social .soh{display:none}
+  body.wide .sotop{border-radius:18px 18px 0 0;overflow:hidden}
+  .sotop #pills{position:static !important;transform:none !important;width:auto;display:flex !important;box-shadow:none;border-radius:0;padding:8px 8px 4px;background:var(--bg)}
+  .sotop #pills .tclose{display:flex;flex:0 0 34px !important;align-items:center;justify-content:center;border:none;background:none;border-radius:50%;color:var(--mu);font-size:16px !important;cursor:pointer;padding:0 !important}
+  body.wide #soFab{right:auto;left:calc(12px + env(safe-area-inset-left) + min(600px, 100vw - 100px) - 74px);bottom:28px}
+  body.wide.social-open #pills{z-index:auto}
   @media (min-width:1600px){ #panel{width:420px} }
   /* Téléphone en paysage : panneau plus compact */
   @media (orientation:landscape) and (max-height:520px){
@@ -945,13 +982,25 @@
 </div>
 <button id="mic" class="fab" title="Commande vocale" hidden><svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5.3-3a5.3 5.3 0 0 1-10.6 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-1.7z"/></svg></button>
 <button id="btnLoc" class="fab" title="Ma position"><svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm8.94 3A8.99 8.99 0 0 0 13 3.06V1h-2v2.06A8.99 8.99 0 0 0 3.06 11H1v2h2.06A8.99 8.99 0 0 0 11 20.94V23h2v-2.06A8.99 8.99 0 0 0 20.94 13H23v-2h-2.06zM12 19a7 7 0 1 1 0-14 7 7 0 0 1 0 14z"/></svg></button>
+<nav id="rail" aria-label="Menu">
+  <button data-r="menu" title="Afficher les libellés"><svg viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg><span>Réduire</span></button>
+  <hr>
+  <button data-r="search" title="Rechercher"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg><span>Rechercher</span></button>
+  <button data-r="photo" title="Ajouter des photos ou vidéos"><svg viewBox="0 0 24 24" style="transform:translate(1px,0)"><path d="M3 4V1h2v3h3v2H5v3H3V6H0V4h3zm3 6V7h3V4h7l1.83 2H21a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V10h3zm7 9a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm-3.2-5a3.2 3.2 0 1 0 6.4 0 3.2 3.2 0 0 0-6.4 0z"/></svg><span>Ajouter une photo</span></button>
+  <hr>
+  <button data-t="parcours" title="Parcours"><i>🗺️</i><span>Parcours</span></button>
+  <button data-t="sugg" title="Suggestions"><i>✨</i><span>Suggestions</span></button>
+  <button data-t="coach" title="Coach"><i>💪</i><span>Coach</span></button>
+  <button data-t="social" title="Communauté"><i>👥</i><span>Communauté</span></button>
+  <button data-t="compte" title="Compte"><i>👤</i><span>Compte</span></button>
+</nav>
 <button id="btnPhoto" class="fab" title="Ajouter des photos ou vidéos"><svg viewBox="0 0 24 24" style="transform:translate(1px,0)"><path d="M3 4V1h2v3h3v2H5v3H3V6H0V4h3zm3 6V7h3V4h7l1.83 2H21a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V10h3zm7 9a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm-3.2-5a3.2 3.2 0 1 0 6.4 0 3.2 3.2 0 0 0-6.4 0z"/></svg></button>
 <input id="mediaIn" type="file" accept="image/*,video/*" multiple hidden>
 
 <button id="btnSaved" class="fab" title="Mes enregistrements"><svg viewBox="0 0 24 24"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg><span id="svCount" hidden></span></button>
 
 <!-- Onglets en pilule quand aucun n'est ouvert (téléphone) -->
-<nav id="pills" aria-label="Onglets"><button data-t="parcours"><i>🗺️</i>Parcours</button><button data-t="sugg"><i>✨</i>Suggestions</button><button data-t="coach"><i>💪</i>Coach</button><button data-t="social"><i>👥</i>Communauté</button><button data-t="compte"><i>👤</i>Compte</button></nav>
+<nav id="pills" aria-label="Onglets"><button data-t="parcours"><i>🗺️</i>Parcours</button><button data-t="sugg"><i>✨</i>Suggestions</button><button data-t="coach"><i>💪</i>Coach</button><button data-t="social"><i>👥</i>Communauté</button><button data-t="compte"><i>👤</i>Compte</button><button data-t="close" class="tclose" title="Fermer" aria-label="Fermer">✕</button></nav>
 
 <!-- Communauté : pleine page -->
 <div id="social" hidden>
@@ -1065,6 +1114,7 @@
   <div id="search">
     <input id="q" type="search" placeholder="Rechercher un lieu, une adresse…" autocomplete="off" enterkeyhint="search">
     <button id="btnPlan" title="Itinéraire avec étapes"><svg viewBox="0 0 24 24"><path d="M21.71 11.29l-9-9a1 1 0 0 0-1.42 0l-9 9a1 1 0 0 0 0 1.42l9 9a1 1 0 0 0 1.42 0l9-9a1 1 0 0 0 0-1.42zM14 14.5V12h-4v3H8v-4a1 1 0 0 1 1-1h5V7.5l3.5 3.5-3.5 3.5z"/></svg></button>
+    <button id="qPhoto" type="button" title="Ajouter des photos ou vidéos" aria-label="Ajouter des photos ou vidéos"><svg viewBox="0 0 24 24"><path d="M3 4V1h2v3h3v2H5v3H3V6H0V4h3zm3 6V7h3V4h7l1.83 2H21a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V10h3zm7 9a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm-3.2-5a3.2 3.2 0 1 0 6.4 0 3.2 3.2 0 0 0-6.4 0z"/></svg></button>
     <div id="sres" hidden></div>
   </div>
   <div class="row1">
@@ -1099,7 +1149,7 @@
   </div>
   <div id="destChip" hidden><span id="destName"></span><button id="destClear" title="Retirer l'arrivée">✕ Retirer</button></div>
   <div id="info"></div>
-  <div id="tabs"><button data-t="parcours"><i>🗺️</i>Parcours</button><button data-t="sugg"><i>✨</i>Suggestions</button><button data-t="coach"><i>💪</i>Coach</button><button data-t="social"><i>👥</i>Communauté</button><button data-t="compte"><i>👤</i>Compte</button></div>
+  <div id="tabs"><button data-t="parcours"><i>🗺️</i>Parcours</button><button data-t="sugg"><i>✨</i>Suggestions</button><button data-t="coach"><i>💪</i>Coach</button><button data-t="social"><i>👥</i>Communauté</button><button data-t="compte"><i>👤</i>Compte</button><button data-t="close" class="tclose" title="Fermer" aria-label="Fermer">✕</button></div>
   <div id="sessBar" class="sessbar" hidden></div>
   <div id="list"></div>
   <div id="sugg" hidden></div>
@@ -1278,12 +1328,17 @@ flashAttribution();
 
 /* ---------- Mise en page selon la taille de la fenêtre ---------- */
 const WIDE = window.matchMedia('(min-width:800px), (orientation:landscape) and (max-height:520px)');
-const syncWide = () => document.body.classList.toggle('wide', WIDE.matches);
+const syncWide = () => { document.body.classList.toggle('wide', WIDE.matches); if(typeof placePills === 'function') placePills(); };
 syncWide(); WIDE.addEventListener && WIDE.addEventListener('change', syncWide);
 // Marges = ce qui recouvre la carte : barre de recherche, boutons ronds, tiroir (sa hauteur finale) ou panneau PC
+// PC : bord droit de ce qui recouvre la carte à gauche (carte ouverte, Communauté ou pilule verticale)
+function sideRight(){
+  const el = !$('social').hidden ? $('social') : tab ? $('panel') : $('rail');
+  return Math.max(0, el.getBoundingClientRect().right);
+}
 function visPad(){
   const p = $('panel');
-  if(WIDE.matches) return { paddingTopLeft:[p.getBoundingClientRect().right + 24, 24], paddingBottomRight:[70, 76] };
+  if(WIDE.matches) return { paddingTopLeft:[sideRight() + 24, 24], paddingBottomRight:[70, 76] };
   const sheet = parseFloat(p.style.height) || p.offsetHeight;
   return { paddingTopLeft:[20, 78], paddingBottomRight:[66, sheet + 64] };
 }
@@ -1321,7 +1376,7 @@ function setStart(ll){
 function visRect(){
   const W = map.getSize(), r0 = map.getContainer().getBoundingClientRect();
   let left = 0, top = 78, right = W.x, bottom = W.y;
-  if(WIDE.matches){ left = $('panel').getBoundingClientRect().right - r0.left + 12; top = 0; }
+  if(WIDE.matches){ left = sideRight() - r0.left + 12; top = 0; }
   else ['panel', 'pills'].forEach(id => { const r = $(id).getBoundingClientRect(); if(r.height > 0 && r.top > 120 && r.top - r0.top < bottom) bottom = r.top - r0.top; });
   return { left, top, right, bottom, W };
 }
@@ -1992,7 +2047,7 @@ async function searchPlaces(q){
   });
   box.hidden = false;
 }
-function closeSearch(){ $('sres').hidden = true; $('q').value = ''; $('q').blur(); }
+function closeSearch(){ $('sres').hidden = true; $('q').value = ''; $('q').blur(); document.body.classList.remove('wsearch'); }
 /* ---------- Historique des recherches : parcours générés et suggestions ---------- */
 let hist = store.get('hist', []), histCat = 'tout';
 const HIST_MAX = 100;   // les plus anciennes s'effacent d'elles-mêmes
@@ -2055,13 +2110,15 @@ function histRow(e, compact){
 }
 // Dans la barre de recherche (vide) : les 4 dernières + accès à tout l'historique
 function showRecent(){
+  const big = WIDE.matches && document.body.classList.contains('wsearch');
+  if(big && !hist.length && !$('q').value.trim()){ $('sres').innerHTML = '<p class="empty">Aucune recherche récente.<br>Tes parcours générés et tes recherches de suggestions apparaîtront ici.</p>'; $('sres').hidden = false; return; }
   if(!hist.length || $('q').value.trim()) return;
   const box = $('sres'); box.innerHTML = '';
   const hd = mk('div', 'srh', '<b>Récent</b><button type="button">Tout l\'historique ›</button>');
   hd.querySelector('button').onmousedown = ev => ev.preventDefault();
   hd.querySelector('button').onclick = () => { closeSearch(); openHist(); };
   box.appendChild(hd);
-  hist.slice(0, 4).forEach(e => box.appendChild(histRow(e, true)));
+  hist.slice(0, big ? 40 : 4).forEach(e => box.appendChild(histRow(e, true)));
   box.hidden = false;
 }
 function openHist(){ histCat = 'tout'; renderHist(); $('histModal').classList.remove('hidden'); }
@@ -2093,7 +2150,7 @@ $('histClear').onclick = () => {
   hist = []; store.set('hist', hist); b.classList.remove('sure'); b.textContent = 'Effacer'; renderHist();
 };
 $('q').addEventListener('focus', showRecent);
-document.addEventListener('pointerdown', e => { if(!$('sres').hidden && !e.target.closest('#search') && !$('q').value.trim()) $('sres').hidden = true; });
+document.addEventListener('pointerdown', e => { if(!e.target.closest('#search') && !$('q').value.trim()){ $('sres').hidden = true; document.body.classList.remove('wsearch'); } });
 
 $('q').addEventListener('input', () => {
   clearTimeout(sTimer);
@@ -3596,7 +3653,7 @@ function centerVisible(ll, z){
   userMoved = false; document.body.classList.remove('show-here');
   const p = $('panel');
   let dx = 0, dy = 0;
-  if(WIDE.matches) dx = -(p.offsetWidth + 12) / 2;
+  if(WIDE.matches) dx = -sideRight() / 2;
   else dy = (p.offsetHeight - 70) / 2;
   const pt = map.project(ll, z).add([dx, dy]);
   map.setView(map.unproject(pt, z), z);
@@ -3719,6 +3776,7 @@ function setTab(t){
   ['parcours', 'sugg', 'coach', 'compte'].forEach(k => document.body.classList.toggle('tab-' + k, t === k));
   document.body.classList.toggle('no-tab', !t);
   document.querySelectorAll('#tabs button, #pills button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+  if(!t) document.body.classList.remove('wsearch');
   $('list').hidden = t !== 'parcours';
   $('sugg').hidden = t !== 'sugg';
   $('coach').hidden = t !== 'coach';
@@ -3734,13 +3792,35 @@ function setTab(t){
   if(typeof syncHalo === 'function') syncHalo();
 }
 // Toucher l'onglet ouvert le referme (retour aux pilules)
-document.querySelectorAll('#tabs button, #pills button').forEach(b => b.onclick = () => {
+document.querySelectorAll('#tabs button, #pills button, #rail button[data-t]').forEach(b => b.onclick = () => {
+  document.body.classList.remove('wsearch');
+  if(b.dataset.t === 'close') return setTab(null);
   if(!$('social').hidden){   // depuis la Communauté
     if(b.dataset.t === 'social'){ $('soBody').scrollTo({ top:0, behavior:'smooth' }); document.body.classList.remove('so-hide'); return; }
     return setTab(b.dataset.t);
   }
   setTab(tab === b.dataset.t ? null : b.dataset.t);
 });
+
+// Pilule verticale (PC) : menu, recherche, photo
+document.body.classList.toggle('rail-open', !!store.get('railOpen', false));
+$('rail').querySelector('[data-r="menu"]').onclick = () => {
+  const on = !document.body.classList.contains('rail-open');
+  document.body.classList.toggle('rail-open', on); store.set('railOpen', on);
+};
+$('rail').querySelector('[data-r="photo"]').onclick = () => $('btnPhoto').click();
+$('qPhoto').onclick = () => $('btnPhoto').click();
+$('rail').querySelector('[data-r="search"]').onclick = () => {
+  setTab(mapTab && mapTab !== 'social' ? mapTab : 'parcours');
+  document.body.classList.add('wsearch');
+  $('q').focus(); showRecent();
+};
+// Communauté sur PC : la barre d'onglets se place en haut de la carte Communauté
+function placePills(){
+  const P = $('pills'), top = $('social').querySelector('.sotop');
+  if(WIDE.matches && document.body.classList.contains('social-open')){ if(P.parentNode !== top) top.insertBefore(P, top.querySelector('.sotabs')); }
+  else if(P.parentNode !== document.body) document.body.insertBefore(P, $('social'));
+}
 
 /* =====================================================================
    COACH — bilan de départ, objectifs à la carte (partie 1)
@@ -6002,12 +6082,13 @@ function openSocial(){
   $('social').hidden = false;
   requestAnimationFrame(() => $('social').classList.add('open'));
   document.body.classList.add('social-open');
+  placePills();
   renderSocial();
 }
 function closeSocial(keep){
   $('social').classList.remove('open');
   document.body.classList.remove('social-open', 'so-hide', 'so-chat');
-  setTimeout(() => { if(!$('social').classList.contains('open')) $('social').hidden = true; }, 300);
+  setTimeout(() => { if(!$('social').classList.contains('open')){ $('social').hidden = true; placePills(); } }, 300);
   if(!keep) setTab(soPrevTab || null);
 }
 const SO_ORDER = ['fil', 'msg', 'grp'];
