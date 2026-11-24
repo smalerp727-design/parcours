@@ -514,6 +514,12 @@
   .sofilt span{flex:1;font-weight:600;color:var(--c)}
   .sofilt .sgDet{margin:0}
   @media (hover:hover){ .sotag:hover{border-color:var(--hov-bd);background:var(--hov-bg)} }
+  body.sheet-full:not(.wide) #panel #tabs{display:none}
+  body.sheet-full:not(.wide) #pills{display:flex}
+  body.sheet-full:not(.wide) #list, body.sheet-full:not(.wide) #sugg, body.sheet-full:not(.wide) #coach, body.sheet-full:not(.wide) #compte{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+  #soGrab{width:100%;height:22px;display:flex;align-items:center;justify-content:center;background:var(--bg);cursor:grab;touch-action:none;padding-top:env(safe-area-inset-top)}
+  #soGrab::before{content:"";width:44px;height:5px;border-radius:3px;background:var(--bd2)}
+  .soh{padding-top:4px !important}
   .bzc.rpe{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
   .bzc.rpe button{min-width:0;padding:7px 0}
   @media (hover:hover){ .ses:not(.ok):hover{background:var(--hov-bg)} }
@@ -896,6 +902,7 @@
 <!-- Communauté : pleine page -->
 <div id="social" hidden>
   <div class="sotop">
+    <div id="soGrab" title="Glisser vers le bas pour réduire" role="button" aria-label="Réduire la Communauté"></div>
     <header class="soh"><b>👥 Communauté</b></header>
     <nav class="sotabs"><button data-s="fil">Fil</button><button data-s="msg">Messages</button><button data-s="grp">Groupes</button></nav>
   </div>
@@ -5205,6 +5212,7 @@ let refitT = null;
 function setSheet(s){
   if(!sheetReady || WIDE.matches) return;
   if(!tab){   // aucun onglet : tiroir rangé, la pilule d'onglets reste en bas
+    document.body.classList.remove('sheet-full');
     setSheetVar($('pills').offsetHeight + 16);
     $('panel').dataset.state = 'none'; document.body.dataset.sheet = 'none';
     return;
@@ -5214,6 +5222,7 @@ function setSheet(s){
   if(prev !== s && s !== 'full' && selected && !nav && !userMoved){ clearTimeout(refitT); refitT = setTimeout(fitRoute, 320); }
   if(tab === 'sugg' && sugDetail && wasPeek !== (s === 'peek')) renderSugg();
   const p = $('panel'), l = $('list');
+  document.body.classList.toggle('sheet-full', s === 'full');   // plein écran : onglets dans la pilule du bas
   p.style.height = sheetH()[s] + 'px';
   setSheetVar(sheetH()[s]);
   p.dataset.state = s;
@@ -5687,6 +5696,16 @@ $('soBody').addEventListener('touchend', e => {
   const i = SO_ORDER.indexOf(soView) + (dx < 0 ? 1 : -1);
   if(i >= 0 && i < SO_ORDER.length) soGo(SO_ORDER[i], dx < 0 ? 1 : -1);
 }, { passive:true });
+// Barre du haut : toucher ou glisser vers le bas range la Communauté (retour à la pilule)
+(() => {
+  const g = $('soGrab'), S = $('social'); let y0 = null, dy = 0, moved = false;
+  const down = () => { closeSocial(true); setTab(null); };
+  g.addEventListener('pointerdown', e => { y0 = e.clientY; dy = 0; moved = false; g.setPointerCapture(e.pointerId); S.style.transition = 'none'; });
+  g.addEventListener('pointermove', e => { if(y0 == null) return; dy = Math.max(0, e.clientY - y0); if(dy > 6) moved = true; S.style.transform = 'translateY(' + dy + 'px)'; });
+  const end = () => { if(y0 == null) return; y0 = null; S.style.transition = ''; S.style.transform = '';
+    if(!moved || dy > 90) down(); };
+  g.addEventListener('pointerup', end); g.addEventListener('pointercancel', end);
+})();
 $('soFab').onclick = () => soFind ? (soFind = null, renderSocial()) : soOpenFind();
 new ResizeObserver(() => { $('soBody').style.paddingTop = ($('social').querySelector('.sotop').offsetHeight + 12) + 'px'; }).observe($('social').querySelector('.sotop'));
 
