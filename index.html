@@ -591,6 +591,18 @@
   #btnPlan .pbn{position:absolute;top:2px;right:0;min-width:16px;height:16px;border-radius:8px;background:var(--c);color:#fff;font:700 10px/16px system-ui,sans-serif;text-align:center;padding:0 4px}
   .vbtn{flex:none;border:none;background:var(--c);color:#fff;border-radius:9px;padding:8px 10px;font:600 13px system-ui,sans-serif;cursor:pointer;white-space:nowrap}
   .sg-msg{color:var(--mu);font-size:14px;text-align:center;margin:14px 0}
+  /* Fin de liste : glisser vers le haut (ou toucher) pour en charger d'autres */
+  .pmore{flex:none;width:100%;height:68px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:6px;padding:12px 0 0;border:0;background:none;color:var(--mu);font:500 13px system-ui,sans-serif;cursor:pointer;transition:height .25s ease;overflow:hidden;-webkit-tap-highlight-color:transparent}
+  .pmore.pulling{transition:none}
+  .pmore i{position:relative;width:28px;height:28px;flex:none;display:grid;place-items:center;font:700 15px/1 system-ui,sans-serif;font-style:normal;color:var(--c);transition:transform .2s ease}
+  .pmore i::before{content:'';position:absolute;inset:0;border-radius:50%;background:conic-gradient(var(--c) calc(var(--p,0) * 360deg),var(--bd) 0);-webkit-mask:radial-gradient(circle,transparent 10px,#000 11px);mask:radial-gradient(circle,transparent 10px,#000 11px)}
+  .pmore.ready{color:var(--c)}
+  .pmore.ready i{transform:rotate(180deg)}
+  .pmore.busy{color:var(--c)}
+  .pmore.busy i{font-size:0}
+  .pmore.busy i::before{background:conic-gradient(var(--c) 0 100deg,var(--bd) 0);animation:pmspin .8s linear infinite}
+  @keyframes pmspin{to{transform:rotate(360deg)}}
+  @media (hover:hover){ .pmore:not(.busy):hover{color:var(--c)} }
   .pc{display:flex;gap:10px;border:1px solid var(--bd);border-radius:12px;padding:8px;margin-bottom:8px;background:var(--bg)}
   .pc img{flex:none;width:96px;height:96px;object-fit:cover;border-radius:9px;cursor:pointer;background:var(--n3)}
   .pcb{flex:1;min-width:0;display:flex;flex-direction:column}
@@ -1681,6 +1693,7 @@ function renderList(){
     b._c = c;
     L_.appendChild(b);
   });
+  if(candidates.length && candidates.length < 60) L_.appendChild(pmoreEl($('btnGo').disabled ? 'Recherche d\'autres parcours…' : 'Glisse vers le haut pour d\'autres parcours', $('btnGo').disabled, moreRoutes));
   const pinned = L_.querySelector('.pin');
   listObs = makeObserver(WIDE.matches && pinned ? pinned.offsetHeight + 6 : 0);
   L_.querySelectorAll('.it:not(.pin)').forEach(b => listObs.observe(b));
@@ -1780,8 +1793,8 @@ async function generate(){
   const prevSel = keep.length ? (keep.includes(selected) ? selected : keep[0]) : null;
   candidates = keep.slice(); selected = prevSel; userPicked = false;
   if(!prevSel){ lastRoute = null; photoRun++; photoLayer.clearLayers(); }
-  drawAll(); renderList();
   $('btnGo').disabled = true;
+  drawAll(); renderList();
   msg('');
   let lastErr = null;
   const isNew = c => !fresh.concat(keep).some(o => similarity(c, o) > 0.7);   // pas un quasi-doublon
@@ -3269,12 +3282,12 @@ async function findPlaces(c, radius){
 }
 
 // Boucles qui passent par des lieux à visiter : 3 directions, lieux dans l'ordre du tour
-function planTours(places, target){
+function planTours(places, target, used){
   const tours = [], off = Math.random() * 120, est = pts => { let d = 0; for(let i = 1; i < pts.length; i++) d += hav(pts[i-1], pts[i]); return d * 1.3; };
   places.forEach(p => { p.brg = bearingOf(start, p.ll); });
   [off, off + 120, off + 240].forEach(dir => {
     const rel = p => ((p.brg - dir + 540) % 360) - 180;
-    const pool = places.filter(p => Math.abs(rel(p)) <= 75 && p.dist <= target * 0.42).sort((a, b) => b.score - a.score || a.dist - b.dist);
+    const pool = places.filter(p => Math.abs(rel(p)) <= 75 && p.dist <= target * 0.42).sort((a, b) => (used ? used.has(a.id) - used.has(b.id) : 0) || b.score - a.score || a.dist - b.dist);
     let chosen = [];
     for(const p of pool){
       if(chosen.length >= 5) break;
@@ -3478,7 +3491,9 @@ function renderSugg(){
     if(i === sugIdx) el.classList.add('cur');
     box.appendChild(el);
   });
-  [sugBusy, sugMsg].filter(Boolean).forEach(t => { const p = document.createElement('p'); p.className = 'sg-msg'; p.textContent = t; box.appendChild(p); });
+  const more = items.length && sugMoreOk();
+  if(more) box.appendChild(pmoreEl(sugBusy || (st.type === 'boucle' ? 'Glisse vers le haut pour d\'autres balades' : 'Glisse vers le haut pour des lieux plus loin'), !!sugBusy, moreSugg));
+  [more ? '' : sugBusy, sugMsg].filter(Boolean).forEach(t => { const p = document.createElement('p'); p.className = 'sg-msg'; p.textContent = t; box.appendChild(p); });
   box.scrollTop = keepY;
   if(tab === 'sugg') showPlaces();
 }
@@ -3511,6 +3526,45 @@ function pickSugg(i){
 }
 
 function applySugg(){ suggKey = ''; runSugg(); }
+let suggPool = [], suggRadius = 0, suggTourKeys = new Set();
+const sugMoreOk = () => !!start && !dest && !!suggKey && (st.type === 'boucle' ? suggPool.length > 0 : suggRadius < 40000);
+// Charger plus : lieux un peu plus loin (aller) ou nouvelles balades par d'autres lieux (boucle), ajoutés à la suite
+async function moreSugg(){
+  if(sugBusy || !sugMoreOk()) return;
+  const run = suggRun, loop = st.type === 'boucle', target = targetMeters();
+  sugMsg = '';
+  if(!loop){
+    const r = Math.min(40000, suggRadius * 1.5);
+    sugBusy = '🔎 Recherche de lieux jusqu\'à ' + fmtKm(r) + '…'; renderSugg();
+    let places = [];
+    try{ places = await findPlaces(start, r); }catch(e){}
+    if(run !== suggRun) return;
+    sugBusy = ''; suggRadius = r;
+    const have = new Set(suggPlaces.map(p => p.id));
+    const add = places.filter(p => !have.has(p.id)).sort((a, b) => a.dist - b.dist);
+    suggPlaces = suggPlaces.concat(add).slice(0, 200);
+    sugHead = suggPlaces.length + ' lieu' + (suggPlaces.length > 1 ? 'x' : '') + ' à visiter à moins de ' + fmtKm(r);
+    if(!add.length) sugMsg = 'Pas d\'autre lieu à visiter jusqu\'à ' + fmtKm(r) + '. Glisse encore pour chercher plus loin.';
+    renderSugg(); return;
+  }
+  const used = new Set(suggTours.flatMap(c => (c.places || []).map(p => p.id)));
+  const tours = planTours(suggPool, target, used).filter(t => !suggTourKeys.has(t.key)), base = PROFILES[st.mode];
+  let added = 0;
+  for(let i = 0; i < tours.length; i++){
+    if(run !== suggRun) return;
+    suggTourKeys.add(tours[i].key);
+    sugBusy = 'Calcul d\'autres balades… ' + (i + 1) + ' / ' + tours.length; renderSugg();
+    try{
+      const c = await routeTour(base, tours[i], target);
+      if(run !== suggRun) return;
+      if(c && !suggTours.some(o => similarity(c, o) > 0.7)){ suggTours.push(c); added++; }
+    }catch(e){ await sleep(1200); }
+  }
+  if(run !== suggRun) return;
+  sugBusy = '';
+  if(!added) sugMsg = 'Pas d\'autre balade différente avec les lieux de cette zone. Essaie une autre distance.';
+  renderSugg();
+}
 $('btnApply').onclick = applySugg;
 async function runSugg(){
   sugMsg = ''; sugBusy = '';
@@ -3520,8 +3574,9 @@ async function runSugg(){
   const key = [start[0].toFixed(4), start[1].toFixed(4), st.mode, st.type, Math.round(target)].join('|');
   if(key === suggKey){ renderSugg(); return; }
   const run = ++suggRun;
-  suggKey = key; suggPlaces = []; suggTours = []; sugIdx = 0; sugHead = '';
+  suggKey = key; suggPlaces = []; suggTours = []; sugIdx = 0; sugHead = ''; suggPool = []; suggTourKeys = new Set();
   const radius = loop ? target * 0.42 : target / 1.3;
+  suggRadius = radius;
   sugBusy = '🔎 Recherche des lieux à visiter à moins de ' + fmtKm(radius) + '…';
   syncGo2(); $('btnApply').disabled = true;
   renderSugg(); if(sheetReady && !WIDE.matches) setSheet(sheetState);
@@ -3539,7 +3594,9 @@ async function runSugg(){
     return;
   }
   // Boucle : balades qui passent par des lieux à visiter
+  suggPool = places;
   const tours = planTours(places, target), base = PROFILES[st.mode];
+  tours.forEach(t => suggTourKeys.add(t.key));
   sugHead = 'Balades de ' + fmtKm(target) + ' avec des lieux à visiter';
   for(let i = 0; i < tours.length; i++){
     if(run !== suggRun) return;
@@ -5568,7 +5625,30 @@ function soNewGroup(){
 let soFind = null, soFilter = null;   // recherche ouverte { q, cat } ; filtre du fil { who } ou { tag }
 const SO_CATS = [['tout', 'Tout'], ['comptes', 'Comptes'], ['posts', 'Publications'], ['tags', '#Tags'], ['groupes', 'Groupes']];
 const soNorm = s => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-const soAllPosts = () => social.posts.concat(social.seed).sort((a, b) => b.t - a.t);
+const soAllPosts = () => social.posts.concat(social.seed, soOld).sort((a, b) => b.t - a.t);
+// Publications plus anciennes (démo) : chargées 4 par 4 en bas du fil
+let soOld = [], soOldBusy = false;
+const SO_TXT = {
+  course:['Footing tranquille en fin de journée, les jambes tournent bien 🙂 #course', 'Sortie longue du week-end : on a gardé une allure régulière du début à la fin. #sortielongue', 'Petit tour vallonné pour travailler les côtes 💪 #trail', 'Séance seuil : 3 × 10 min, récup 2 min. Dur mais efficace ! #fractionne'],
+  velo:['Balade vélo au soleil, presque pas de voitures 🚴 #velo', 'Boucle du dimanche avec une belle montée au milieu. #velo #denivele', 'Trajet maison-boulot rallongé par les quais, ça réveille ☀️ #velotaf'],
+  marche:['Marche digestive en famille, tout le monde a suivi 👟 #marche', 'Petite balade nature, on a croisé des écureuils 🐿️ #balade', 'Rando urbaine entre parcs et ruelles. #marche #balade']
+};
+function soLoadOld(){
+  if(soOldBusy || soOld.length >= 40) return;
+  soOldBusy = true; renderSocialKeep();
+  setTimeout(() => {
+    const who = Object.keys(SO_PEOPLE), H = 3600e3, last = soAllPosts().filter(p => p.who !== 'me').reduce((m, p) => Math.min(m, p.t), Date.now());
+    for(let k = 0; k < 4; k++){
+      const n = soOld.length, R = seeded(9001 + n * 7), w = who[n % who.length], act = SO_PEOPLE[w].act, T = SO_TXT[act];
+      const km = act === 'velo' ? 18 + R() * 40 : act === 'course' ? 5 + R() * 14 : 3 + R() * 7;
+      const v = act === 'velo' ? 17 + R() * 8 : act === 'course' ? 9.5 + R() * 3.5 : 4.3 + R() * 1.2;
+      soOld.push({ id:'o' + n, who:w, t:last - (10 + R() * 30) * H * (k + 1), act, km:Math.round(km * 10) / 10, min:Math.round(km / v * 60), dplus:Math.round(km * (8 + R() * 18)), txt:T[Math.floor(R() * T.length)], likes:Math.round(5 + R() * (SO_PEOPLE[w].creator ? 180 : 30)), com:Math.round(R() * 20) });
+    }
+    soOldBusy = false; renderSocialKeep();
+  }, 700);
+}
+// Re-rendu du fil sans perdre la position de défilement
+function renderSocialKeep(){ const b = $('soBody'), y = b.scrollTop; renderSocial(); b.scrollTop = y; }
 const soTagsOf = p => (p.txt.match(/#[\p{L}\d_]+/gu) || []).map(t => t.toLowerCase());
 function soOpenFind(){ soFind = soFind || { q:'', cat:'tout' }; soConv = null; renderSocial(); setTimeout(() => { const i = $('soBody').querySelector('.sofind input'); if(i) i.focus(); }, 50); }
 function soRenderFind(box){
@@ -5639,6 +5719,10 @@ function renderSocial(){
       box.appendChild(fb);
     } else { const nb = mk('button', 'sonewb', '＋ Publier un circuit'); nb.onclick = soNewPost; box.appendChild(nb); }
     soAllPosts().filter(p => !soFilter || (soFilter.who ? p.who === soFilter.who : soTagsOf(p).includes(soFilter.tag))).forEach(p => box.appendChild(soPostCard(p)));
+    if(!soFilter){
+      if(soOld.length < 40) box.appendChild(pmoreEl(soOldBusy ? 'Chargement des publications…' : 'Glisse vers le haut pour des publications plus anciennes', soOldBusy, soLoadOld));
+      else box.appendChild(mk('p', 'sg-msg', 'Tu as tout vu 🎉'));
+    }
   }
   if(soView === 'msg'){
     social.convs.slice().sort((a, b) => (b.msgs.at(-1) || {}).t - (a.msgs.at(-1) || {}).t).forEach(c => {
@@ -5737,6 +5821,59 @@ $('soBody').addEventListener('touchend', e => {
     last = y;
   }, { passive:true });
 });
+// Fin de liste : élément « charger plus » (toucher, ou glisser vers le haut en insistant)
+function pmoreEl(text, busy, load){
+  const b = mk('button', 'pmore' + (busy ? ' busy' : ''), '<i>↑</i><span></span>');
+  b.querySelector('span').textContent = text;
+  b._load = load;
+  b.onclick = e => { e.stopPropagation(); if(!busy) load(); };
+  return b;
+}
+function pullMore(el){
+  const ind = () => { const p = el.querySelector(':scope > .pmore'); return p && !p.classList.contains('busy') ? p : null; };
+  const scrolls = () => /auto|scroll/.test(getComputedStyle(el).overflowY);
+  const atEnd = () => el.scrollTop + el.clientHeight >= el.scrollHeight - 4;
+  const NEED = 70;
+  let p = null;
+  const reset = () => { if(!p) return; const b = p.b; p = null; b.classList.remove('pulling', 'ready'); b.style.height = ''; b.style.removeProperty('--p'); };
+  el.addEventListener('touchstart', e => { p = null; const b = ind(); if(e.touches.length === 1 && b && scrolls()) p = { b, y:e.touches[0].clientY, d:0, x:e.touches[0].clientX }; }, { passive:true });
+  el.addEventListener('touchmove', e => {
+    if(!p) return;
+    const t = e.touches[0];
+    if(!atEnd() && !p.d){ p.y = t.clientY; return; }   // pas encore au bout : on attend
+    const d = Math.max(0, Math.min(120, (p.y - t.clientY) * 0.5));
+    if(!p.d && Math.abs(t.clientX - p.x) > Math.abs(p.y - t.clientY) * 1.5) return;   // geste horizontal
+    p.d = d;
+    p.b.classList.add('pulling');
+    p.b.style.height = (68 + d) + 'px';
+    p.b.style.setProperty('--p', Math.min(1, d / NEED));
+    const ready = d >= NEED;
+    if(ready !== p.b.classList.contains('ready')){ p.b.classList.toggle('ready', ready); if(ready && navigator.vibrate) try{ navigator.vibrate(12); }catch(_){} }
+    p.b.querySelector('span').dataset.t = p.b.querySelector('span').dataset.t || p.b.querySelector('span').textContent;
+    p.b.querySelector('span').textContent = ready ? 'Relâche pour charger' : p.b.querySelector('span').dataset.t;
+    el.scrollTop = el.scrollHeight;
+  }, { passive:true });
+  const end = () => { if(!p) return; const go = p.d >= NEED, b = p.b; reset(); if(go){ b.classList.add('busy'); b.querySelector('span').textContent = 'Chargement…'; b._load(); } };
+  el.addEventListener('touchend', end, { passive:true });
+  el.addEventListener('touchcancel', reset, { passive:true });
+  // Souris / pavé tactile : continuer à faire défiler vers le bas au bout de la liste
+  let acc = 0, accT = 0;
+  el.addEventListener('wheel', e => {
+    const b = ind();
+    if(!b || e.deltaY <= 0 || !atEnd()){ acc = 0; return; }
+    const now = performance.now(); if(now - accT > 400) acc = 0; accT = now;
+    acc += e.deltaY;
+    b.style.setProperty('--p', Math.min(1, acc / 500));
+    if(acc > 500){ acc = 0; b.classList.add('busy'); b.querySelector('span').textContent = 'Chargement…'; b._load(); }
+  }, { passive:true });
+}
+['list', 'sugg', 'soBody'].forEach(id => pullMore($(id)));
+// Parcours : comme le bouton « Autres parcours », sans replier le tiroir
+function moreRoutes(){
+  if($('btnGo').disabled || !candidates.length) return;
+  keepSheetOnce = true;
+  generate();
+}
 $('soFab').onclick = () => soFind ? (soFind = null, renderSocial()) : soOpenFind();
 new ResizeObserver(() => { $('soBody').style.paddingTop = ($('social').querySelector('.sotop').offsetHeight + 12) + 'px'; }).observe($('social').querySelector('.sotop'));
 
