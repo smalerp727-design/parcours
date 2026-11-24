@@ -914,7 +914,7 @@
   body:not(.wide) .tclose{display:none !important}
   body.wide #rail{display:flex}
   body.wide #tabs{display:none !important}
-  body.wide #panel, body.wide #social{left:calc(12px + env(safe-area-inset-left) + var(--rail-w, 58px)) !important;transition:left .25s cubic-bezier(.2,.8,.2,1), transform .32s cubic-bezier(.2,.8,.2,1)}
+  body.wide #panel, body.wide #social{left:calc(12px + env(safe-area-inset-left) + var(--rail-w, 58px)) !important;transition:none !important}
   #rail button.on{background:var(--sel-bg);color:var(--c)}
   /* Onglet ouvert : la pilule et la carte ne font plus qu'une */
   #rail .rhide{display:none}
@@ -3862,6 +3862,9 @@ document.body.classList.toggle('rail-open', !!store.get('railOpen', false));
 $('rail').querySelector('[data-r="menu"]').onclick = () => {
   const on = !document.body.classList.contains('rail-open');
   document.body.classList.toggle('rail-open', on); store.set('railOpen', on);
+  // Pendant que la colonne s'élargit / se rétrécit, la carte suit image par image
+  const t0 = performance.now();
+  (function follow(){ document.documentElement.style.setProperty('--rail-w', $('rail').offsetWidth + 'px'); if(performance.now() - t0 < 420) requestAnimationFrame(follow); })();
 };
 // Pilule + carte d'un seul bloc : même hauteur (la plus grande des deux contenus)
 function syncCardH(){
@@ -3873,7 +3876,8 @@ function syncCardH(){
   const open = !$('social').hidden ? $('social') : tab ? $('panel') : null;
   R.setProperty('--card-h', (open ? open.offsetHeight : 0) + 'px');
 }
-const cardRO = new ResizeObserver(() => requestAnimationFrame(syncCardH));
+// Même image que le redimensionnement de la colonne (libellés) : la carte reste collée, sans décalage
+const cardRO = new ResizeObserver(() => { if(WIDE.matches) document.documentElement.style.setProperty('--rail-w', $('rail').offsetWidth + 'px'); requestAnimationFrame(syncCardH); });
 [$('rail'), $('panel'), $('social')].forEach(el => cardRO.observe(el));
 $('rail').querySelector('[data-r="hide"]').onclick = () => morphTab(null);
 $('rail').querySelector('[data-r="photo"]').onclick = () => $('btnPhoto').click();
