@@ -914,8 +914,15 @@
   body:not(.wide) .tclose{display:none !important}
   body.wide #rail{display:flex}
   body.wide #tabs{display:none !important}
-  body.wide #panel, body.wide #social{left:calc(12px + env(safe-area-inset-left) + var(--rail-w, 58px) + 10px) !important;transition:left .25s cubic-bezier(.2,.8,.2,1), transform .32s cubic-bezier(.2,.8,.2,1)}
+  body.wide #panel, body.wide #social{left:calc(12px + env(safe-area-inset-left) + var(--rail-w, 58px)) !important;transition:left .25s cubic-bezier(.2,.8,.2,1), transform .32s cubic-bezier(.2,.8,.2,1)}
   #rail button.on{background:var(--sel-bg);color:var(--c)}
+  /* Onglet ouvert : la pilule et la carte ne font plus qu'une */
+  #rail .rhide{display:none}
+  body.wide:not(.no-tab) #rail .rhide, body.wide.social-open #rail .rhide{display:flex}
+  body.wide:not(.no-tab) hr.rhide, body.wide.social-open hr.rhide{display:block}
+  body.wide:not(.no-tab) #rail, body.wide.social-open #rail{border-radius:18px 0 0 18px;min-height:var(--card-h, 0px);clip-path:inset(-30px 0 -30px -30px);animation:none}
+  body.wide #panel, body.wide #social{border-radius:0 18px 18px 0 !important;border-left:1px solid var(--bd);clip-path:inset(-30px -30px -30px 0);min-height:var(--rail-h, 0px)}
+  body.wide.social-open #social{bottom:auto;height:calc(100% - 24px)}
   #rail button.on span{color:var(--c)}
   body.wide.no-tab #panel{display:none !important}
   body.wide #btnPhoto{display:none !important}
@@ -997,6 +1004,8 @@
   <button data-t="coach" title="Coach"><i>💪</i><span>Coach</span></button>
   <button data-t="social" title="Communauté"><i>👥</i><span>Communauté</span></button>
   <button data-t="compte" title="Compte"><i>👤</i><span>Compte</span></button>
+  <hr class="rhide">
+  <button data-r="hide" class="rhide" title="Masquer la carte"><svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg><span>Masquer</span></button>
 </nav>
 <button id="btnPhoto" class="fab" title="Ajouter des photos ou vidéos"><svg viewBox="0 0 24 24" style="transform:translate(1px,0)"><path d="M3 4V1h2v3h3v2H5v3H3V6H0V4h3zm3 6V7h3V4h7l1.83 2H21a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V10h3zm7 9a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm-3.2-5a3.2 3.2 0 1 0 6.4 0 3.2 3.2 0 0 0-6.4 0z"/></svg></button>
 <input id="mediaIn" type="file" accept="image/*,video/*" multiple hidden>
@@ -3794,6 +3803,7 @@ function setTab(t){
   showPlaces();
   if(sheetReady && !WIDE.matches) setSheet(sheetState);
   if(typeof syncHalo === 'function') syncHalo();
+  if(typeof syncCardH === 'function') requestAnimationFrame(syncCardH);
 }
 // Toucher l'onglet ouvert le referme (retour aux pilules)
 document.querySelectorAll('#tabs button, #pills button, #rail button[data-t]').forEach(b => b.onclick = () => {
@@ -3813,7 +3823,19 @@ $('rail').querySelector('[data-r="menu"]').onclick = () => {
   const on = !document.body.classList.contains('rail-open');
   document.body.classList.toggle('rail-open', on); store.set('railOpen', on);
 };
-new ResizeObserver(() => document.documentElement.style.setProperty('--rail-w', $('rail').offsetWidth + 'px')).observe($('rail'));
+// Pilule + carte d'un seul bloc : même hauteur (la plus grande des deux contenus)
+function syncCardH(){
+  if(!WIDE.matches) return;
+  const r = $('rail'), R = document.documentElement.style;
+  R.setProperty('--rail-w', r.offsetWidth + 'px');
+  let nat = 0; [...r.children].forEach(c => { if(c.offsetParent) nat = Math.max(nat, c.offsetTop + c.offsetHeight); });
+  R.setProperty('--rail-h', (nat + 8) + 'px');
+  const open = !$('social').hidden ? $('social') : tab ? $('panel') : null;
+  R.setProperty('--card-h', (open ? open.offsetHeight : 0) + 'px');
+}
+const cardRO = new ResizeObserver(() => requestAnimationFrame(syncCardH));
+[$('rail'), $('panel'), $('social')].forEach(el => cardRO.observe(el));
+$('rail').querySelector('[data-r="hide"]').onclick = () => setTab(null);
 $('rail').querySelector('[data-r="photo"]').onclick = () => $('btnPhoto').click();
 $('qPhoto').onclick = () => $('btnPhoto').click();
 $('rail').querySelector('[data-r="search"]').onclick = () => {
