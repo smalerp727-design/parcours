@@ -912,7 +912,11 @@
   /* ===== PC : pilule verticale (rail) quand aucun onglet n'est ouvert ; un onglet la transforme en carte ===== */
   #rail, #qPhoto, .tclose{display:none}
   body:not(.wide) .tclose{display:none !important}
-  body.wide.no-tab:not(.social-open) #rail{display:flex}
+  body.wide #rail{display:flex}
+  body.wide #tabs{display:none !important}
+  body.wide #panel, body.wide #social{left:calc(12px + env(safe-area-inset-left) + var(--rail-w, 58px) + 10px) !important;transition:left .25s cubic-bezier(.2,.8,.2,1), transform .32s cubic-bezier(.2,.8,.2,1)}
+  #rail button.on{background:var(--sel-bg);color:var(--c)}
+  #rail button.on span{color:var(--c)}
   body.wide.no-tab #panel{display:none !important}
   body.wide #btnPhoto{display:none !important}
   #rail{position:fixed;z-index:1001;left:calc(12px + env(safe-area-inset-left));top:calc(12px + env(safe-area-inset-top));flex-direction:column;gap:2px;padding:8px 6px;background:var(--bg);border-radius:30px;box-shadow:0 2px 12px rgba(0,0,0,.2);animation:railIn .22s cubic-bezier(.2,.8,.2,1)}
@@ -938,13 +942,13 @@
   body.wide.wsearch #search{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
   body.wide.wsearch #sres{position:static;flex:1 1 auto;max-height:none;box-shadow:none;border:none;border-radius:0;background:none;margin:0 -4px;padding:0 4px}
   /* Communauté sur PC : une carte plus large, onglets en haut */
-  body.wide #social{left:calc(12px + env(safe-area-inset-left));top:calc(12px + env(safe-area-inset-top));bottom:12px;right:auto;width:min(600px, calc(100% - 100px));border-radius:18px;box-shadow:0 2px 12px rgba(0,0,0,.2);transform:translateX(calc(-100% - 30px))}
+  body.wide #social{left:calc(12px + env(safe-area-inset-left));top:calc(12px + env(safe-area-inset-top));bottom:12px;right:auto;width:min(600px, calc(100% - 100px - var(--rail-w, 58px)));border-radius:18px;box-shadow:0 2px 12px rgba(0,0,0,.2);transform:translateX(calc(-100% - 30px))}
   body.wide #social.open{transform:none}
   body.wide #social #soGrab, body.wide #social .soh{display:none}
   body.wide .sotop{border-radius:18px 18px 0 0;overflow:hidden}
   .sotop #pills{position:static !important;transform:none !important;width:auto;display:flex !important;box-shadow:none;border-radius:0;padding:8px 8px 4px;background:var(--bg)}
   .sotop #pills .tclose{display:flex;flex:0 0 34px !important;align-items:center;justify-content:center;border:none;background:none;border-radius:50%;color:var(--mu);font-size:16px !important;cursor:pointer;padding:0 !important}
-  body.wide #soFab{right:auto;left:calc(12px + env(safe-area-inset-left) + min(600px, 100vw - 100px) - 74px);bottom:28px}
+  body.wide #soFab{right:auto;left:calc(22px + env(safe-area-inset-left) + var(--rail-w, 58px) + min(600px, 100vw - 100px - var(--rail-w, 58px)) - 74px);bottom:28px}
   body.wide.social-open #pills{z-index:auto}
   @media (min-width:1600px){ #panel{width:420px} }
   /* Téléphone en paysage : panneau plus compact */
@@ -3767,7 +3771,7 @@ var mapTab = null;   // onglet dont la carte garde l'affichage quand on revient 
 function setTab(t){
   t = t || null;
   if(t) mapTab = t; else if(tab) mapTab = tab;
-  if(t === 'social'){ openSocial(); document.querySelectorAll('#tabs button, #pills button').forEach(b => b.classList.toggle('on', b.dataset.t === 'social')); return; }
+  if(t === 'social'){ openSocial(); document.querySelectorAll('#tabs button, #pills button, #rail button[data-t]').forEach(b => b.classList.toggle('on', b.dataset.t === 'social')); return; }
   if(!$('social').hidden) closeSocial(true);
   document.body.classList.remove('pills-hide');
   const wasNone = !tab;
@@ -3775,7 +3779,7 @@ function setTab(t){
   showUI();
   ['parcours', 'sugg', 'coach', 'compte'].forEach(k => document.body.classList.toggle('tab-' + k, t === k));
   document.body.classList.toggle('no-tab', !t);
-  document.querySelectorAll('#tabs button, #pills button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+  document.querySelectorAll('#tabs button, #pills button, #rail button[data-t]').forEach(b => b.classList.toggle('on', b.dataset.t === t));
   if(!t) document.body.classList.remove('wsearch');
   $('list').hidden = t !== 'parcours';
   $('sugg').hidden = t !== 'sugg';
@@ -3796,6 +3800,7 @@ document.querySelectorAll('#tabs button, #pills button, #rail button[data-t]').f
   document.body.classList.remove('wsearch');
   if(b.dataset.t === 'close') return setTab(null);
   if(!$('social').hidden){   // depuis la Communauté
+    if(b.dataset.t === 'social' && WIDE.matches) return setTab(null);
     if(b.dataset.t === 'social'){ $('soBody').scrollTo({ top:0, behavior:'smooth' }); document.body.classList.remove('so-hide'); return; }
     return setTab(b.dataset.t);
   }
@@ -3808,6 +3813,7 @@ $('rail').querySelector('[data-r="menu"]').onclick = () => {
   const on = !document.body.classList.contains('rail-open');
   document.body.classList.toggle('rail-open', on); store.set('railOpen', on);
 };
+new ResizeObserver(() => document.documentElement.style.setProperty('--rail-w', $('rail').offsetWidth + 'px')).observe($('rail'));
 $('rail').querySelector('[data-r="photo"]').onclick = () => $('btnPhoto').click();
 $('qPhoto').onclick = () => $('btnPhoto').click();
 $('rail').querySelector('[data-r="search"]').onclick = () => {
@@ -3818,7 +3824,7 @@ $('rail').querySelector('[data-r="search"]').onclick = () => {
 // Communauté sur PC : la barre d'onglets se place en haut de la carte Communauté
 function placePills(){
   const P = $('pills'), top = $('social').querySelector('.sotop');
-  if(WIDE.matches && document.body.classList.contains('social-open')){ if(P.parentNode !== top) top.insertBefore(P, top.querySelector('.sotabs')); }
+  if(false){ }
   else if(P.parentNode !== document.body) document.body.insertBefore(P, $('social'));
 }
 
