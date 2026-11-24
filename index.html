@@ -925,8 +925,9 @@
   body.wide.social-open #social{bottom:auto;height:calc(100% - 24px)}
   body.wide #social{transform:none !important}
   body.wide #pills, body.wide.social-open #panel{display:none !important}
-  body.wide #rail{transition:min-height .3s cubic-bezier(.2,.8,.2,1)}
-  .mghost{position:fixed;z-index:999;background:var(--bg);border-radius:0 18px 18px 0;box-shadow:0 2px 12px rgba(0,0,0,.2);pointer-events:none}
+  .mghost{position:fixed;z-index:999;background:var(--bg);box-shadow:0 2px 12px rgba(0,0,0,.2);pointer-events:none}
+  body.morphing #rail{background:transparent !important;box-shadow:none !important;clip-path:none !important;transition:none !important}
+  body.morphing #panel, body.morphing #social{box-shadow:none !important;border-left-color:transparent}
   #rail button.on span{color:var(--c)}
   body.wide.no-tab #panel{display:none !important}
   body.wide #btnPhoto{display:none !important}
@@ -3817,19 +3818,26 @@ const curCard = () => !$('social').hidden ? $('social') : tab ? $('panel') : nul
 function morphTab(t, after){
   const go = () => { setTab(t); if(after) after(); };
   if(!WIDE.matches || matchMedia('(prefers-reduced-motion: reduce)').matches) return go();
-  const rr = $('rail').getBoundingClientRect(), old = curCard();
-  const flat = { left:rr.right, top:rr.top, width:0, height:rr.height };
-  const r0 = old ? old.getBoundingClientRect() : flat;
+  // Le bloc entier (colonne d'onglets + carte) : un seul fond animé, la colonne devient transparente le temps de l'effet
+  const block = () => { syncCardH(); const r = $('rail').getBoundingClientRect(), c = curCard(), cr = c && c.getBoundingClientRect();
+    return { left:r.left, top:r.top, width:(cr ? cr.right : r.right) - r.left, height:Math.max(r.height, cr ? cr.height : 0), rad:cr ? '18px' : '30px', card:c }; };
+  const a = block();
   go();
-  const nw = curCard();
-  const r1 = nw ? nw.getBoundingClientRect() : flat;
-  if(Math.abs(r0.width - r1.width) < 2 && Math.abs(r0.height - r1.height) < 2 && old === nw && nw){
-    nw.animate([{ opacity:.4 }, { opacity:1 }], { duration:220, easing:'ease-out' }); return;
+  const b = block();
+  if(Math.abs(a.width - b.width) < 2 && Math.abs(a.height - b.height) < 2){
+    if(b.card) b.card.animate([{ opacity:.4 }, { opacity:1 }], { duration:220, easing:'ease-out' });
+    return;
   }
+  document.querySelectorAll('.mghost').forEach(x => x.remove());
   const g = mk('div', 'mghost'); document.body.appendChild(g);
-  const kf = r => ({ left:r.left + 'px', top:r.top + 'px', width:r.width + 'px', height:r.height + 'px' });
-  g.animate([kf(r0), kf(r1)], { duration:320, easing:'cubic-bezier(.2,.8,.2,1)' }).onfinish = () => g.remove();
-  if(nw) nw.animate([{ opacity:0 }, { opacity:0, offset:.35 }, { opacity:1 }], { duration:340, easing:'ease-out' });
+  document.body.classList.add('morphing');
+  const kf = r => ({ left:r.left + 'px', top:r.top + 'px', width:r.width + 'px', height:r.height + 'px', borderRadius:r.rad });
+  const an = g.animate([kf(a), kf(b)], { duration:320, easing:'cubic-bezier(.2,.8,.2,1)' });
+  an.onfinish = an.oncancel = () => { g.remove(); if(!document.querySelector('.mghost')) document.body.classList.remove('morphing'); };
+  if(b.card){
+    const cr = b.card.getBoundingClientRect(), ir = Math.max(0, cr.right - (a.left + a.width)), ib = Math.max(0, cr.height - a.height);
+    b.card.animate([{ opacity:0, clipPath:'inset(0 ' + ir + 'px ' + ib + 'px 0)' }, { opacity:0, offset:.3 }, { opacity:1, clipPath:'inset(0 0 0 0)' }], { duration:320, easing:'cubic-bezier(.2,.8,.2,1)' });
+  }
 }
 // Toucher l'onglet ouvert le referme (retour aux pilules)
 document.querySelectorAll('#tabs button, #pills button, #rail button[data-t]').forEach(b => b.onclick = () => {
