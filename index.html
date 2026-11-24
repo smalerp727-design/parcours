@@ -5323,7 +5323,12 @@ function sheetH(){
   const cur = tab === 'parcours' ? first : tab === 'coach' ? $('coach').querySelector('.cur') : tab === 'compte' ? $('compte').querySelector('.cpro') : ($('sugg').querySelector('.cur') || $('sugg').querySelector('.sg-msg'));
   const gap = cur ? clamp(cur.getBoundingClientRect().top - $('tabs').getBoundingClientRect().bottom, 6, 24) : 0;
   const peek = Math.min(Math.round(vh * 0.6), Math.round(top + (cur ? gap + cur.offsetHeight + 12 : 10)));
-  return { peek, half: Math.max(peek + 80, Math.round(vh * 0.58)), full: vh };
+  // Mi-hauteur : jamais plus haut que le contenu réel (réglages refermés, liste vide…) ; on peut toujours agrandir à la main
+  const box = $({ parcours:'list', sugg:'sugg', coach:'coach', compte:'compte' }[tab] || 'list'), last = box && box.lastElementChild;
+  const natural = Math.round(top + (last ? last.getBoundingClientRect().bottom - box.getBoundingClientRect().top + box.scrollTop + (parseFloat(getComputedStyle(box).paddingBottom) || 0) : 0) + 14);
+  const half0 = Math.max(peek + 80, Math.round(vh * 0.58));
+  const half = natural < half0 ? (natural < peek + 40 ? peek : natural) : half0;
+  return { peek, half, full: vh };
 }
 // Le bouton de localisation suit le haut du tiroir (masqué quand le tiroir prend presque tout l'écran)
 function setSheetVar(px){
