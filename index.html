@@ -940,10 +940,13 @@
   #rail button span{max-width:0;opacity:0;overflow:hidden;transition:max-width .25s cubic-bezier(.2,.8,.2,1),opacity .2s ease,margin .25s ease}
   body.rail-open #rail button span{max-width:180px;opacity:1;margin-left:12px;margin-right:6px}
   @media (hover:hover){ #rail button:hover{background:var(--hov-bg)} }
-  body.wide #qPhoto{display:flex;position:absolute;right:42px;top:0;height:38px;width:38px;border:none;background:none;border-radius:50%;align-items:center;justify-content:center;padding:0;cursor:pointer}
+  body.wide #qPhoto{display:none !important;position:absolute;right:42px;top:0;height:38px;width:38px;border:none;background:none;border-radius:50%;align-items:center;justify-content:center;padding:0;cursor:pointer}
   body.wide #qPhoto svg{width:21px;height:21px;fill:var(--mu)}
   @media (hover:hover){ body.wide #qPhoto:hover svg{fill:var(--c)} }
-  body.wide #q{padding-right:84px !important}
+  body.wide #q{padding-right:44px !important}
+  body.wide:not(.wsearch) #search{display:none !important}
+  body.wsearch #rail button[data-r="search"]{background:var(--sel-bg)}
+  body.wsearch #rail button[data-t].on{background:none;color:var(--tx)}
   body.wide #tabs .tclose{display:flex;flex:0 0 34px !important;align-items:center;justify-content:center;border:none;background:none;border-radius:50%;color:var(--mu);font-size:16px !important;cursor:pointer;padding:0 !important}
   @media (hover:hover){ body.wide .tclose:hover{background:var(--hov-bg);color:var(--tx)} }
   /* Recherche ouverte depuis la pilule : la carte prend toute la hauteur et montre l'historique */
@@ -2167,7 +2170,7 @@ $('histClear').onclick = () => {
   hist = []; store.set('hist', hist); b.classList.remove('sure'); b.textContent = 'Effacer'; renderHist();
 };
 $('q').addEventListener('focus', showRecent);
-document.addEventListener('pointerdown', e => { if(!e.target.closest('#search') && !$('q').value.trim()){ $('sres').hidden = true; document.body.classList.remove('wsearch'); } });
+document.addEventListener('pointerdown', e => { if(!e.target.closest('#search, #rail') && !$('q').value.trim()){ $('sres').hidden = true; document.body.classList.remove('wsearch'); } });
 
 $('q').addEventListener('input', () => {
   clearTimeout(sTimer);
@@ -3811,12 +3814,13 @@ function setTab(t){
 }
 // PC : changement d'onglet avec un effet de morphose (la carte s'étire / se rétracte vers sa nouvelle taille)
 const curCard = () => !$('social').hidden ? $('social') : tab ? $('panel') : null;
-function morphTab(t){
-  if(!WIDE.matches || matchMedia('(prefers-reduced-motion: reduce)').matches) return setTab(t);
+function morphTab(t, after){
+  const go = () => { setTab(t); if(after) after(); };
+  if(!WIDE.matches || matchMedia('(prefers-reduced-motion: reduce)').matches) return go();
   const rr = $('rail').getBoundingClientRect(), old = curCard();
   const flat = { left:rr.right, top:rr.top, width:0, height:rr.height };
   const r0 = old ? old.getBoundingClientRect() : flat;
-  setTab(t);
+  go();
   const nw = curCard();
   const r1 = nw ? nw.getBoundingClientRect() : flat;
   if(Math.abs(r0.width - r1.width) < 2 && Math.abs(r0.height - r1.height) < 2 && old === nw && nw){
@@ -3829,6 +3833,11 @@ function morphTab(t){
 }
 // Toucher l'onglet ouvert le referme (retour aux pilules)
 document.querySelectorAll('#tabs button, #pills button, #rail button[data-t]').forEach(b => b.onclick = () => {
+  if(WIDE.matches && b.dataset.t !== 'close'){
+    const ws = document.body.classList.contains('wsearch'), off = () => { document.body.classList.remove('wsearch'); $('sres').hidden = true; };
+    if(ws && $('social').hidden && tab === b.dataset.t) return morphTab(tab, off);   // depuis la recherche : retour à l'onglet
+    return morphTab(!$('social').hidden ? (b.dataset.t === 'social' ? null : b.dataset.t) : tab === b.dataset.t ? null : b.dataset.t, off);
+  }
   document.body.classList.remove('wsearch');
   if(b.dataset.t === 'close') return setTab(null);
   if(WIDE.matches) return morphTab(!$('social').hidden ? (b.dataset.t === 'social' ? null : b.dataset.t) : tab === b.dataset.t ? null : b.dataset.t);
@@ -3863,9 +3872,8 @@ $('rail').querySelector('[data-r="photo"]').onclick = () => $('btnPhoto').click(
 $('qPhoto').onclick = () => $('btnPhoto').click();
 $('rail').querySelector('[data-r="search"]').onclick = () => {
   const tt = mapTab && mapTab !== 'social' ? mapTab : 'parcours';
-  const h0 = $('panel').offsetHeight;
-  document.body.classList.add('wsearch');
-  if(tab !== tt || !$('social').hidden) morphTab(tt); else { const p = $('panel'); requestAnimationFrame(() => p.animate([{ height:h0 + 'px' }, { height:p.offsetHeight + 'px' }], { duration:300, easing:'cubic-bezier(.2,.8,.2,1)' })); }
+  if(document.body.classList.contains('wsearch') && tab === tt) return morphTab(tt, () => { document.body.classList.remove('wsearch'); $('sres').hidden = true; });
+  morphTab(tt, () => document.body.classList.add('wsearch'));
   $('q').focus(); showRecent();
 };
 // Communauté sur PC : la barre d'onglets se place en haut de la carte Communauté
