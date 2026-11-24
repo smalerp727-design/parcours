@@ -467,7 +467,13 @@
   body.so-chat #soBody{padding-bottom:calc(12px + env(safe-area-inset-bottom))}
   #soBody > *{width:100%;max-width:640px;margin:0 auto;flex:none}
   .sonote{font-size:12px !important;color:var(--mu);background:var(--bg);border:1px dashed var(--bd);border-radius:10px;padding:8px 10px;margin:0 auto !important}
-  .sosearch{display:flex;align-items:center;gap:10px;border:1px solid var(--bd);background:var(--bg);color:var(--mu);border-radius:999px;padding:11px 16px;font:400 15px system-ui,sans-serif;cursor:text;text-align:left;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+  .sosearch{display:flex;align-items:center;gap:10px;border:1px solid var(--bd);background:var(--bg);color:var(--mu);border-radius:999px;padding:11px 16px;font:400 15px system-ui,sans-serif;cursor:text;text-align:left;box-shadow:0 4px 16px rgba(0,0,0,.14)}
+  /* Barre de recherche flottante : se cache en descendant, revient en remontant (comme les onglets) */
+  #soSearch{position:absolute;z-index:2;left:12px;right:12px;max-width:640px;margin:0 auto;top:calc(var(--sotop-h, 96px) + 10px);transition:transform .3s cubic-bezier(.2,.8,.2,1),opacity .2s ease}
+  body.so-hide #soSearch{transform:translateY(calc(-1 * var(--sotop-h, 96px) - 80px))}
+  body.so-finding #soSearch, body.so-chat #soSearch{display:none}
+  #soBody{padding-top:calc(var(--sotop-h, 96px) + 12px) !important}
+  body:not(.so-finding):not(.so-chat) #soBody{padding-top:calc(var(--sotop-h, 96px) + 74px) !important}
   .sosearch svg{width:20px;height:20px;fill:var(--c);flex:none}
   @media (hover:hover){ .sosearch:hover{border-color:var(--hov-bd)} }
   .sonewb{border:1px dashed var(--c);background:var(--bg);color:var(--c);border-radius:12px;padding:11px;font:600 14px system-ui,sans-serif;cursor:pointer}
@@ -955,6 +961,7 @@
     <nav class="sotabs"><button data-s="fil"><span id="soFeedIco"></span><span id="soFeedLbl">Pour toi</span><i class="sochev" id="soFeedChev" aria-label="Choisir le fil"></i></button><button data-s="msg"><span class="soico-msg"></span>Messages</button><button data-s="grp"><span class="soico-grp"></span>Groupes</button></nav>
   </div>
   <div id="soBody"></div>
+  <button id="soSearch" class="sosearch" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg><span>Rechercher dans la communauté…</span></button>
 </div>
 
 <button id="soFab" class="fab" title="Publier une activité" aria-label="Publier une activité"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></button>
@@ -5869,6 +5876,7 @@ function soRenderFind(box){
   f.querySelector('.sofq button').onclick = () => { soFind = null; renderSocial(); };
   SO_CATS.forEach(([k, t]) => { const b = mk('button', k === soFind.cat ? 'on' : ''); b.type = 'button'; b.textContent = t; b.onclick = () => { soFind.cat = k; f.querySelectorAll('.socats button').forEach(x => x.classList.toggle('on', x === b)); draw(); }; f.querySelector('.socats').appendChild(b); });
   box.appendChild(f);
+  f.insertBefore(mk('p', 'sonote', 'Aperçu hors ligne : publications, messages et groupes restent sur ton téléphone jusqu\'à l\'activation des comptes. Les créateurs et groupes affichés sont fictifs.'), f.querySelector('.sores'));
   function draw(){
     const R = f.querySelector('.sores'), q = soNorm(soFind.q.trim()).replace(/^#/, ''), cat = soFind.cat, has = s => !q || soNorm(s).includes(q);
     R.innerHTML = '';
@@ -5917,13 +5925,12 @@ function renderSocial(){
   soInit();
   document.body.classList.remove('so-chat');
   document.body.classList.toggle('so-finding', !!soFind);
+  $('social').style.setProperty('--sotop-h', document.querySelector('#social .sotop').offsetHeight + 'px');
   if(soFind){ document.querySelectorAll('#social .sotabs button').forEach(b => b.classList.remove('on')); const box = $('soBody'); box.innerHTML = ''; soRenderFind(box); return; }
   document.querySelectorAll('#social .sotabs button').forEach(b => b.classList.toggle('on', b.dataset.s === soView));
   syncSoTabs();
   const box = $('soBody'); box.innerHTML = '';
   if(soConv){ const c = social.convs.find(x => x.id === soConv); if(c) return soChat(c); soConv = null; }
-  const sq = mk('button', 'sosearch', '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg><span>Rechercher dans la communauté…</span>'); sq.onclick = soOpenFind; box.appendChild(sq);
-  box.appendChild(mk('p', 'sonote', 'Aperçu hors ligne : publications, messages et groupes restent sur ton téléphone jusqu\'à l\'activation des comptes. Les créateurs et groupes affichés sont fictifs.'));
   if(soView === 'fil'){
     if(soFilter){
       const fb = mk('div', 'sofilt', '<span></span><button class="sgDet">✕ Tout le fil</button>');
@@ -6106,8 +6113,9 @@ function moreRoutes(){
   keepSheetOnce = true;
   generate();
 }
+$('soSearch').onclick = soOpenFind;
 $('soFab').onclick = () => { soFind = null; soConv = null; soFilter = null; if(soView !== 'fil'){ soView = 'fil'; } soNewPost(); $('soBody').scrollTop = 0; document.body.classList.remove('so-hide'); };
-new ResizeObserver(() => { $('soBody').style.paddingTop = ($('social').querySelector('.sotop').offsetHeight + 12) + 'px'; }).observe($('social').querySelector('.sotop'));
+new ResizeObserver(() => { $('social').style.setProperty('--sotop-h', $('social').querySelector('.sotop').offsetHeight + 'px'); }).observe($('social').querySelector('.sotop'));
 
 sheetReady = true;
 updateChip();
