@@ -440,6 +440,29 @@
   .sotabs{display:grid;grid-template-columns:repeat(3,1fr);background:var(--bg);border-bottom:1px solid var(--bd);padding:0 10px}
   .sotabs button{border:none;background:none;padding:10px 0;font:600 14px system-ui,sans-serif;color:var(--mu);border-bottom:2px solid transparent;cursor:pointer}
   .sotabs button.on{color:var(--c);border-bottom-color:var(--c)}
+  .sotabs button{display:flex;align-items:center;justify-content:center;gap:5px;min-width:0;white-space:nowrap}
+  .sotabs button svg{width:17px;height:17px;flex:none;fill:currentColor}
+  .sochev{display:inline-flex;width:20px;height:20px;margin-left:-2px;border-radius:50%;align-items:center;justify-content:center;font-style:normal}
+  .sochev svg{width:18px !important;height:18px !important;transition:transform .2s ease}
+  body.so-menu .sochev svg{transform:rotate(180deg)}
+  .sofm{position:absolute;z-index:5;min-width:230px;background:var(--bg);border:1px solid var(--bd);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.18);padding:6px;display:flex;flex-direction:column;gap:2px;animation:sofmIn .16s ease}
+  @keyframes sofmIn{from{opacity:0;transform:translateY(-6px)}}
+  .sofm button{display:flex;align-items:center;gap:10px;border:none;background:none;border-radius:10px;padding:9px 10px;text-align:left;cursor:pointer;color:var(--tx);font:500 14px system-ui,sans-serif}
+  .sofm button svg{width:20px;height:20px;fill:var(--mu);flex:none}
+  .sofm button small{display:block;color:var(--mu);font-size:12px;font-weight:400}
+  .sofm button.on{background:var(--sel-bg);color:var(--c)}
+  .sofm button.on svg{fill:var(--c)}
+  .sofm button.on::after{content:'✓';margin-left:auto;font-weight:700}
+  @media (hover:hover){ .sofm button:not(.on):hover{background:var(--hov-bg)} }
+  .sofol{flex:none;border:1px solid var(--c);background:var(--c);color:#fff;border-radius:16px;padding:5px 11px;font:600 12px system-ui,sans-serif;cursor:pointer}
+  .sofol.on{background:var(--bg);color:var(--c)}
+  .sofollow{display:flex;flex-direction:column;gap:8px}
+  .sofollow .soconv{cursor:default}
+  .sosrc{display:grid !important;grid-template-columns:1fr 1fr}
+  .soind{margin-top:2px}
+  .soind button{font-size:13px !important;padding:6px 10px !important}
+  .sonew label.kgrp{margin:4px 0 0}
+  .sostats.n1{grid-template-columns:1fr}.sostats.n2{grid-template-columns:repeat(2,minmax(0,1fr))}.sostats.n3{grid-template-columns:repeat(3,minmax(0,1fr))}
   #soBody{position:absolute;inset:0;overflow-y:auto;padding:100px 12px calc(90px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px;overscroll-behavior:contain}
   body.so-chat #soBody{padding-bottom:calc(12px + env(safe-area-inset-bottom))}
   #soBody > *{width:100%;max-width:640px;margin:0 auto;flex:none}
@@ -452,6 +475,7 @@
   .sopost header div{flex:1;min-width:0}
   .sopost header b{display:block;font-size:15px}
   .sopost header small{color:var(--mu);font-size:12px}
+  .sopost header b .socr{vertical-align:2px;margin-left:4px}
   .socr{font:700 10px system-ui,sans-serif;text-transform:uppercase;letter-spacing:.03em;background:#f3e8ff;color:#7e22ce;padding:3px 7px;border-radius:6px}
   .dark .socr{background:#2e1f45;color:#d8b4fe}
   .sotxt{margin:0 !important;font-size:14px;line-height:1.45}
@@ -925,7 +949,7 @@
   <div class="sotop">
     <div id="soGrab" title="Glisser vers le bas pour réduire" role="button" aria-label="Réduire la Communauté"></div>
     <header class="soh"><b>👥 Communauté</b></header>
-    <nav class="sotabs"><button data-s="fil">Fil</button><button data-s="msg">Messages</button><button data-s="grp">Groupes</button></nav>
+    <nav class="sotabs"><button data-s="fil"><span id="soFeedIco"></span><span id="soFeedLbl">Pour toi</span><i class="sochev" id="soFeedChev" aria-label="Choisir le fil"></i></button><button data-s="msg"><span class="soico-msg"></span>Messages</button><button data-s="grp"><span class="soico-grp"></span>Groupes</button></nav>
   </div>
   <div id="soBody"></div>
 </div>
@@ -5610,46 +5634,115 @@ function soOpenRoute(p){
 function soPostCard(p){
   const who = p.who === 'me' ? { nom:'Toi', bio:'' } : SO_PEOPLE[p.who];
   const d = mk('article', 'sopost');
-  d.innerHTML = '<header>' + soAvatar(p.who) + '<div><b></b><small></small></div>' + (who.creator ? '<span class="socr">Créateur</span>' : '') + '</header>' +
+  d.innerHTML = '<header>' + soAvatar(p.who) + '<div><b><span></span>' + (who.creator ? ' <span class="socr">Créateur</span>' : '') + '</b><small></small></div>' + (p.who !== 'me' ? '<button class="sofol"></button>' : '') + '</header>' +
     '<p class="sotxt"></p><div class="sostats"></div><div class="somapw"></div>' +
     '<div class="sobtns"><button class="sol"></button><button class="soc">💬 ' + (p.com || 0) + '</button><button class="sov">' + ITI_SVG + 'Voir le circuit</button><button class="sos" title="Partager">' + SHARE_SVG + '</button></div>';
-  d.querySelector('header b').textContent = who.nom;
-  d.querySelector('header small').textContent = ACT[p.act] + ' · ' + soWhen(p.t);
+  d.querySelector('header b span').textContent = who.nom;
+  d.querySelector('header small').textContent = ACT[p.act] + ' · ' + soWhen(p.t) + (p.done && isoDay(p.done) !== isoDay(new Date(p.t)) ? ' · séance du ' + fmtD(p.done) : '');
+  const fol = d.querySelector('.sofol');
+  if(fol){ const on = soIsFollowed(p.who); fol.classList.toggle('on', on); fol.textContent = on ? 'Suivi ✓' : 'Suivre'; fol.onclick = () => soToggleFollow(p.who); }
   // texte avec #tags cliquables
   p.txt.split(/(#[\p{L}\d_]+)/u).forEach(part => {
     if(/^#/.test(part)){ const a = mk('button', 'sotagi'); a.textContent = part; a.onclick = () => { soFind = null; soFilter = { tag:part.toLowerCase() }; soView = 'fil'; renderSocial(); $('soBody').scrollTop = 0; }; d.querySelector('.sotxt').appendChild(a); }
     else d.querySelector('.sotxt').appendChild(document.createTextNode(part));
   });
-  d.querySelector('.sostats').innerHTML = '<span><small>Distance</small><b>' + r1(p.km) + ' km</b></span><span><small>Temps</small><b>' + fmtMin(p.min) + '</b></span><span><small>' + (p.act === 'course' ? 'Allure' : 'Vitesse') + '</small><b>' + (p.act === 'course' ? allure(p.km / (p.min / 60)) : r1(p.km / (p.min / 60)) + ' km/h') + '</b></span><span><small>Dénivelé</small><b>' + p.dplus + ' m</b></span>';
-  const pts = p.pts || soShape(p.km, hashStr(p.id));
-  d.querySelector('.somapw').innerHTML = soMini(pts);
-  d.querySelector('.somapw').onclick = () => soOpenRoute(p);
+  const stats = p.stats || null;
+  if(stats){
+    const g = d.querySelector('.sostats'); g.classList.add('n' + Math.min(4, stats.length));
+    stats.forEach(([k, v]) => { const x = mk('span', '', '<small></small><b></b>'); x.children[0].textContent = k; x.children[1].textContent = v; g.appendChild(x); });
+    if(!stats.length) g.remove();
+  } else d.querySelector('.sostats').innerHTML = '<span><small>Distance</small><b>' + r1(p.km) + ' km</b></span><span><small>Temps</small><b>' + fmtMin(p.min) + '</b></span><span><small>' + (p.act === 'course' ? 'Allure' : 'Vitesse') + '</small><b>' + (p.act === 'course' ? allure(p.km / (p.min / 60)) : r1(p.km / (p.min / 60)) + ' km/h') + '</b></span><span><small>Dénivelé</small><b>' + p.dplus + ' m</b></span>';
+  const pts = p.noMap ? null : p.pts || soShape(p.km, hashStr(p.id));
+  if(pts){ d.querySelector('.somapw').innerHTML = soMini(pts); d.querySelector('.somapw').onclick = () => soOpenRoute(p); }
+  else { d.querySelector('.somapw').remove(); d.querySelector('.sov').remove(); }
   const liked = !!social.likes[p.id], lb = d.querySelector('.sol');
   lb.textContent = (liked ? '❤️ ' : '🤍 ') + ((p.likes || 0) + (liked ? 1 : 0)); lb.classList.toggle('on', liked);
   lb.onclick = () => { social.likes[p.id] = !liked; soSave(); renderSocial(); };
   d.querySelector('.soc').onclick = () => msg('💬 Les commentaires arriveront avec les comptes.');
   d.querySelector('.sov').onclick = () => soOpenRoute(p);
   d.querySelector('.sos').onclick = () => {
+    if(!pts){ shareIt(who.nom, ICO[p.act] + ' ' + p.txt + ' (PARS-COURS)', appUrl()); return; }
     const q = new URLSearchParams({ r:encPoly(pts), m:p.act, k:'boucle', d:Math.round(p.km * 1000), n:'Circuit de ' + who.nom });
     shareIt('Circuit de ' + who.nom, ICO[p.act] + ' Circuit de ' + who.nom + ' — ' + r1(p.km) + ' km (PARS-COURS)', appUrl() + '#' + q.toString());
   };
   return d;
 }
+// Indicateurs qu'on peut afficher dans une publication (selon ce qui a été enregistré)
+function soIndOf(src){
+  const out = [], add = (k, lbl, val) => { if(val != null && val !== '') out.push({ k, lbl, val }); };
+  if(src.log){
+    const l = src.log, sp = speedOf(l), S = streamOf(l), run = l.act === 'course';
+    add('dist', 'Distance', l.dist ? r1(l.dist) + ' km' : null);
+    add('temps', 'Temps', hm(l.duree));
+    add('allure', run ? 'Allure' : 'Vitesse', sp ? (run ? allure(sp) : r1(sp) + ' km/h') : null);
+    add('dplus', 'Dénivelé', l.dplus ? l.dplus + ' m' : null);
+    add('vmax', run ? 'Allure max.' : 'Vitesse max.', S ? (run ? allure(Math.max(...S.sp)) : r1(Math.max(...S.sp)) + ' km/h') : null);
+    add('fc', 'FC moy.', l.fc ? Math.round(l.fc) + ' bpm' : null);
+    add('fcmax', 'FC max.', S && S.hr ? Math.round(Math.max(...S.hr)) + ' bpm' : null);
+    add('rpe', 'Effort', l.rpe ? l.rpe + '/10' : null);
+    add('kcal', 'Calories', coach ? kcalOf(coach, l.act, l.type || 'ef', l.duree) + ' kcal' : null);
+    add('type', 'Séance', TYPE_LBL[l.type] || null);
+  } else {
+    const c = src.circ, km = c.distance / 1000, v = cfg.speeds[c.mode] || 5;
+    add('dist', 'Distance', r1(km) + ' km');
+    add('temps', 'Temps estimé', fmtMin(km / v * 60));
+    add('allure', c.mode === 'course' ? 'Allure' : 'Vitesse', c.mode === 'course' ? allure(v) : r1(v) + ' km/h');
+    add('dplus', 'Dénivelé', c.up ? Math.round(c.up) + ' m' : null);
+  }
+  return out;
+}
 function soNewPost(){
   const routes = saved.filter(s => catOf(s) !== 'lieu');
+  const logs = coach ? logsOf(coach).slice().reverse().slice(0, 60) : [];
+  let mode = logs.length ? 'log' : 'circ', sel = social.indSel || ['dist', 'temps', 'allure', 'dplus'];
   const box = $('soBody'); box.innerHTML = '';
-  const f = mk('div', 'cc sonew', '<b class="cct">Nouvelle publication</b><p class="ccsub">Partage un de tes circuits enregistrés avec un petit mot.</p><select></select><textarea rows="4" placeholder="Raconte ta sortie, donne tes conseils…"></textarea><div class="bzrow"><button class="sgDet">Annuler</button><button class="primary">Publier</button></div>');
-  const sel = f.querySelector('select');
-  if(!routes.length){ sel.outerHTML = '<p class="empty">Enregistre d\'abord un parcours (☆) pour pouvoir le publier.</p>'; f.querySelector('.primary').disabled = true; }
-  else routes.forEach(s => { const o = mk('option'); o.value = s.id; o.textContent = (MODE_ICO[s.mode] || '') + ' ' + s.name + ' · ' + d1(s.distance / 1000) + ' km'; f.querySelector('select').appendChild(o); });
+  const f = mk('div', 'cc sonew', '<b class="cct">Nouvelle publication</b><div class="bzc sosrc"></div><select></select><p class="empty" hidden></p><p class="kgrp">Indicateurs affichés</p><div class="bzc soind"></div><textarea rows="4" placeholder="Raconte ta sortie, donne tes conseils…"></textarea><div class="bzrow"><button class="sgDet">Annuler</button><button class="primary">Publier</button></div>');
+  const S_ = f.querySelector('select'), E = f.querySelector('.empty'), I = f.querySelector('.soind'), pub = f.querySelector('.primary');
+  const cur = () => mode === 'log' ? (logs[+S_.value] ? { log:logs[+S_.value] } : null) : (routes.find(x => x.id === S_.value) ? { circ:routes.find(x => x.id === S_.value) } : null);
+  const drawInd = () => {
+    I.innerHTML = ''; const src = cur();
+    if(!src){ I.previousElementSibling.hidden = I.hidden = true; return; }
+    I.previousElementSibling.hidden = I.hidden = false;
+    soIndOf(src).forEach(x => {
+      const b = mk('button', sel.includes(x.k) ? 'on' : ''); b.type = 'button';
+      b.textContent = x.lbl + ' · ' + x.val;
+      b.onclick = () => { sel = sel.includes(x.k) ? sel.filter(k => k !== x.k) : sel.concat([x.k]); b.classList.toggle('on'); };
+      I.appendChild(b);
+    });
+  };
+  const fill = () => {
+    S_.innerHTML = ''; E.hidden = true; S_.hidden = false; pub.disabled = false;
+    f.querySelectorAll('.sosrc button').forEach(b => b.classList.toggle('on', b.dataset.m === mode));
+    const L = mode === 'log' ? logs : routes;
+    if(!L.length){
+      S_.hidden = true; E.hidden = false; pub.disabled = true;
+      E.textContent = mode === 'log' ? (coach ? 'Aucune activité enregistrée pour l\'instant : termine une sortie guidée ou ajoute une séance dans Coach.' : 'Fais ton bilan dans l\'onglet Coach pour enregistrer tes activités.') : 'Enregistre d\'abord un parcours (☆) pour pouvoir le publier.';
+    }
+    if(mode === 'log') logs.forEach((l, i) => { const o = mk('option'); o.value = i; o.textContent = fmtD(l.date) + ' · ' + (MODE_ICO[l.act] || '') + ' ' + (l.parcours || TYPE_LBL[l.type] || 'Séance') + ' · ' + [l.dist ? r1(l.dist) + ' km' : '', hm(l.duree)].filter(Boolean).join(' · '); S_.appendChild(o); });
+    else routes.forEach(x => { const o = mk('option'); o.value = x.id; o.textContent = (MODE_ICO[x.mode] || '') + ' ' + x.name + ' · ' + d1(x.distance / 1000) + ' km'; S_.appendChild(o); });
+    drawInd();
+  };
+  [['log', '🏅 Activité réalisée'], ['circ', '⭐ Circuit enregistré']].forEach(([m, t]) => { const b = mk('button', '', t); b.type = 'button'; b.dataset.m = m; b.onclick = () => { mode = m; fill(); }; f.querySelector('.sosrc').appendChild(b); });
+  S_.onchange = drawInd;
   f.querySelector('.sgDet').onclick = () => renderSocial();
-  f.querySelector('.primary').onclick = () => {
-    const s = saved.find(x => x.id === f.querySelector('select').value); if(!s) return;
-    const km = s.distance / 1000;
-    social.posts.unshift({ id:'p' + Date.now().toString(36), who:'me', t:Date.now(), act:s.mode || st.mode, km, min:Math.round(km / (cfg.speeds[s.mode] || 5) * 60), dplus:s.up || 0, txt:f.querySelector('textarea').value.trim() || s.name, pts:s.coords.map(q => [q[1], q[0]]), likes:0, com:0 });
-    soSave(); soView = 'fil'; renderSocial(); msg('✓ Publication ajoutée à ton fil.');
+  pub.onclick = () => {
+    const src = cur(); if(!src) return;
+    social.indSel = sel;
+    const stats = soIndOf(src).filter(x => sel.includes(x.k)).sort((a, b) => sel.indexOf(a.k) - sel.indexOf(b.k)).map(x => [x.lbl, x.val]);
+    const txt = f.querySelector('textarea').value.trim();
+    let p;
+    if(src.log){
+      const l = src.log;
+      p = { act:l.act, km:l.dist || 0, min:l.duree, dplus:l.dplus || 0, done:l.date, txt:txt || (l.parcours || TYPE_LBL[l.type] || 'Ma séance'), pts:l.dist ? traceOf(l) : null, noMap:!l.dist };
+    } else {
+      const c = src.circ, km = c.distance / 1000;
+      p = { act:c.mode || st.mode, km, min:Math.round(km / (cfg.speeds[c.mode] || 5) * 60), dplus:c.up || 0, txt:txt || c.name, pts:c.coords.map(q => [q[1], q[0]]) };
+    }
+    social.posts.unshift(Object.assign(p, { id:'p' + Date.now().toString(36), who:'me', t:Date.now(), stats, likes:0, com:0 }));
+    soSave(); soView = 'fil'; soFilter = null; renderSocial(); $('soBody').scrollTop = 0; msg('✓ Publication ajoutée à ton fil.');
   };
   box.appendChild(f);
+  fill();
 }
 function soChat(c){
   soConv = c.id;
@@ -5694,6 +5787,54 @@ let soFind = null, soFilter = null;   // recherche ouverte { q, cat } ; filtre d
 const SO_CATS = [['tout', 'Tout'], ['comptes', 'Comptes'], ['posts', 'Publications'], ['tags', '#Tags'], ['groupes', 'Groupes']];
 const soNorm = s => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 const soAllPosts = () => social.posts.concat(social.seed, soOld).sort((a, b) => b.t - a.t);
+// Pictogrammes des onglets de la Communauté
+const SO_IC = {
+  pourtoi:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 2.5l2 5.5 5.5 2-5.5 2-2 5.5-2-5.5-5.5-2 5.5-2zM18 13l1 2.7 2.7 1-2.7 1L18 20.5l-1-2.8-2.7-1 2.7-1z"/></svg>',
+  suivis:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-2.7 0-8 1.34-8 4v2h16v-2c0-2.66-5.3-4-8-4zm7.6-1.6l-2.3-2.3-1.4 1.4 3.7 3.7 6.1-6.1-1.4-1.4z"/></svg>',
+  msg:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zM7 9h10v2H7zm0-3h10v2H7zm0 6h7v2H7z"/></svg>',
+  grp:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-8 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13zm8 0c-.29 0-.62.02-.97.05A4.2 4.2 0 0 1 17 16.5V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>',
+  chev:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5z"/></svg>'
+};
+const SO_FEEDS = { pourtoi:{ lbl:'Pour toi', sub:'Publications conseillées pour toi' }, suivis:{ lbl:'Suivis', sub:'Les personnes que tu suis' } };
+const soFeed = () => (social && social.feed) || 'pourtoi';
+const soFollows = () => social.follows || (social.follows = ['lina', 'theo']);
+const soIsFollowed = w => soFollows().includes(w);
+function soToggleFollow(w){
+  const F = soFollows(), i = F.indexOf(w);
+  if(i >= 0) F.splice(i, 1); else F.push(w);
+  soSave(); renderSocialKeep();
+  msg(i >= 0 ? 'Tu ne suis plus ' + SO_PEOPLE[w].nom + '.' : '✓ Tu suis ' + SO_PEOPLE[w].nom + '.');
+}
+function syncSoTabs(){
+  $('soFeedIco').innerHTML = SO_IC[soFeed()];
+  $('soFeedLbl').textContent = SO_FEEDS[soFeed()].lbl;
+  $('soFeedChev').innerHTML = SO_IC.chev;
+  document.querySelector('#social .soico-msg').innerHTML = SO_IC.msg;
+  document.querySelector('#social .soico-grp').innerHTML = SO_IC.grp;
+}
+// Petit menu sous « Pour toi / Suivis »
+function soFeedMenu(){
+  const old = document.querySelector('#social .sofm');
+  if(old){ old.remove(); document.body.classList.remove('so-menu'); return; }
+  const btn = document.querySelector('#social .sotabs [data-s="fil"]'), r = btn.getBoundingClientRect(), top = $('social').getBoundingClientRect();
+  const m = mk('div', 'sofm');
+  m.style.left = Math.max(8, r.left - top.left) + 'px'; m.style.top = (r.bottom - top.top + 4) + 'px';
+  Object.entries(SO_FEEDS).forEach(([k, v]) => {
+    const b = mk('button', soFeed() === k ? 'on' : '', SO_IC[k] + '<span><b></b><small></small></span>');
+    b.querySelector('b').textContent = v.lbl; b.querySelector('small').textContent = v.sub;
+    b.onclick = e => { e.stopPropagation(); m.remove(); document.body.classList.remove('so-menu'); social.feed = k; soSave(); soFilter = null; soGo('fil'); renderSocial(); $('soBody').scrollTop = 0; };
+    m.appendChild(b);
+  });
+  $('social').appendChild(m); document.body.classList.add('so-menu');
+  setTimeout(() => document.addEventListener('click', function off(e){ if(!m.contains(e.target)){ m.remove(); document.body.classList.remove('so-menu'); } document.removeEventListener('click', off, true); }, true));
+}
+// Pour toi : mélange popularité et fraîcheur ; Suivis : les personnes suivies (et toi), du plus récent au plus ancien
+function soFeedPosts(){
+  const all = soAllPosts();
+  if(soFeed() === 'suivis') return all.filter(p => p.who === 'me' || soIsFollowed(p.who));
+  const now = Date.now(), sc = p => Math.log2(2 + (p.likes || 0)) * 0.9 + (SO_PEOPLE[p.who] && SO_PEOPLE[p.who].creator ? 0.6 : 0) - (now - p.t) / 864e5 * 0.35 + (p.who === 'me' ? 3 : 0);
+  return all.slice().sort((a, b) => sc(b) - sc(a));
+}
 // Publications plus anciennes (démo) : chargées 4 par 4 en bas du fil
 let soOld = [], soOldBusy = false;
 const SO_TXT = {
@@ -5776,6 +5917,7 @@ function renderSocial(){
   document.body.classList.toggle('so-finding', !!soFind);
   if(soFind){ document.querySelectorAll('#social .sotabs button').forEach(b => b.classList.remove('on')); const box = $('soBody'); box.innerHTML = ''; soRenderFind(box); return; }
   document.querySelectorAll('#social .sotabs button').forEach(b => b.classList.toggle('on', b.dataset.s === soView));
+  syncSoTabs();
   const box = $('soBody'); box.innerHTML = '';
   if(soConv){ const c = social.convs.find(x => x.id === soConv); if(c) return soChat(c); soConv = null; }
   box.appendChild(mk('p', 'sonote', 'Aperçu hors ligne : publications, messages et groupes restent sur ton téléphone jusqu\'à l\'activation des comptes. Les créateurs et groupes affichés sont fictifs.'));
@@ -5785,8 +5927,24 @@ function renderSocial(){
       fb.querySelector('span').textContent = soFilter.who ? 'Publications de ' + SO_PEOPLE[soFilter.who].nom : 'Publications ' + soFilter.tag;
       fb.querySelector('button').onclick = () => { soFilter = null; renderSocial(); };
       box.appendChild(fb);
-    } else { const nb = mk('button', 'sonewb', '＋ Publier un circuit'); nb.onclick = soNewPost; box.appendChild(nb); }
-    soAllPosts().filter(p => !soFilter || (soFilter.who ? p.who === soFilter.who : soTagsOf(p).includes(soFilter.tag))).forEach(p => box.appendChild(soPostCard(p)));
+    } else { const nb = mk('button', 'sonewb', '＋ Publier une activité'); nb.onclick = soNewPost; box.appendChild(nb); }
+    const posts = (soFilter ? soAllPosts() : soFeedPosts()).filter(p => !soFilter || (soFilter.who ? p.who === soFilter.who : soTagsOf(p).includes(soFilter.tag)));
+    posts.forEach(p => box.appendChild(soPostCard(p)));
+    if(!soFilter && soFeed() === 'suivis'){
+      // Suivis : à qui s'abonner
+      const others = Object.keys(SO_PEOPLE).filter(k => !soIsFollowed(k));
+      if(!posts.some(p => p.who !== 'me')) box.appendChild(mk('p', 'ccsub', 'Tu ne suis encore personne : abonne-toi à des créateurs pour voir leurs circuits ici.'));
+      if(others.length){
+        const w = mk('div', 'sofollow'); w.appendChild(mk('p', 'kgrp', 'Suggestions à suivre'));
+        others.forEach(k => {
+          const P = SO_PEOPLE[k], r = mk('div', 'soconv', soAvatar(k) + '<div><b></b><small></small></div>');
+          r.querySelector('b').textContent = P.nom; r.querySelector('small').textContent = P.bio || ACT[P.act];
+          const fb = mk('button', 'sofol', 'Suivre'); fb.onclick = () => soToggleFollow(k); r.appendChild(fb);
+          w.appendChild(r);
+        });
+        box.appendChild(w);
+      }
+    }
     if(!soFilter){
       if(soOld.length < 40) box.appendChild(pmoreEl(soOldBusy ? 'Chargement des publications…' : 'Glisse vers le haut pour des publications plus anciennes', soOldBusy, soLoadOld));
       else box.appendChild(mk('p', 'sg-msg', 'Tu as tout vu 🎉'));
@@ -5850,7 +6008,10 @@ function soGo(v, dir){
   renderSocial(); $('soBody').scrollTop = 0;
   if(dir){ const b = $('soBody'); b.classList.remove('slide-l', 'slide-r'); void b.offsetWidth; b.classList.add(dir > 0 ? 'slide-l' : 'slide-r'); }
 }
-document.querySelectorAll('#social .sotabs button').forEach(b => b.onclick = () => soGo(b.dataset.s, Math.sign(SO_ORDER.indexOf(b.dataset.s) - SO_ORDER.indexOf(soView))));
+document.querySelectorAll('#social .sotabs button').forEach(b => b.onclick = e => {
+  if(b.dataset.s === 'fil' && ((soView === 'fil' && !soConv && !soFind) || e.target.closest('.sochev'))){ e.stopPropagation(); soFeedMenu(); return; }
+  soGo(b.dataset.s, Math.sign(SO_ORDER.indexOf(b.dataset.s) - SO_ORDER.indexOf(soView)));
+});
 // Défilement : vers le bas, les barres du haut et du bas sortent de l'écran ; vers le haut, elles reviennent
 let soLastY = 0;
 $('soBody').addEventListener('scroll', () => {
