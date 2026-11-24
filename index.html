@@ -493,6 +493,27 @@
   .sonew .bzrow{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   .sonew .bzrow .sgDet{margin:0}
   @media (hover:hover){ #pills button:not(.on):hover, .crow:hover, .soconv:hover{background:var(--hov-bg)} .sotabs button:not(.on):hover{color:var(--tx)} }
+  /* Communauté : recherche (bouton flottant aux couleurs du micro) */
+  #soFab{display:none;position:fixed;right:16px;top:auto;bottom:calc(88px + env(safe-area-inset-bottom));z-index:1960;background:linear-gradient(135deg,var(--ai0) 0%,var(--ai1) 40%,var(--ai2) 75%,var(--ai3) 100%) !important;box-shadow:0 2px 10px var(--ai-sh);visibility:visible !important}
+  #soFab svg{fill:#fff !important}
+  body.social-open #soFab{display:flex}
+  body.social-open.so-hide #soFab, body.social-open.so-chat #soFab{transform:translateY(calc(100% + 120px))}
+  @media (hover:hover){ #soFab:hover{filter:brightness(1.1)} }
+  .sofind{display:flex;flex-direction:column;gap:10px}
+  .sofq{display:flex;gap:8px}
+  .sofq input{flex:1;border:1px solid var(--bd);border-radius:999px;padding:10px 14px;font-size:15px;background:var(--bg);color:var(--tx)}
+  .sofq input:focus{outline:none;border-color:var(--c);box-shadow:0 0 0 3px var(--sel-bg)}
+  .sofq .sgDet{margin:0;width:42px;padding:0}
+  .bzc.socats{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:6px;scrollbar-width:none}
+  .socats button{flex:none;padding:7px 12px;font-size:13px;white-space:nowrap}
+  .sores{display:flex;flex-direction:column;gap:8px}
+  .sotags{display:flex;flex-wrap:wrap;gap:6px}
+  .sotag{border:1px solid var(--bd);background:var(--bg);color:var(--c);border-radius:999px;padding:6px 12px;font:600 13px system-ui,sans-serif;cursor:pointer}
+  .sotagi{border:none;background:none;padding:0;color:var(--c);font:inherit;font-weight:600;cursor:pointer}
+  .sofilt{display:flex;align-items:center;gap:8px;background:var(--sel-bg);border:1px solid var(--hov-bd);border-radius:12px;padding:8px 10px}
+  .sofilt span{flex:1;font-weight:600;color:var(--c)}
+  .sofilt .sgDet{margin:0}
+  @media (hover:hover){ .sotag:hover{border-color:var(--hov-bd);background:var(--hov-bg)} }
   .bzc.rpe{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
   .bzc.rpe button{min-width:0;padding:7px 0}
   @media (hover:hover){ .ses:not(.ok):hover{background:var(--hov-bg)} }
@@ -880,6 +901,8 @@
   </div>
   <div id="soBody"></div>
 </div>
+
+<button id="soFab" class="fab" title="Rechercher dans la communauté" aria-label="Rechercher dans la communauté"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></button>
 
 <div id="savedModal" class="modal hidden">
   <div class="card">
@@ -3113,7 +3136,10 @@ function hideUI(){
   document.body.classList.add('immersive');
   $('sres').hidden = true; if($('q') === document.activeElement) $('q').blur();
 }
-function showUI(){ document.body.classList.remove('immersive'); }
+function showUI(){ clearTimeout(immT); document.body.classList.remove('immersive'); }
+var immT = null;   // carte immobile depuis 1,2 s : l'interface revient d'elle-même
+map.on('movestart', () => clearTimeout(immT));
+map.on('moveend', () => { if(document.body.classList.contains('immersive')){ clearTimeout(immT); immT = setTimeout(showUI, 1200); } });
 map.on('click contextmenu', showUI);
 map.on('dragstart', markManual);
 map.on('dblclick', markManual);
@@ -5365,16 +5391,11 @@ const SO_PEOPLE = {
   sam:{ nom:'Sam', ini:'S', col:'#0891b2', act:'course' }
 };
 function soInit(){
-  if(social) return;
+  if(social){ if(!social.v2){ social.seed = soSeed(); social.v2 = 1; soSave(); } return; }
   const now = Date.now(), H = 3600e3;
-  social = {
+  social = { v2:1,
     likes:{}, posts:[],
-    seed:[
-      { id:'d1', who:'lina', t:now - 3 * H, act:'course', km:12.4, min:68, dplus:210, shape:11, txt:'Sortie du matin le long de l\'eau, puis la petite côte pour finir 💪 Le circuit est dans le lien, il est parfait pour une sortie longue tranquille.', likes:128, com:14 },
-      { id:'d2', who:'max', t:now - 9 * H, act:'velo', km:31.0, min:95, dplus:340, shape:23, txt:'Boucle vélo des parcs : presque tout en piste cyclable. Pause café à mi-parcours ☕', likes:86, com:9 },
-      { id:'d3', who:'theo', t:now - 30 * H, act:'course', km:8.0, min:44, dplus:60, shape:37, txt:'Séance du jour : 6 × 1 000 m sur ce tour plat. Récup 1 min 30 entre chaque. Qui le tente cette semaine ?', likes:203, com:31 },
-      { id:'d4', who:'nina', t:now - 52 * H, act:'marche', km:6.2, min:80, dplus:95, shape:41, txt:'Balade du dimanche avec le groupe des Marcheurs 🌳 Merci à tous pour la bonne humeur !', likes:24, com:5 }
-    ],
+    seed:soSeed(),
     convs:[
       { id:'c1', nom:'Lina Trail', who:'lina', group:false, msgs:[{ from:'lina', t:now - 26 * H, txt:'Hello ! Tu as testé le circuit des quais ?' }] },
       { id:'g1', nom:'Running du mardi', group:true, act:'course', members:['sam', 'theo', 'nina'], next:'Mardi 19 h · 10 km tranquille', msgs:[
@@ -5390,6 +5411,15 @@ function soInit(){
   soSave();
 }
 const soSave = () => store.set('social', social);
+function soSeed(){
+  const now = Date.now(), H = 3600e3;
+  return [
+    { id:'d1', who:'lina', t:now - 3 * H, act:'course', km:12.4, min:68, dplus:210, shape:11, txt:'Sortie du matin le long de l\'eau, puis la petite côte pour finir 💪 Le circuit est dans le lien, parfait pour une sortie longue tranquille. #sortielongue #trail', likes:128, com:14 },
+    { id:'d2', who:'max', t:now - 9 * H, act:'velo', km:31.0, min:95, dplus:340, shape:23, txt:'Boucle vélo des parcs : presque tout en piste cyclable. Pause café à mi-parcours ☕ #velo #balade', likes:86, com:9 },
+    { id:'d3', who:'theo', t:now - 30 * H, act:'course', km:8.0, min:44, dplus:60, shape:37, txt:'Séance du jour : 6 × 1 000 m sur ce tour plat. Récup 1 min 30 entre chaque. Qui le tente cette semaine ? #fractionne #course', likes:203, com:31 },
+    { id:'d4', who:'nina', t:now - 52 * H, act:'marche', km:6.2, min:80, dplus:95, shape:41, txt:'Balade du dimanche avec le groupe des Marcheurs 🌳 Merci à tous pour la bonne humeur ! #balade #marche', likes:24, com:5 }
+  ];
+}
 // Tracé de démonstration : boucle de la bonne longueur autour de la zone affichée (aucun lieu réel visé)
 function soShape(km, seed){
   const R = seeded(seed), c = start || [map.getCenter().lat, map.getCenter().lng];
@@ -5430,7 +5460,11 @@ function soPostCard(p){
     '<div class="sobtns"><button class="sol"></button><button class="soc">💬 ' + (p.com || 0) + '</button><button class="sov">' + ITI_SVG + 'Voir le circuit</button><button class="sos" title="Partager">' + SHARE_SVG + '</button></div>';
   d.querySelector('header b').textContent = who.nom;
   d.querySelector('header small').textContent = ACT[p.act] + ' · ' + soWhen(p.t);
-  d.querySelector('.sotxt').textContent = p.txt;
+  // texte avec #tags cliquables
+  p.txt.split(/(#[\p{L}\d_]+)/u).forEach(part => {
+    if(/^#/.test(part)){ const a = mk('button', 'sotagi'); a.textContent = part; a.onclick = () => { soFind = null; soFilter = { tag:part.toLowerCase() }; soView = 'fil'; renderSocial(); $('soBody').scrollTop = 0; }; d.querySelector('.sotxt').appendChild(a); }
+    else d.querySelector('.sotxt').appendChild(document.createTextNode(part));
+  });
   d.querySelector('.sostats').innerHTML = '<span><small>Distance</small><b>' + r1(p.km) + ' km</b></span><span><small>Temps</small><b>' + fmtMin(p.min) + '</b></span><span><small>' + (p.act === 'course' ? 'Allure' : 'Vitesse') + '</small><b>' + (p.act === 'course' ? allure(p.km / (p.min / 60)) : r1(p.km / (p.min / 60)) + ' km/h') + '</b></span><span><small>Dénivelé</small><b>' + p.dplus + ' m</b></span>';
   const pts = p.pts || soShape(p.km, hashStr(p.id));
   d.querySelector('.somapw').innerHTML = soMini(pts);
@@ -5501,16 +5535,80 @@ function soNewGroup(){
   };
   box.appendChild(f);
 }
+let soFind = null, soFilter = null;   // recherche ouverte { q, cat } ; filtre du fil { who } ou { tag }
+const SO_CATS = [['tout', 'Tout'], ['comptes', 'Comptes'], ['posts', 'Publications'], ['tags', '#Tags'], ['groupes', 'Groupes']];
+const soNorm = s => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+const soAllPosts = () => social.posts.concat(social.seed).sort((a, b) => b.t - a.t);
+const soTagsOf = p => (p.txt.match(/#[\p{L}\d_]+/gu) || []).map(t => t.toLowerCase());
+function soOpenFind(){ soFind = soFind || { q:'', cat:'tout' }; soConv = null; renderSocial(); setTimeout(() => { const i = $('soBody').querySelector('.sofind input'); if(i) i.focus(); }, 50); }
+function soRenderFind(box){
+  const f = mk('div', 'sofind', '<div class="sofq"><input type="search" placeholder="Rechercher dans la communauté…" enterkeyhint="search" aria-label="Rechercher"><button class="sgDet" aria-label="Fermer la recherche">✕</button></div><div class="bzc socats"></div><div class="sores"></div>');
+  const inp = f.querySelector('input'); inp.value = soFind.q;
+  inp.oninput = () => { soFind.q = inp.value; draw(); };
+  f.querySelector('.sofq button').onclick = () => { soFind = null; renderSocial(); };
+  SO_CATS.forEach(([k, t]) => { const b = mk('button', k === soFind.cat ? 'on' : ''); b.type = 'button'; b.textContent = t; b.onclick = () => { soFind.cat = k; f.querySelectorAll('.socats button').forEach(x => x.classList.toggle('on', x === b)); draw(); }; f.querySelector('.socats').appendChild(b); });
+  box.appendChild(f);
+  function draw(){
+    const R = f.querySelector('.sores'), q = soNorm(soFind.q.trim()).replace(/^#/, ''), cat = soFind.cat, has = s => !q || soNorm(s).includes(q);
+    R.innerHTML = '';
+    const sec = t => { if(cat === 'tout') R.appendChild(mk('p', 'kgrp', t)); };
+    let n = 0;
+    if(cat === 'tout' || cat === 'comptes'){
+      const L = Object.entries(SO_PEOPLE).filter(([, p]) => has(p.nom + ' ' + (p.bio || '')));
+      if(L.length) sec('Comptes');
+      L.forEach(([k, p]) => { n++;
+        const r = mk('button', 'soconv', soAvatar(k) + '<div><b></b><small></small></div>' + (p.creator ? '<span class="socr">Créateur</span>' : ''));
+        r.querySelector('b').textContent = p.nom; r.querySelector('small').textContent = (p.bio || ACT[p.act]) + ' · ' + soAllPosts().filter(x => x.who === k).length + ' publication(s)';
+        r.onclick = () => { soFind = null; soFilter = { who:k }; soView = 'fil'; renderSocial(); };
+        R.appendChild(r);
+      });
+    }
+    if(cat === 'tout' || cat === 'tags'){
+      const cnt = {}; soAllPosts().forEach(p => soTagsOf(p).forEach(t => cnt[t] = (cnt[t] || 0) + 1));
+      const L = Object.entries(cnt).filter(([t]) => has(t.slice(1))).sort((a, b) => b[1] - a[1]);
+      if(L.length) sec('#Tags');
+      const w = mk('div', 'sotags');
+      L.forEach(([t, c]) => { n++; const b = mk('button', 'sotag'); b.textContent = t + ' · ' + c; b.onclick = () => { soFind = null; soFilter = { tag:t }; soView = 'fil'; renderSocial(); }; w.appendChild(b); });
+      if(L.length) R.appendChild(w);
+    }
+    if(cat === 'tout' || cat === 'groupes'){
+      const mine = social.convs.filter(c => c.group), other = social.groupsSugg.filter(g => !social.convs.some(c => c.id === g.id));
+      const L = mine.concat(other).filter(g => has(g.nom + ' ' + (g.next || '') + ' ' + ACT[g.act]));
+      if(L.length) sec('Groupes');
+      L.forEach(g => { n++;
+        const joined = mine.includes(g), r = mk('button', 'soconv', '<span class="soav grp">' + ICO[g.act] + '</span><div><b></b><small></small></div><em></em>');
+        r.querySelector('b').textContent = g.nom; r.querySelector('small').textContent = (joined ? (g.members.length + 1) : g.count) + ' membres' + (g.next ? ' · ' + g.next : '');
+        r.querySelector('em').textContent = joined ? 'Ouvrir ›' : 'Voir ›';
+        r.onclick = () => { soFind = null; if(joined) soChat(g); else { soView = 'grp'; renderSocial(); } };
+        R.appendChild(r);
+      });
+    }
+    if(cat === 'tout' || cat === 'posts'){
+      const L = soAllPosts().filter(p => has(p.txt + ' ' + (p.who === 'me' ? 'toi' : SO_PEOPLE[p.who].nom)));
+      if(L.length) sec('Publications');
+      (cat === 'tout' ? L.slice(0, 3) : L).forEach(p => { n++; R.appendChild(soPostCard(p)); });
+    }
+    if(!n) R.appendChild(mk('p', 'empty', 'Aucun résultat' + (q ? ' pour « ' + soFind.q.trim() + ' »' : '') + '.'));
+  }
+  draw();
+}
 function renderSocial(){
   soInit();
   document.body.classList.remove('so-chat');
+  document.body.classList.toggle('so-finding', !!soFind);
+  if(soFind){ document.querySelectorAll('#social .sotabs button').forEach(b => b.classList.remove('on')); const box = $('soBody'); box.innerHTML = ''; soRenderFind(box); return; }
   document.querySelectorAll('#social .sotabs button').forEach(b => b.classList.toggle('on', b.dataset.s === soView));
   const box = $('soBody'); box.innerHTML = '';
   if(soConv){ const c = social.convs.find(x => x.id === soConv); if(c) return soChat(c); soConv = null; }
   box.appendChild(mk('p', 'sonote', 'Aperçu hors ligne : publications, messages et groupes restent sur ton téléphone jusqu\'à l\'activation des comptes. Les créateurs et groupes affichés sont fictifs.'));
   if(soView === 'fil'){
-    const nb = mk('button', 'sonewb', '＋ Publier un circuit'); nb.onclick = soNewPost; box.appendChild(nb);
-    social.posts.concat(social.seed).sort((a, b) => b.t - a.t).forEach(p => box.appendChild(soPostCard(p)));
+    if(soFilter){
+      const fb = mk('div', 'sofilt', '<span></span><button class="sgDet">✕ Tout le fil</button>');
+      fb.querySelector('span').textContent = soFilter.who ? 'Publications de ' + SO_PEOPLE[soFilter.who].nom : 'Publications ' + soFilter.tag;
+      fb.querySelector('button').onclick = () => { soFilter = null; renderSocial(); };
+      box.appendChild(fb);
+    } else { const nb = mk('button', 'sonewb', '＋ Publier un circuit'); nb.onclick = soNewPost; box.appendChild(nb); }
+    soAllPosts().filter(p => !soFilter || (soFilter.who ? p.who === soFilter.who : soTagsOf(p).includes(soFilter.tag))).forEach(p => box.appendChild(soPostCard(p)));
   }
   if(soView === 'msg'){
     social.convs.slice().sort((a, b) => (b.msgs.at(-1) || {}).t - (a.msgs.at(-1) || {}).t).forEach(c => {
@@ -5564,8 +5662,8 @@ function closeSocial(keep){
 }
 const SO_ORDER = ['fil', 'msg', 'grp'];
 function soGo(v, dir){
-  if(v === soView && !soConv) return;
-  soView = v; soConv = null;
+  if(v === soView && !soConv && !soFind) return;
+  soView = v; soConv = null; soFind = null; if(v !== 'fil') soFilter = null;
   document.body.classList.remove('so-hide');
   renderSocial(); $('soBody').scrollTop = 0;
   if(dir){ const b = $('soBody'); b.classList.remove('slide-l', 'slide-r'); void b.offsetWidth; b.classList.add(dir > 0 ? 'slide-l' : 'slide-r'); }
@@ -5589,6 +5687,7 @@ $('soBody').addEventListener('touchend', e => {
   const i = SO_ORDER.indexOf(soView) + (dx < 0 ? 1 : -1);
   if(i >= 0 && i < SO_ORDER.length) soGo(SO_ORDER[i], dx < 0 ? 1 : -1);
 }, { passive:true });
+$('soFab').onclick = () => soFind ? (soFind = null, renderSocial()) : soOpenFind();
 new ResizeObserver(() => { $('soBody').style.paddingTop = ($('social').querySelector('.sotop').offsetHeight + 12) + 'px'; }).observe($('social').querySelector('.sotop'));
 
 sheetReady = true;
