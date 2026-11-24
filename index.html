@@ -591,6 +591,12 @@
   #btnPlan .pbn{position:absolute;top:2px;right:0;min-width:16px;height:16px;border-radius:8px;background:var(--c);color:#fff;font:700 10px/16px system-ui,sans-serif;text-align:center;padding:0 4px}
   .vbtn{flex:none;border:none;background:var(--c);color:#fff;border-radius:9px;padding:8px 10px;font:600 13px system-ui,sans-serif;cursor:pointer;white-space:nowrap}
   .sg-msg{color:var(--mu);font-size:14px;text-align:center;margin:14px 0}
+  /* Halo de distance autour du départ */
+  path.halo{animation:haloIn .3s ease both;transition:opacity .3s ease}
+  path.halo.out, .halolbl.out{opacity:0}
+  @keyframes haloIn{from{opacity:0}}
+  .halolbl{transition:opacity .3s ease;pointer-events:none}
+  .halolbl span{position:absolute;left:0;top:0;transform:translate(-50%,-50%);white-space:nowrap;background:var(--c);color:#fff;font:700 12px/1 system-ui,sans-serif;padding:5px 9px;border-radius:999px;box-shadow:0 1px 5px rgba(0,0,0,.3)}
   /* Fin de liste : glisser vers le haut (ou toucher) pour en charger d'autres */
   .pmore{flex:none;width:100%;height:68px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:6px;padding:12px 0 0;border:0;background:none;color:var(--mu);font:500 13px system-ui,sans-serif;cursor:pointer;transition:height .25s ease;overflow:hidden;-webkit-tap-highlight-color:transparent}
   .pmore.pulling{transition:none}
@@ -1273,8 +1279,61 @@ const pin = color => L.divIcon({
 
 function setStart(ll){
   start = [ll[0], ll[1]];
-  if(!startMarker) startMarker = L.marker(start, { icon:pin('#16a34a') }).addTo(map);
+  if(!startMarker) startMarker = L.marker(start, { icon:pin('#16a34a'), zIndexOffset:300 }).addTo(map).on('click', e => { L.DomEvent.stop(e); centerOnView(start); });
   else startMarker.setLatLng(start);
+  if(typeof syncHalo === 'function') syncHalo();
+}
+// Centre la carte sur ll au milieu de la zone réellement visible (sous la recherche, au-dessus du tiroir / de la pilule), sans changer le zoom
+function visRect(){
+  const W = map.getSize(), r0 = map.getContainer().getBoundingClientRect();
+  let left = 0, top = 78, right = W.x, bottom = W.y;
+  if(WIDE.matches){ left = $('panel').getBoundingClientRect().right - r0.left + 12; top = 0; }
+  else ['panel', 'pills'].forEach(id => { const r = $(id).getBoundingClientRect(); if(r.height > 0 && r.top > 120 && r.top - r0.top < bottom) bottom = r.top - r0.top; });
+  return { left, top, right, bottom, W };
+}
+function centerOnView(ll){
+  const { left, top, right, bottom, W } = visRect();
+  const z = map.getZoom(), pt = map.project(ll, z).subtract([(left + right) / 2 - W.x / 2, (top + bottom) / 2 - W.y / 2]);
+  if(typeof userMoved !== 'undefined'){ userMoved = false; document.body.classList.remove('show-here'); }
+  map.panTo(map.unproject(pt, z), { animate:true, duration:.35 });
+}
+/* Halo autour du départ : la zone que couvre la distance / la durée choisie
+   (réglages ouverts, ou pendant quelques secondes après un changement) */
+let halo = null, haloLbl = null, haloUntil = 0, haloT = null, haloArmed = false, haloFitT = null;
+function haloRadius(){
+  const t = targetMeters();
+  if(!start || dest || !(t > 0)) return 0;
+  return st.type === 'boucle' ? t / Math.PI : t / 1.3;   // boucle : éloignement max ≈ diamètre du tour ; aller : à vol d'oiseau
+}
+function haloWanted(){
+  if(typeof nav !== 'undefined' && nav) return false;
+  const open = !WIDE.matches && $('panel').classList.contains('open') && !document.body.classList.contains('no-tab');
+  return open || Date.now() < haloUntil;
+}
+function syncHalo(bump){
+  if(bump && haloArmed){ haloUntil = Date.now() + 2600; clearTimeout(haloT); haloT = setTimeout(() => syncHalo(), 2700); }
+  const r = haloRadius(), on = r > 0 && haloWanted();
+  if(!on){
+    if(halo){ const h = halo, l = haloLbl; halo = haloLbl = null; h.getElement() && h.getElement().classList.add('out'); l.getElement() && l.getElement().classList.add('out');
+      setTimeout(() => { map.removeLayer(h); map.removeLayer(l); }, 300); }
+    return;
+  }
+  const v = getVal(), txt = st.unit === 'min' ? fmtMin(v) + ' ≈ ' + d1(targetMeters() / 1000) + ' km' : d1(v) + ' km';
+  const top = destPoint(start, r, 0);
+  if(!halo){
+    halo = L.circle(start, { radius:r, interactive:false, className:'halo', color:TC.c, weight:2, dashArray:'6 7', fillColor:TC.c, fillOpacity:.1 }).addTo(map);
+    haloLbl = L.marker(top, { interactive:false, keyboard:false, zIndexOffset:200, icon:L.divIcon({ className:'halolbl', iconSize:null, html:'<span></span>' }) }).addTo(map);
+  } else { halo.setLatLng(start); halo.setRadius(r); halo.setStyle({ color:TC.c, fillColor:TC.c }); haloLbl.setLatLng(top); }
+  // Halo plus grand que la zone visible : on dézoome juste ce qu'il faut pour le voir en entier
+  clearTimeout(haloFitT);
+  haloFitT = setTimeout(() => {
+    if(!halo) return;
+    const v = visRect(), b = halo.getBounds(), a = map.latLngToContainerPoint(b.getNorthWest()), c = map.latLngToContainerPoint(b.getSouthEast());
+    if(a.x < v.left || a.y < v.top || c.x > v.right || c.y > v.bottom)
+      map.fitBounds(b, { paddingTopLeft:[v.left + 16, v.top + 22], paddingBottomRight:[v.W.x - v.right + 16, v.W.y - v.bottom + 16], animate:true });
+  }, 350);
+  const sp = haloLbl.getElement() && haloLbl.getElement().querySelector('span');
+  if(sp) sp.textContent = (st.type === 'boucle' ? '⟳ ' : '→ ') + txt;
 }
 
 // (le départ se place avec un appui long / clic droit : voir le menu de la carte)
@@ -1755,7 +1814,7 @@ function select(c, noFit, keepSize){
   renderList();
   if(!WIDE.matches && sheetReady && sheetState !== 'peek' && !keepSize){
     // Téléphone : on replie le tiroir pour montrer le parcours sur la carte
-    $('panel').classList.remove('open');
+    $('panel').classList.remove('open'); syncHalo();
     setSheet('peek');
     if(!noFit) setTimeout(fitRoute, 320);
   } else if(!noFit) fitRoute();
@@ -1779,6 +1838,7 @@ async function generate(){
   if(tab !== 'parcours') setTab('parcours');
   const keepSize = keepSheetOnce; keepSheetOnce = false;
   if(!WIDE.matches && sheetReady && !keepSize){ $('panel').classList.remove('open'); setSheet('peek'); }
+  haloUntil = 0; syncHalo();
 
   // Même départ, même activité, même type : on garde les parcours déjà proposés, les nouveaux s'ajoutent à la suite
   const key = [start[0].toFixed(5), start[1].toFixed(5), st.mode, st.type, dest ? dest.ll.join(',') : ''].join('|');
@@ -3637,6 +3697,7 @@ function setTab(t){
   if(typeof syncGo2 === 'function') syncGo2();
   showPlaces();
   if(sheetReady && !WIDE.matches) setSheet(sheetState);
+  if(typeof syncHalo === 'function') syncHalo();
 }
 // Toucher l'onglet ouvert le referme (retour aux pilules)
 document.querySelectorAll('#tabs button, #pills button').forEach(b => b.onclick = () => {
@@ -5397,6 +5458,7 @@ $('grab').onclick = () => setSheet(sheetState === 'peek' ? 'half' : 'peek');
 
 // Ligne de résumé : réglages en un coup d'œil (toucher = ouvrir les réglages) + bouton Générer
 function updateChip(){
+  if(typeof syncHalo === 'function') syncHalo(true);
   const ico = { marche:'🚶', course:'🏃', velo:'🚴' }, lbl = { marche:'Marche', course:'Course', velo:'Vélo' };
   const v = getVal();
   const what = dest ? '→ ' + dest.name : (!v ? '?' : st.unit === 'min' ? fmtMin(v) : String(v).replace('.', ',') + ' km');
@@ -5406,6 +5468,7 @@ $('chip').onclick = () => {
   const open = !$('panel').classList.contains('open');
   $('panel').classList.toggle('open', open);
   setSheet(open && sheetState === 'peek' ? 'half' : sheetState);
+  syncHalo();
 };
 $('go2').onclick = () => tab === 'sugg' ? applySugg() : $('btnGo').click();
 // Le bouton du résumé suit l'état du grand bouton ; dans Suggestions il devient « Appliquer »
@@ -5879,6 +5942,7 @@ new ResizeObserver(() => { $('soBody').style.paddingTop = ($('social').querySele
 
 sheetReady = true;
 updateChip();
+setTimeout(() => { haloArmed = true; }, 1500);
 setTab(null);
 applyLayout();
 setTimeout(openShared, 300);   // lien partagé (#r=… parcours, #p=… lieu)
