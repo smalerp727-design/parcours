@@ -467,6 +467,9 @@
   body.so-chat #soBody{padding-bottom:calc(12px + env(safe-area-inset-bottom))}
   #soBody > *{width:100%;max-width:640px;margin:0 auto;flex:none}
   .sonote{font-size:12px !important;color:var(--mu);background:var(--bg);border:1px dashed var(--bd);border-radius:10px;padding:8px 10px;margin:0 auto !important}
+  .sosearch{display:flex;align-items:center;gap:10px;border:1px solid var(--bd);background:var(--bg);color:var(--mu);border-radius:999px;padding:11px 16px;font:400 15px system-ui,sans-serif;cursor:text;text-align:left;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+  .sosearch svg{width:20px;height:20px;fill:var(--c);flex:none}
+  @media (hover:hover){ .sosearch:hover{border-color:var(--hov-bd)} }
   .sonewb{border:1px dashed var(--c);background:var(--bg);color:var(--c);border-radius:12px;padding:11px;font:600 14px system-ui,sans-serif;cursor:pointer}
   .soav{flex:none;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;color:#fff;font-weight:700}
   .soav.grp{width:40px;height:40px;background:var(--sel-bg);font-size:20px}
@@ -954,7 +957,7 @@
   <div id="soBody"></div>
 </div>
 
-<button id="soFab" class="fab" title="Rechercher dans la communauté" aria-label="Rechercher dans la communauté"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></button>
+<button id="soFab" class="fab" title="Publier une activité" aria-label="Publier une activité"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></button>
 
 <div id="savedModal" class="modal hidden">
   <div class="card">
@@ -5919,6 +5922,7 @@ function renderSocial(){
   syncSoTabs();
   const box = $('soBody'); box.innerHTML = '';
   if(soConv){ const c = social.convs.find(x => x.id === soConv); if(c) return soChat(c); soConv = null; }
+  const sq = mk('button', 'sosearch', '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg><span>Rechercher dans la communauté…</span>'); sq.onclick = soOpenFind; box.appendChild(sq);
   box.appendChild(mk('p', 'sonote', 'Aperçu hors ligne : publications, messages et groupes restent sur ton téléphone jusqu\'à l\'activation des comptes. Les créateurs et groupes affichés sont fictifs.'));
   if(soView === 'fil'){
     if(soFilter){
@@ -5926,7 +5930,7 @@ function renderSocial(){
       fb.querySelector('span').textContent = soFilter.who ? 'Publications de ' + SO_PEOPLE[soFilter.who].nom : 'Publications ' + soFilter.tag;
       fb.querySelector('button').onclick = () => { soFilter = null; renderSocial(); };
       box.appendChild(fb);
-    } else { const nb = mk('button', 'sonewb', '＋ Publier une activité'); nb.onclick = soNewPost; box.appendChild(nb); }
+    }
     const posts = (soFilter ? soAllPosts() : soFeedPosts()).filter(p => !soFilter || (soFilter.who ? p.who === soFilter.who : soTagsOf(p).includes(soFilter.tag)));
     posts.forEach(p => box.appendChild(soPostCard(p)));
     if(!soFilter && soFeed() === 'suivis'){
@@ -6102,7 +6106,7 @@ function moreRoutes(){
   keepSheetOnce = true;
   generate();
 }
-$('soFab').onclick = () => soFind ? (soFind = null, renderSocial()) : soOpenFind();
+$('soFab').onclick = () => { soFind = null; soConv = null; soFilter = null; if(soView !== 'fil'){ soView = 'fil'; } soNewPost(); $('soBody').scrollTop = 0; document.body.classList.remove('so-hide'); };
 new ResizeObserver(() => { $('soBody').style.paddingTop = ($('social').querySelector('.sotop').offsetHeight + 12) + 'px'; }).observe($('social').querySelector('.sotop'));
 
 sheetReady = true;
