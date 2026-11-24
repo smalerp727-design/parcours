@@ -461,6 +461,8 @@
   .sostats b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .somapw{cursor:pointer}
   .somap{width:100%;height:auto;display:block}
+  .soattr{font:9px system-ui,sans-serif;fill:#374151;paint-order:stroke;stroke:#fff;stroke-width:3px}
+  .dark .sotiles{filter:invert(1) hue-rotate(180deg) brightness(.85) contrast(.9)}
   .sobtns{display:grid;grid-template-columns:auto auto 1fr auto;gap:6px}
   .sobtns button{display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--bd);background:var(--bg);border-radius:9px;padding:8px 10px;font:600 13px system-ui,sans-serif;color:var(--tx);cursor:pointer;white-space:nowrap}
   .sobtns .sov{color:var(--c)}
@@ -5442,15 +5444,31 @@ function soShape(km, seed){
   }
   return pts;
 }
-function soMini(pts){   // aperçu du tracé (sans fond de carte)
-  const la = pts.map(p => p[0]), lo = pts.map(p => p[1]), y0 = Math.min(...la), y1 = Math.max(...la), x0 = Math.min(...lo), x1 = Math.max(...lo);
-  const k = Math.cos(((y0 + y1) / 2) * Math.PI / 180), w = (x1 - x0) * k || 1e-6, h = (y1 - y0) || 1e-6, s = Math.min(280 / w, 120 / h);
-  const P = pts.map(p => (20 + ((p[1] - x0) * k) * s + (280 - w * s) / 2).toFixed(1) + ',' + (14 + (y1 - p[0]) * s + (120 - h * s) / 2).toFixed(1)).join(' ');
-  const f = P.split(' ')[0].split(',');
-  return '<svg viewBox="0 0 320 148" class="somap" aria-hidden="true"><rect width="320" height="148" rx="12" fill="var(--n2)"/>' +
-    '<polyline points="' + P + '" fill="none" stroke="#fff" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/>' +
-    '<polyline points="' + P + '" fill="none" stroke="var(--c)" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>' +
-    '<circle cx="' + f[0] + '" cy="' + f[1] + '" r="6" fill="#16a34a" stroke="#fff" stroke-width="2.5"/></svg>';
+// Mini-carte d'une publication : fond OpenStreetMap (tuiles) + tracé, à l'échelle du circuit
+function soMini(pts){
+  const W = 320, Hh = 148, T = 256;
+  const px = (ll, z) => { const s = T * Math.pow(2, z), la = ll[0] * Math.PI / 180;
+    return [(ll[1] + 180) / 360 * s, (1 - Math.log(Math.tan(la) + 1 / Math.cos(la)) / Math.PI) / 2 * s]; };
+  // zoom le plus fort qui fait tenir le circuit (avec une marge)
+  let z = 17, P;
+  for(; z > 3; z--){
+    P = pts.map(p => px(p, z));
+    const xs = P.map(p => p[0]), ys = P.map(p => p[1]);
+    if(Math.max(...xs) - Math.min(...xs) <= W - 36 && Math.max(...ys) - Math.min(...ys) <= Hh - 28) break;
+  }
+  const xs = P.map(p => p[0]), ys = P.map(p => p[1]);
+  const cx = (Math.max(...xs) + Math.min(...xs)) / 2, cy = (Math.max(...ys) + Math.min(...ys)) / 2, ox = cx - W / 2, oy = cy - Hh / 2;
+  let tiles = '';
+  for(let tx = Math.floor(ox / T); tx <= Math.floor((ox + W) / T); tx++)
+    for(let ty = Math.floor(oy / T); ty <= Math.floor((oy + Hh) / T); ty++)
+      tiles += '<image href="https://tile.openstreetmap.org/' + z + '/' + tx + '/' + ty + '.png" x="' + (tx * T - ox).toFixed(1) + '" y="' + (ty * T - oy).toFixed(1) + '" width="' + T + '" height="' + T + '"/>';
+  const L = P.map(p => (p[0] - ox).toFixed(1) + ',' + (p[1] - oy).toFixed(1)).join(' '), f = L.split(' ')[0].split(','), id = 'm' + Math.random().toString(36).slice(2, 7);
+  return '<svg viewBox="0 0 ' + W + ' ' + Hh + '" class="somap" aria-hidden="true"><defs><clipPath id="' + id + '"><rect width="' + W + '" height="' + Hh + '" rx="12"/></clipPath></defs>' +
+    '<g clip-path="url(#' + id + ')"><rect width="' + W + '" height="' + Hh + '" fill="var(--n2)"/><g class="sotiles">' + tiles + '</g>' +
+    '<polyline points="' + L + '" fill="none" stroke="#fff" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/>' +
+    '<polyline points="' + L + '" fill="none" stroke="var(--c)" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>' +
+    '<circle cx="' + f[0] + '" cy="' + f[1] + '" r="6" fill="#16a34a" stroke="#fff" stroke-width="2.5"/>' +
+    '<text x="' + (W - 5) + '" y="' + (Hh - 5) + '" text-anchor="end" class="soattr">© OpenStreetMap</text></g></svg>';
 }
 function soAvatar(w, size){
   const p = w === 'me' ? { ini:'Moi', col:'var(--c)' } : SO_PEOPLE[w] || { ini:'?', col:'#9ca3af' };
