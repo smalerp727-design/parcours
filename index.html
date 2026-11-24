@@ -5694,9 +5694,9 @@ function soIndOf(src){
 function soNewPost(){
   const routes = saved.filter(s => catOf(s) !== 'lieu');
   const logs = coach ? logsOf(coach).slice().reverse().slice(0, 60) : [];
-  let mode = logs.length ? 'log' : 'circ', sel = social.indSel || ['dist', 'temps', 'allure', 'dplus'];
+  const mode = 'log'; let sel = social.indSel || ['dist', 'temps', 'allure', 'dplus'];
   const box = $('soBody'); box.innerHTML = '';
-  const f = mk('div', 'cc sonew', '<b class="cct">Nouvelle publication</b><div class="bzc sosrc"></div><select></select><p class="empty" hidden></p><p class="kgrp">Indicateurs affichés</p><div class="bzc soind"></div><textarea rows="4" placeholder="Raconte ta sortie, donne tes conseils…"></textarea><div class="bzrow"><button class="sgDet">Annuler</button><button class="primary">Publier</button></div>');
+  const f = mk('div', 'cc sonew', '<b class="cct">Nouvelle publication</b><p class="ccsub">Choisis une de tes activités réalisées.</p><select></select><p class="empty" hidden></p><p class="kgrp">Indicateurs affichés</p><div class="bzc soind"></div><textarea rows="4" placeholder="Raconte ta sortie, donne tes conseils…"></textarea><div class="bzrow"><button class="sgDet">Annuler</button><button class="primary">Publier</button></div>');
   const S_ = f.querySelector('select'), E = f.querySelector('.empty'), I = f.querySelector('.soind'), pub = f.querySelector('.primary');
   const cur = () => mode === 'log' ? (logs[+S_.value] ? { log:logs[+S_.value] } : null) : (routes.find(x => x.id === S_.value) ? { circ:routes.find(x => x.id === S_.value) } : null);
   const drawInd = () => {
@@ -5722,7 +5722,6 @@ function soNewPost(){
     else routes.forEach(x => { const o = mk('option'); o.value = x.id; o.textContent = (MODE_ICO[x.mode] || '') + ' ' + x.name + ' · ' + d1(x.distance / 1000) + ' km'; S_.appendChild(o); });
     drawInd();
   };
-  [['log', '🏅 Activité réalisée'], ['circ', '⭐ Circuit enregistré']].forEach(([m, t]) => { const b = mk('button', '', t); b.type = 'button'; b.dataset.m = m; b.onclick = () => { mode = m; fill(); }; f.querySelector('.sosrc').appendChild(b); });
   S_.onchange = drawInd;
   f.querySelector('.sgDet').onclick = () => renderSocial();
   pub.onclick = () => {
