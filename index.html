@@ -957,13 +957,13 @@
   body.wide.wsearch #search{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
   body.wide.wsearch #sres{position:static;flex:1 1 auto;max-height:none;box-shadow:none;border:none;border-radius:0;background:none;margin:0 -4px;padding:0 4px}
   /* Communauté sur PC : une carte plus large, onglets en haut */
-  body.wide #social{left:calc(12px + env(safe-area-inset-left));top:calc(12px + env(safe-area-inset-top));bottom:12px;right:auto;width:min(600px, calc(100% - 100px - var(--rail-w, 58px)));border-radius:18px;box-shadow:0 2px 12px rgba(0,0,0,.2);transform:translateX(calc(-100% - 30px))}
+  body.wide #social{left:calc(12px + env(safe-area-inset-left));top:calc(12px + env(safe-area-inset-top));bottom:12px;right:auto;width:min(480px, calc(100% - 100px - var(--rail-w, 58px)));border-radius:18px;box-shadow:0 2px 12px rgba(0,0,0,.2);transform:translateX(calc(-100% - 30px))}
   body.wide #social.open{transform:none}
   body.wide #social #soGrab, body.wide #social .soh{display:none}
   body.wide .sotop{border-radius:18px 18px 0 0;overflow:hidden}
   .sotop #pills{position:static !important;transform:none !important;width:auto;display:flex !important;box-shadow:none;border-radius:0;padding:8px 8px 4px;background:var(--bg)}
   .sotop #pills .tclose{display:flex;flex:0 0 34px !important;align-items:center;justify-content:center;border:none;background:none;border-radius:50%;color:var(--mu);font-size:16px !important;cursor:pointer;padding:0 !important}
-  body.wide #soFab{right:auto;left:calc(22px + env(safe-area-inset-left) + var(--rail-w, 58px) + min(600px, 100vw - 100px - var(--rail-w, 58px)) - 74px);bottom:28px}
+  body.wide #soFab{right:auto;left:calc(22px + env(safe-area-inset-left) + var(--rail-w, 58px) + min(480px, 100vw - 100px - var(--rail-w, 58px)) - 74px);bottom:28px}
   body.wide.social-open #pills{z-index:auto}
   @media (min-width:1600px){ #panel{width:420px} }
   /* Téléphone en paysage : panneau plus compact */
@@ -3814,6 +3814,11 @@ function setTab(t){
   if(typeof syncCardH === 'function') requestAnimationFrame(syncCardH);
 }
 // PC : changement d'onglet avec un effet de morphose (la carte s'étire / se rétracte vers sa nouvelle taille)
+// La zone de carte visible change de largeur : on décale la carte d'autant pour garder le même centre
+function shiftMap(dx){
+  if(!WIDE.matches || Math.abs(dx) < 2) return;
+  map.panBy([-dx / 2, 0], { animate:true, duration:.32, easeLinearity:.4 });
+}
 const curCard = () => !$('social').hidden ? $('social') : tab ? $('panel') : null;
 function morphTab(t, after){
   const go = () => { setTab(t); if(after) after(); };
@@ -3821,9 +3826,10 @@ function morphTab(t, after){
   // Le bloc entier (colonne d'onglets + carte) : un seul fond animé, la colonne devient transparente le temps de l'effet
   const block = () => { syncCardH(); const r = $('rail').getBoundingClientRect(), c = curCard(), cr = c && c.getBoundingClientRect();
     return { left:r.left, top:r.top, width:(cr ? cr.right : r.right) - r.left, height:Math.max(r.height, cr ? cr.height : 0), rad:cr ? '18px' : '30px', card:c }; };
-  const a = block();
+  const a = block(), s0 = sideRight();
   go();
   const b = block();
+  shiftMap(sideRight() - s0);
   if(Math.abs(a.width - b.width) < 2 && Math.abs(a.height - b.height) < 2){
     if(b.card) b.card.animate([{ opacity:.4 }, { opacity:1 }], { duration:220, easing:'ease-out' });
     return;
@@ -3859,12 +3865,17 @@ document.querySelectorAll('#tabs button, #pills button, #rail button[data-t]').f
 
 // Pilule verticale (PC) : menu, recherche, photo
 document.body.classList.toggle('rail-open', !!store.get('railOpen', false));
+const railWs = {};
 $('rail').querySelector('[data-r="menu"]').onclick = () => {
   const on = !document.body.classList.contains('rail-open');
+  const w0 = $('rail').offsetWidth, key = on ? 'open' : 'closed';
+  railWs[on ? 'closed' : 'open'] = w0;
   document.body.classList.toggle('rail-open', on); store.set('railOpen', on);
+  if(railWs[key]) shiftMap(railWs[key] - w0);
   // Pendant que la colonne s'élargit / se rétrécit, la carte suit image par image
   const t0 = performance.now();
-  (function follow(){ document.documentElement.style.setProperty('--rail-w', $('rail').offsetWidth + 'px'); if(performance.now() - t0 < 420) requestAnimationFrame(follow); })();
+  (function follow(){ const w = $('rail').offsetWidth; document.documentElement.style.setProperty('--rail-w', w + 'px');
+    if(performance.now() - t0 < 420) requestAnimationFrame(follow); else { if(!railWs[key]) shiftMap(w - w0); railWs[key] = w; } })();
 };
 // Pilule + carte d'un seul bloc : même hauteur (la plus grande des deux contenus)
 function syncCardH(){
