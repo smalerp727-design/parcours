@@ -407,6 +407,54 @@
   .csv .cchr .sgDet, .csv label.btnlike{display:inline-flex !important;align-items:center;margin:0 !important;padding:5px 9px !important;font:600 12px system-ui,sans-serif !important;border:1px solid var(--bd) !important;background:var(--bg) !important;color:var(--tx) !important;border-radius:8px !important;height:auto !important;min-height:0 !important;cursor:pointer;flex:none}
   .csv .cct{white-space:nowrap}
   .cmenu{padding:4px 12px}
+  .crow.on{background:var(--sel-bg)}
+  .crow.on b{color:var(--c)}
+  .chd{display:flex;align-items:center;gap:6px;padding:2px 4px 10px;position:sticky;top:-8px;z-index:2;background:var(--bg)}
+  .chd b{flex:1;min-width:0;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .chdr{display:flex;gap:6px;flex:none}
+  .cback{flex:none;width:38px;height:38px;border-radius:50%;border:none;background:var(--n1);display:grid;place-items:center;cursor:pointer;padding:0}
+  .cback svg{width:24px;height:24px;fill:var(--tx)}
+  @media (hover:hover){ .cback:hover{background:var(--hov-bg)} }
+  .cbody{display:flex;flex-direction:column;gap:8px}
+  .csec{display:flex;flex-direction:column;gap:6px;padding:0 4px}
+  .csec .kgrp{margin:10px 0 2px}
+  .csec label.sw{display:flex;align-items:center;gap:10px;padding:8px 6px;border-radius:10px;color:var(--tx);font-size:15px;cursor:pointer}
+  .csec label.sw small{display:block;color:var(--mu);font-size:12px}
+  .csec .speeds small{display:block;color:var(--mu);font-size:12px;margin-bottom:4px}
+  .csec .speeds input{width:100%;font-size:16px;padding:9px 10px;border:1px solid var(--bd);border-radius:9px;background:var(--bg);color:var(--tx)}
+  .csec .credits{margin-top:14px}
+  #compte .cbody #savedList{display:flex;flex-direction:column;gap:6px}
+  /* PC : la page s'ouvre à côté du menu */
+  body.cwide #panel{width:782px !important}
+  body.cwide #compte{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:minmax(0,1fr);overflow:hidden;padding:0}
+  body.cwide #compte > .cmain, body.cwide #compte > .csub{overflow-y:auto;min-height:0;padding:8px 6px 12px}
+  body.cwide #compte > .csub{border-left:1px solid var(--bd);padding-left:12px}
+  body.cwide .chd{top:-8px}
+  /* Mes sorties */
+  .rncard{padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+  .rnh .sd{flex:none;width:38px;height:32px;padding-top:4px;border-radius:10px;background:var(--sel-bg);color:var(--c);font:700 14px/1.05 system-ui,sans-serif;text-align:center}
+  .rnh .sd i{display:block;font-style:normal;font-size:10px;font-weight:600;color:var(--mu)}
+  .rnh{display:flex;align-items:center;gap:10px}
+  .rnh > div{flex:1;min-width:0}
+  .rnh b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rnh small{color:var(--mu);font-size:12px}
+  .rnst{color:#f59e0b;font-size:15px;letter-spacing:1px;flex:none}
+  .rnact{display:flex;gap:6px}
+  .rnact .sgDet{flex:1 1 0;display:flex;align-items:center;justify-content:center;gap:6px}
+  .rnact .del{flex:0 0 auto}
+  .shb svg{width:16px;height:16px;fill:currentColor;flex:none}
+  .sm .shb{padding:6px 9px;margin-left:6px;display:inline-flex;align-items:center}
+  .rnx{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--n3);padding-top:8px}
+  .rnx textarea, #rateNote{width:100%;font:15px system-ui,sans-serif;padding:8px 10px;border:1px solid var(--bd);border-radius:9px;background:var(--bg);color:var(--tx);resize:vertical}
+  .stars{display:flex;gap:4px}
+  .stars button{border:none;background:none;font-size:26px;line-height:1;color:var(--bd);cursor:pointer;padding:2px;transition:transform .12s, color .12s}
+  .stars.big button{font-size:36px}
+  .stars button.on{color:#f59e0b}
+  @media (hover:hover){ .stars button:hover{transform:scale(1.15)} }
+  .rsum{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:4px 0 6px}
+  .rsum p{grid-column:1/-1;margin:0;font-weight:600}
+  .rsum span small{display:block;color:var(--mu);font-size:12px;margin:0}
+  .rsum span b{font-size:17px}
   .crow{display:flex;align-items:center;gap:12px;width:100%;border:none;background:none;padding:11px 2px;border-bottom:1px solid var(--n3);font:inherit;color:inherit;text-align:left;cursor:pointer;border-radius:8px;transition:background .15s}
   .crow:last-child{border-bottom:none}
   .crow > span{font-size:20px;width:26px;text-align:center}
@@ -1180,22 +1228,23 @@
 
 </div>
 
-<div id="cfg" class="modal hidden">
-  <div class="card">
-    <h2>Réglages</h2>
-    <label>Thème de l'appli</label>
+<div id="cfg" class="hidden" hidden>
+  <section class="csec" data-p="theme">
+    <p class="kgrp">Couleur</p>
     <div id="themes"></div>
+    <p class="kgrp">Apparence</p>
     <div id="themeMode" class="tmode"><button data-m="clair">☀️ Clair</button><button data-m="sombre">🌙 Sombre</button><button data-m="auto">🌓 Auto</button></div>
-    <label>Style de carte</label>
+  </section>
+  <section class="csec" data-p="reglages">
+    <p class="kgrp">Style de carte</p>
     <div id="styles"></div>
-    <label>Photos sur la carte</label>
+    <p class="kgrp">Photos sur la carte</p>
     <label class="sw"><input type="checkbox" id="optPhotos"><span>Photos autour du parcours<small>Wikimedia Commons et Panoramax</small></span></label>
     <label class="sw"><input type="checkbox" id="optMine"><span>Mes photos et vidéos<small>ajoutées avec le bouton 📷+</small></span></label>
-    <label>Liste des parcours</label>
+    <p class="kgrp">Liste des parcours</p>
     <label class="sw"><input type="checkbox" id="optNoConfirm"><span>Effacer sans confirmation<small>le bouton 🗑 efface la liste dès le 1er appui</small></span></label>
-    <label>Profils de test (démonstration du Coach)</label>
-    <div id="demoList"></div>
-    <label>Vitesses moyennes (km/h) — servent à convertir une durée en distance</label>
+    <p class="kgrp">Vitesses moyennes (km/h)</p>
+    <p class="ccsub">Servent à convertir une durée en distance.</p>
     <div class="speeds">
       <div><small>Marche</small><input id="spMarche" type="number" inputmode="decimal" step="0.5"></div>
       <div><small>Course</small><input id="spCourse" type="number" inputmode="decimal" step="0.5"></div>
@@ -1205,10 +1254,22 @@
       (<a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener">signaler une erreur</a>) · itinéraires FOSSGIS / OSRM ·
       altitudes <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (Copernicus DEM) · lieux et photos Wikipédia, Wikimedia Commons, Panoramax ·
       recherche Photon · fonds Esri, OpenTopoMap, CyclOSM · affichage Leaflet.</div>
-    <div class="btns">
-      <button id="cfgCancel">Annuler</button>
-      <button id="cfgSave" class="primary">Enregistrer</button>
-    </div>
+  </section>
+  <section class="csec" data-p="demo">
+    <p class="ccsub">Des profils fictifs pour essayer le Coach avec 4 semaines de séances déjà faites. Ton vrai profil est mis de côté et revient quand tu quittes le test.</p>
+    <div id="demoList"></div>
+  </section>
+</div>
+
+<div id="rateModal" class="modal hidden">
+  <div class="card">
+    <h2>Sortie terminée 🎉</h2>
+    <div id="rateSum" class="rsum"></div>
+    <label>Ta note pour ce parcours</label>
+    <div id="rateStars" class="stars big"></div>
+    <label>Ton avis (option)</label>
+    <textarea id="rateNote" rows="3" placeholder="Joli tracé, beaucoup de feux rouges, à refaire au printemps…"></textarea>
+    <div class="btns"><button id="rateLater">Plus tard</button><button id="rateSave" class="primary">Enregistrer</button></div>
   </div>
 </div>
 
@@ -1218,6 +1279,7 @@ const store = {
   get(k, d){ try{ const v = localStorage.getItem('prc_'+k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } },
   set(k, v){ try{ localStorage.setItem('prc_'+k, JSON.stringify(v)); }catch(e){} }
 };
+let runs = store.get('runs', []), runCat = 'tout', runOpen = null, cPage = null;   // Mes sorties · page ouverte dans Compte
 
 /* ---------- Thèmes : couleur principale + mode clair / sombre / automatique ---------- */
 const THEMES = {
@@ -1552,25 +1614,22 @@ hint();
 function msg(t, err){ $('info').innerHTML = err ? '<span class="err">' + t + '</span>' : t; }
 
 /* ---------- Réglages ---------- */
-function openCfg(){
+function fillSpeeds(){
   $('spMarche').value = cfg.speeds.marche;
   $('spCourse').value = cfg.speeds.course;
   $('spVelo').value = cfg.speeds.velo;
-  $('cfg').classList.remove('hidden');
 }
+function openCfg(){ openCompte('reglages'); }
 $('btnCfg').onclick = openCfg;
-$('cfgCancel').onclick = () => $('cfg').classList.add('hidden');
-$('cfgSave').onclick = () => {
-  cfg.speeds = {
-    marche: parseFloat($('spMarche').value) || 5,
-    course: parseFloat($('spCourse').value) || 10,
-    velo:   parseFloat($('spVelo').value)   || 18
-  };
-  store.set('cfg', cfg);
-  $('cfg').classList.add('hidden');
-  hint();
-  msg('Réglages enregistrés.');
-};
+// Chaque changement est pris en compte et sauvegardé tout de suite
+[['spMarche', 'marche', 5], ['spCourse', 'course', 10], ['spVelo', 'velo', 18]].forEach(([id, k, def]) => {
+  $(id).addEventListener('change', () => {
+    const v = parseFloat(String($(id).value).replace(',', '.'));
+    cfg.speeds[k] = v > 0 && v < 80 ? v : def; $(id).value = cfg.speeds[k];
+    store.set('cfg', cfg); hint();
+  });
+});
+fillSpeeds();
 
 /* ---------- Calcul d'itinéraire (OSRM / FOSSGIS, sans compte) ---------- */
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -2143,7 +2202,7 @@ function showRecent(){
   hist.slice(0, big ? 40 : 4).forEach(e => box.appendChild(histRow(e, true)));
   box.hidden = false;
 }
-function openHist(){ histCat = 'tout'; renderHist(); $('histModal').classList.remove('hidden'); }
+function openHist(){ histCat = 'tout'; openCompte('hist'); }
 function renderHist(){
   const box = $('histBody'); box.innerHTML = '';
   const bar = mk('div', 'bzc hcat');
@@ -2950,7 +3009,7 @@ $('btnClear').onclick = () => {   // 1er appui : confirmation, 2e appui : efface
 };
 
 /* ---------- Mode navigation : on suit le parcours en direct ---------- */
-let nav = null, doneLine = null, wakeLock = null;
+let nav = null, doneLine = null, wakeLock = null, navMeta = null;
 async function keepAwake(){ try{ if('wakeLock' in navigator && nav) wakeLock = await navigator.wakeLock.request('screen'); }catch(e){} }
 document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible' && nav) keepAwake(); });
 
@@ -2977,6 +3036,7 @@ function startNav(){
 function stopNav(){
   let ride = null;
   if(nav){
+    navMeta = { c:nav.c, frac:nav.total ? nav.arc[nav.idx] / nav.total : 0, lieu:!!((nav.c.places && nav.c.places.length) || (typeof plan !== 'undefined' && plan && ((plan.steps || []).some(x => x.ll) || plan.end))) };
     const line = nav.line.slice(0, nav.idx + 1), step = Math.max(1, Math.ceil(line.length / 80));
     let name = null; try{ name = titleOf(nav.c, candidates.indexOf(nav.c)); }catch(e){}
     ride = { dist:nav.arc[nav.idx] / 1000, duree:Math.round((Date.now() - nav.t0) / 60000), act:st.mode, parcours:name,
@@ -3004,7 +3064,11 @@ function stopNav(){
   $('navAlert').hidden = true;
   if(sheetReady && !WIDE.matches) setSheet('peek');
   fitRoute();
-  if(coach && ride && ride.dist > 0.3 && ride.duree >= 3) openLog(Object.assign(ride, { fromNav:true }));   // suivi du Coach
+  if(!ride || !(ride.dist > 0.05 || ride.duree >= 1)) return;
+  const run = runFromRide(ride);
+  rateRun(run, () => {
+    if(coach && ride.dist > 0.3 && ride.duree >= 3) openLog(Object.assign(ride, { fromNav:true, runId:run.id }));   // suivi du Coach
+  });
 }
 function navBar(main){
   const el = Math.round((Date.now() - nav.t0) / 60000), done = nav.arc[nav.idx], left = Math.max(0, nav.total - done);
@@ -3803,6 +3867,8 @@ function setTab(t){
   $('sugg').hidden = t !== 'sugg';
   $('coach').hidden = t !== 'coach';
   $('compte').hidden = t !== 'compte';
+  if(t !== 'compte') cPage = null;
+  syncCWide();
   if(t === 'compte') renderCompte();
   if(t && wasNone && sheetReady && !WIDE.matches) sheetState = t === 'coach' || t === 'compte' ? 'half' : 'peek';
   if(typeof renderSessBar === 'function') renderSessBar();
@@ -3821,8 +3887,8 @@ function shiftMap(dx){
   map.panBy([-dx / 2, 0], { animate:true, duration:.32, easeLinearity:.4 });
 }
 const curCard = () => !$('social').hidden ? $('social') : tab ? $('panel') : null;
-function morphTab(t, after){
-  const go = () => { setTab(t); if(after) after(); };
+function morphTab(t, after){ return morphBlock(() => { setTab(t); if(after) after(); }); }
+function morphBlock(go){
   if(!WIDE.matches || matchMedia('(prefers-reduced-motion: reduce)').matches) return go();
   // Le bloc entier (colonne d'onglets + carte) : un seul fond animé, la colonne devient transparente le temps de l'effet
   const block = () => { syncCardH(); const r = $('rail').getBoundingClientRect(), c = curCard(), cr = c && c.getBoundingClientRect();
@@ -4834,6 +4900,9 @@ function logRow(l){
   const open = openLogId === l.date;
   const b = mk('button', 'sgDet' + (open ? ' on' : '')); b.textContent = open ? 'Masquer' : 'Voir'; b.title = open ? 'Masquer le parcours et les détails' : 'Voir le parcours et les détails';
   b.onclick = () => toggleLog(l); r.querySelector('.sm').appendChild(b);
+  const pb = mk('button', 'sgDet shb', SHARE_SVG); pb.title = 'Publier dans la Communauté'; pb.setAttribute('aria-label', pb.title);
+  pb.onclick = () => soPublish(l.runId && runs.some(x => x.id === l.runId) ? 'r:' + l.runId : 'l:' + l.date);
+  r.querySelector('.sm').appendChild(pb);
   const w = mk('div', 'lgw' + (open ? ' open' : ''));
   w.appendChild(r);
   if(open) w.appendChild(logDetail(l));
@@ -5392,6 +5461,7 @@ $('logSave').onclick = () => {
     if(lz.parcours) e.parcours = lz.parcours;
     if(lz.trace) e.trace = lz.trace;
     if(lz.sp) e.sp = lz.sp;
+    if(lz.runId){ e.runId = lz.runId; const r = runs.find(x => x.id === lz.runId); if(r){ if(lz.fc) r.fc = lz.fc; if(lz.rpe) r.rpe = lz.rpe; r.type = e.type; saveRuns(); } }
     (coach.log = coach.log || []).push(e);
     if(lz.fromNav) pendingSess = null, renderSessBar();
   }
@@ -5519,7 +5589,7 @@ function sheetH(){
   const vh = window.innerHeight, first = $('list').querySelector('.it');
   // Replié : la ligne de résumé + la ligne d'info + le parcours sélectionné
   const top = $('tabs').getBoundingClientRect().bottom - $('panel').getBoundingClientRect().top;
-  const cur = tab === 'parcours' ? first : tab === 'coach' ? $('coach').querySelector('.cur') : tab === 'compte' ? $('compte').querySelector('.cpro') : ($('sugg').querySelector('.cur') || $('sugg').querySelector('.sg-msg'));
+  const cur = tab === 'parcours' ? first : tab === 'coach' ? $('coach').querySelector('.cur') : tab === 'compte' ? ($('compte').querySelector('.csub:not([hidden]) .chd') || $('compte').querySelector('.cpro')) : ($('sugg').querySelector('.cur') || $('sugg').querySelector('.sg-msg'));
   const gap = cur ? clamp(cur.getBoundingClientRect().top - $('tabs').getBoundingClientRect().bottom, 6, 24) : 0;
   const peek = Math.min(Math.round(vh * 0.6), Math.round(top + (cur ? gap + cur.offsetHeight + 12 : 10)));
   // Mi-hauteur : jamais plus haut que le contenu réel (réglages refermés, liste vide…) ; on peut toujours agrandir à la main
@@ -5689,29 +5759,182 @@ syncGo2();
 /* =====================================================================
    COMPTE — profil (connexion à venir), enregistrements, historique, réglages
    ===================================================================== */
-function renderCompte(){
-  const box = $('compte');
-  if(!box.dataset.built){
-    box.dataset.built = '1';
-    box.innerHTML =
-      '<div class="cc cpro"><span class="soav" style="background:var(--c);width:52px;height:52px;font-size:22px">👤</span><div><b>Invité</b><small>Tes données restent sur ce téléphone.</small></div><button class="sgDet" disabled title="Arrive avec la version publique">Se connecter</button></div>' +
-      '<div class="cc csv"><div class="cch"><b class="cct">⭐ Enregistrements</b><span class="cchr"><button class="sgDet" id="svExp2">Exporter</button><label class="sgDet btnlike">Importer<input id="svImp2" type="file" accept=".json,application/json" hidden></label></span></div><div class="svhost"></div></div>' +
-      '<div class="cc cmenu"></div>';
-    box.querySelector('.svhost').appendChild($('savedList'));   // la liste des enregistrements vit maintenant ici
-    $('svExp2').onclick = () => $('svExport').click();
-    $('svImp2').onchange = e => { const f = e.target.files[0]; if(!f) return; const dt = new DataTransfer(); dt.items.add(f); $('svImport').files = dt.files; $('svImport').dispatchEvent(new Event('change')); e.target.value = ''; };
-  }
-  const menu = box.querySelector('.cmenu'); menu.innerHTML = '';
-  [['🕘', 'Historique des recherches', hist.length ? hist.length + '' : '', () => openHist()],
-   ['⚙️', 'Réglages', 'vitesses, carte, thème', () => openCfg()],
-   ['🎨', 'Thème', (THEMES[theme.t] || THEMES.emeraude).lbl + ' · ' + { clair:'clair', sombre:'sombre', auto:'auto' }[theme.m], () => { openCfg(); setTimeout(() => $('themes').scrollIntoView({ block:'center' }), 80); }],
-   ['🧪', 'Profils de test du Coach', '', () => { openCfg(); setTimeout(() => $('demoList').scrollIntoView({ block:'center' }), 80); }]
-  ].forEach(([i, t, s, f]) => {
-    const r = mk('button', 'crow', '<span>' + i + '</span><div><b></b><small></small></div><em>›</em>');
-    r.querySelector('b').textContent = t; r.querySelector('small').textContent = s; r.onclick = f;
+/* --- Compte : un menu, et chaque bouton ouvre sa propre page (à côté sur PC s'il y a la place) --- */
+const CPAGES = {
+  runs:{ ico:'🏁', t:'Mes sorties' },
+  saved:{ ico:'⭐', t:'Enregistrements' },
+  hist:{ ico:'🕘', t:'Historique des recherches' },
+  reglages:{ ico:'⚙️', t:'Réglages' },
+  theme:{ ico:'🎨', t:'Thème' },
+  demo:{ ico:'🧪', t:'Profils de test du Coach' }
+};
+const cRoomy = () => WIDE.matches && window.innerWidth - $('rail').getBoundingClientRect().right >= 782 + 280;
+function syncCWide(){ document.body.classList.toggle('cwide', WIDE.matches && tab === 'compte' && !!cPage && cRoomy()); }
+function openCompte(p){
+  const go = () => { cPage = p; if(tab !== 'compte') setTab('compte'); else { syncCWide(); renderCompte(); } $('compte').querySelector('.csub').scrollTop = 0; if(!document.body.classList.contains('cwide')) $('compte').scrollTop = 0; };
+  if(WIDE.matches && typeof morphBlock === 'function') morphBlock(go); else go();
+  if(sheetReady && !WIDE.matches) setSheet(sheetState === 'peek' ? 'half' : sheetState);
+}
+function closeCompteSub(){
+  const go = () => { cPage = null; syncCWide(); renderCompte(); };
+  if(WIDE.matches && typeof morphBlock === 'function') morphBlock(go); else go();
+  if(sheetReady && !WIDE.matches) setSheet(sheetState);
+}
+window.addEventListener('resize', () => { if(tab === 'compte'){ syncCWide(); renderCompte(); } });
+function cParkAll(){   // remet les éléments réutilisés à l'abri avant de vider la page
+  const P = $('cfg');
+  ['savedList', 'histBody', 'histClear'].forEach(id => P.appendChild($(id)));
+  P.querySelectorAll(':scope > section').length; document.querySelectorAll('#compte section.csec').forEach(x => P.appendChild(x));
+}
+function renderCMenu(){
+  const menu = $('compte').querySelector('.cmenu'); if(!menu) return;
+  menu.innerHTML = '';
+  const dn = coach && coach.demo ? coach.demo.split(' —')[0] : 'aucun';
+  const subs = {
+    runs:runs.length ? runs.length + ' sortie' + (runs.length > 1 ? 's' : '') + ' · balades, entraînements, lieux' : 'balades, entraînements, lieux',
+    saved:saved.length ? saved.length + ' enregistrement' + (saved.length > 1 ? 's' : '') : 'parcours, entraînements, lieux',
+    hist:hist.length ? hist.length + ' recherche' + (hist.length > 1 ? 's' : '') : 'parcours générés, suggestions',
+    reglages:'carte, photos, vitesses',
+    theme:(THEMES[theme.t] || THEMES.emeraude).lbl + ' · ' + { clair:'clair', sombre:'sombre', auto:'auto' }[theme.m],
+    demo:'profil actif : ' + dn
+  };
+  Object.entries(CPAGES).forEach(([k, p]) => {
+    const r = mk('button', 'crow' + (cPage === k ? ' on' : ''), '<span>' + p.ico + '</span><div><b></b><small></small></div><em>›</em>');
+    r.querySelector('b').textContent = p.t; r.querySelector('small').textContent = subs[k];
+    r.onclick = () => cPage === k && document.body.classList.contains('cwide') ? closeCompteSub() : openCompte(k);
     menu.appendChild(r);
   });
-  renderSaved();
+}
+function renderCompte(){
+  const box = $('compte');
+  if(box.dataset.built !== '2'){
+    box.dataset.built = '2';
+    box.innerHTML =
+      '<div class="cmain"><div class="cc cpro"><span class="soav" style="background:var(--c);width:52px;height:52px;font-size:22px">👤</span><div><b>Invité</b><small>Tes données restent sur ce téléphone.</small></div><button class="sgDet" disabled title="Arrive avec la version publique">Se connecter</button></div>' +
+      '<div class="cc cmenu"></div></div>' +
+      '<div class="csub" hidden><div class="chd"><button class="cback" type="button" title="Retour" aria-label="Retour"><svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg></button><b></b><span class="chdr"></span></div><div class="cbody"></div></div>';
+    box.querySelector('.cback').onclick = closeCompteSub;
+    box.querySelector('.csub').addEventListener('click', () => setTimeout(renderCMenu, 0));
+  }
+  syncCWide();
+  const wide2 = document.body.classList.contains('cwide');
+  box.querySelector('.cmain').hidden = !!cPage && !wide2;
+  box.querySelector('.csub').hidden = !cPage;
+  renderCMenu();
+  if(cPage) renderCPage();
+}
+function renderCPage(){
+  const sub = $('compte').querySelector('.csub'), body = sub.querySelector('.cbody'), hr = sub.querySelector('.chdr');
+  sub.querySelector('.chd b').textContent = CPAGES[cPage].ico + ' ' + CPAGES[cPage].t;
+  cParkAll(); body.innerHTML = ''; hr.innerHTML = '';
+  if(cPage === 'runs'){ const w = mk('div', 'rnlist'); body.appendChild(w); renderRuns(w); }
+  else if(cPage === 'saved'){
+    hr.innerHTML = '<button class="sgDet" type="button">Exporter</button><label class="sgDet btnlike">Importer<input type="file" accept=".json,application/json" hidden></label>';
+    hr.querySelector('button').onclick = () => $('svExport').click();
+    hr.querySelector('input').onchange = e => { const f = e.target.files[0]; if(!f) return; const dt = new DataTransfer(); dt.items.add(f); $('svImport').files = dt.files; $('svImport').dispatchEvent(new Event('change')); e.target.value = ''; };
+    body.appendChild($('savedList')); renderSaved();
+  }
+  else if(cPage === 'hist'){ hr.appendChild($('histClear')); body.appendChild($('histBody')); histCat = histCat || 'tout'; renderHist(); }
+  else {
+    if(cPage === 'reglages') fillSpeeds();
+    if(cPage === 'demo' && typeof renderDemos === 'function') renderDemos();
+    body.appendChild($('cfg').querySelector('section[data-p="' + cPage + '"]'));
+  }
+}
+
+/* --- Mes sorties : tout ce qui a été fait avec ▶ Démarrer (balades, entraînements, lieux suggérés) --- */
+const saveRuns = () => store.set('runs', runs);
+const RUN_CAT = { parcours:'🗺️ Parcours', entrainement:'💪 Entraînement', lieu:'📍 Lieux' };
+function runFromRide(ride){
+  const m = navMeta || {}, c = m.c || {};
+  const r = { id:'r' + Date.now().toString(36), date:new Date().toISOString(), act:ride.act, type:ride.type,
+    cat:ride.type ? 'entrainement' : m.lieu ? 'lieu' : 'parcours', kind:st.type,
+    name:ride.parcours || (ride.type ? TYPE_LBL[ride.type] : 'Sortie'), dist:Math.round(ride.dist * 100) / 100, duree:ride.duree,
+    dplus:c.up ? Math.round(c.up * (m.frac || 1)) : null, trace:ride.trace, sp:ride.sp || null, rating:null, note:'' };
+  runs.unshift(r); saveRuns();
+  return r;
+}
+function starsHtml(n){ return n ? '★'.repeat(n) + '☆'.repeat(5 - n) : ''; }
+function starPicker(box, val, cb){
+  box.innerHTML = '';
+  for(let k = 1; k <= 5; k++){
+    const b = mk('button', k <= val ? 'on' : '', '★'); b.type = 'button'; b.title = k + ' / 5';
+    b.onclick = () => { val = val === k ? 0 : k; box.querySelectorAll('button').forEach((x, i) => x.classList.toggle('on', i < val)); cb(val); };
+    box.appendChild(b);
+  }
+}
+let rateCb = null, rateR = null;
+function rateRun(r, then){
+  rateR = r; rateCb = then; let v = r.rating || 0;
+  const sp = speedOf(r);
+  $('rateSum').innerHTML = '';
+  [['Distance', r1(r.dist) + ' km'], ['Temps', hm(r.duree)], [r.act === 'course' ? 'Allure' : 'Vitesse', sp ? (r.act === 'course' ? allure(sp) : r1(sp) + ' km/h') : '—']].forEach(([k, x]) => { const d = mk('span', '', '<small></small><b></b>'); d.children[0].textContent = k; d.children[1].textContent = x; $('rateSum').appendChild(d); });
+  $('rateSum').insertAdjacentHTML('afterbegin', '<p></p>'); $('rateSum').firstChild.textContent = ICO[r.act] + ' ' + r.name;
+  starPicker($('rateStars'), v, n => { v = n; r.rating = n || null; });
+  $('rateNote').value = r.note || '';
+  $('rateModal').classList.remove('hidden');
+}
+function closeRate(save){
+  if(rateR){ if(save) rateR.note = $('rateNote').value.trim(); else rateR.rating = rateR.rating || null; saveRuns(); }
+  $('rateModal').classList.add('hidden');
+  msg(save ? '✓ Sortie enregistrée dans « Mes sorties » (Compte).' : 'Sortie gardée dans « Mes sorties » : tu pourras la noter plus tard.');
+  const cb = rateCb; rateCb = rateR = null; if(tab === 'compte') renderCompte();
+  if(cb) cb();
+}
+$('rateSave').onclick = () => closeRate(true);
+$('rateLater').onclick = () => { if(rateR) rateR.rating = null; closeRate(false); };
+function renderRuns(box){
+  box.innerHTML = '';
+  const bar = mk('div', 'bzc svcat');
+  [['tout', 'Tout'], ['parcours', '🗺️ Parcours'], ['entrainement', '💪 Entraînements'], ['lieu', '📍 Lieux']].forEach(([k, t]) => {
+    const n = k === 'tout' ? runs.length : runs.filter(r => r.cat === k).length;
+    const b = mk('button', k === runCat ? 'on' : ''); b.type = 'button'; b.textContent = t + (n ? ' ' + n : '');
+    b.onclick = () => { runCat = k; renderRuns(box); };
+    bar.appendChild(b);
+  });
+  box.appendChild(bar);
+  const list = runs.filter(r => runCat === 'tout' || r.cat === runCat);
+  if(!list.length){ box.appendChild(mk('p', 'empty', ({ tout:'Aucune sortie pour l\'instant.<br>Lance un parcours avec ▶ Démarrer : à l\'arrivée, il s\'enregistre ici avec tes indicateurs et ta note.', parcours:'Aucun parcours réalisé.', entrainement:'Aucun entraînement réalisé.<br>Depuis le Coach, choisis une séance puis lance son parcours.', lieu:'Aucune balade vers des lieux suggérés.' })[runCat])); return; }
+  list.forEach(r => box.appendChild(runCard(r, box)));
+}
+function runCard(r, box){
+  const open = runOpen === r.id, sp = speedOf(r), d = new Date(r.date);
+  const w = mk('div', 'cc rncard' + (open ? ' open' : ''), '<div class="rnh"><span class="sd">' + d.getDate() + '<i>' + d.toLocaleDateString('fr-FR', { month:'short' }).replace('.', '') + '</i></span><div><b></b><small></small></div><span class="rnst"></span></div><div class="sostats n3"></div><div class="rnact"></div>');
+  w.querySelector('b').textContent = ICO[r.act] + ' ' + r.name;
+  w.querySelector('small').textContent = (RUN_CAT[r.cat] || '') + ' · ' + d.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
+  w.querySelector('.rnst').textContent = starsHtml(r.rating);
+  [['Distance', r1(r.dist) + ' km'], ['Temps', hm(r.duree)], [r.act === 'course' ? 'Allure' : 'Vitesse', sp ? (r.act === 'course' ? allure(sp) : r1(sp) + ' km/h') : '—']].forEach(([k, x]) => { const s_ = mk('span', '', '<small></small><b></b>'); s_.children[0].textContent = k; s_.children[1].textContent = x; w.querySelector('.sostats').appendChild(s_); });
+  const A = w.querySelector('.rnact');
+  const det = mk('button', 'sgDet' + (open ? ' on' : ''), open ? 'Masquer' : 'Détails');
+  det.onclick = () => { if(open){ runOpen = null; hideTrace(); } else { runOpen = r.id; if(r.trace && r.trace.length > 1) showTrace(Object.assign({}, r, { parcours:r.name, date:r.date })); } renderRuns(box); };
+  const pub = mk('button', 'sgDet shb', SHARE_SVG + '<span>Publier</span>'); pub.title = 'Publier dans la Communauté'; pub.onclick = () => soPublish('r:' + r.id);
+  const del = mk('button', 'sgDet del', '🗑'); del.title = 'Supprimer';
+  del.onclick = () => {
+    if(!del.classList.contains('sure')){ del.classList.add('sure'); del.textContent = 'Supprimer ?'; setTimeout(() => { del.classList.remove('sure'); del.textContent = '🗑'; }, 3000); return; }
+    runs = runs.filter(x => x.id !== r.id); saveRuns(); if(runOpen === r.id){ runOpen = null; hideTrace(); } renderRuns(box); renderCMenu();
+  };
+  A.append(det, pub, del);
+  if(open){
+    const x = mk('div', 'rnx');
+    x.appendChild(mk('p', 'kgrp', 'Ta note'));
+    const stp = mk('div', 'stars'); x.appendChild(stp);
+    starPicker(stp, r.rating || 0, n => { r.rating = n || null; saveRuns(); w.querySelector('.rnst').textContent = starsHtml(r.rating); });
+    const ta = mk('textarea'); ta.rows = 2; ta.placeholder = 'Ton avis sur ce parcours…'; ta.value = r.note || ''; ta.onchange = () => { r.note = ta.value.trim(); saveRuns(); }; x.appendChild(ta);
+    x.appendChild(mk('p', 'kgrp', 'Indicateurs enregistrés'));
+    const g = mk('div', 'lgg');
+    soIndOf({ log:r }).filter(i => i.k !== 'note').forEach(i => { const c = mk('div', '', '<small></small><b></b>'); c.children[0].textContent = i.lbl; c.children[1].textContent = i.val; g.appendChild(c); });
+    x.appendChild(g);
+    const S = streamOf(r); if(S) x.insertAdjacentHTML('beforeend', streamChart(S));
+    w.appendChild(x);
+  }
+  return w;
+}
+// Ouvre la Communauté sur « Nouvelle publication » avec l'activité déjà choisie
+function soPublish(key){
+  if(WIDE.matches && typeof morphTab === 'function') morphTab('social'); else setTab('social');
+  soFind = null; soConv = null; soFilter = null; soView = 'fil';
+  soNewPost(key);
+  $('soBody').scrollTop = 0;
 }
 
 /* =====================================================================
@@ -5857,6 +6080,7 @@ function soIndOf(src){
     add('rpe', 'Effort', l.rpe ? l.rpe + '/10' : null);
     add('kcal', 'Calories', coach ? kcalOf(coach, l.act, l.type || 'ef', l.duree) + ' kcal' : null);
     add('type', 'Séance', TYPE_LBL[l.type] || null);
+    add('note', 'Note', l.rating ? starsHtml(l.rating) : null);
   } else {
     const c = src.circ, km = c.distance / 1000, v = cfg.speeds[c.mode] || 5;
     add('dist', 'Distance', r1(km) + ' km');
@@ -5866,9 +6090,12 @@ function soIndOf(src){
   }
   return out;
 }
-function soNewPost(){
+function soNewPost(pre){
   const routes = saved.filter(s => catOf(s) !== 'lieu');
-  const logs = coach ? logsOf(coach).slice().reverse().slice(0, 60) : [];
+  const runIds = new Set(runs.map(r => r.id));
+  const logs = runs.map(r => Object.assign({ _k:'r:' + r.id, parcours:r.name }, r))
+    .concat(coach ? logsOf(coach).filter(l => !(l.runId && runIds.has(l.runId))).map(l => Object.assign({ _k:'l:' + l.date }, l)) : [])
+    .sort((a, b) => tOf(b.date) - tOf(a.date)).slice(0, 80);
   const mode = 'log'; let sel = social.indSel || ['dist', 'temps', 'allure', 'dplus'];
   const box = $('soBody'); box.innerHTML = '';
   const f = mk('div', 'cc sonew', '<b class="cct">Nouvelle publication</b><p class="ccsub">Choisis une de tes activités réalisées.</p><select></select><p class="empty" hidden></p><p class="kgrp">Indicateurs affichés</p><div class="bzc soind"></div><textarea rows="4" placeholder="Raconte ta sortie, donne tes conseils…"></textarea><div class="bzrow"><button class="sgDet">Annuler</button><button class="primary">Publier</button></div>');
@@ -5891,13 +6118,14 @@ function soNewPost(){
     const L = mode === 'log' ? logs : routes;
     if(!L.length){
       S_.hidden = true; E.hidden = false; pub.disabled = true;
-      E.textContent = mode === 'log' ? (coach ? 'Aucune activité enregistrée pour l\'instant : termine une sortie guidée ou ajoute une séance dans Coach.' : 'Fais ton bilan dans l\'onglet Coach pour enregistrer tes activités.') : 'Enregistre d\'abord un parcours (☆) pour pouvoir le publier.';
+      E.textContent = mode === 'log' ? 'Aucune activité réalisée pour l\'instant : lance un parcours avec ▶ Démarrer, ou ajoute une séance dans Coach.' : 'Enregistre d\'abord un parcours (☆) pour pouvoir le publier.';
     }
     if(mode === 'log') logs.forEach((l, i) => { const o = mk('option'); o.value = i; o.textContent = fmtD(l.date) + ' · ' + (MODE_ICO[l.act] || '') + ' ' + (l.parcours || TYPE_LBL[l.type] || 'Séance') + ' · ' + [l.dist ? r1(l.dist) + ' km' : '', hm(l.duree)].filter(Boolean).join(' · '); S_.appendChild(o); });
     else routes.forEach(x => { const o = mk('option'); o.value = x.id; o.textContent = (MODE_ICO[x.mode] || '') + ' ' + x.name + ' · ' + d1(x.distance / 1000) + ' km'; S_.appendChild(o); });
     drawInd();
   };
   S_.onchange = drawInd;
+  setTimeout(() => { if(pre){ const i = logs.findIndex(l => l._k === pre); if(i >= 0){ S_.value = i; drawInd(); } } });
   f.querySelector('.sgDet').onclick = () => renderSocial();
   pub.onclick = () => {
     const src = cur(); if(!src) return;
@@ -5907,7 +6135,7 @@ function soNewPost(){
     let p;
     if(src.log){
       const l = src.log;
-      p = { act:l.act, km:l.dist || 0, min:l.duree, dplus:l.dplus || 0, done:l.date, txt:txt || (l.parcours || TYPE_LBL[l.type] || 'Ma séance'), pts:l.dist ? traceOf(l) : null, noMap:!l.dist };
+      p = { act:l.act, km:l.dist || 0, min:l.duree, dplus:l.dplus || 0, done:l.date, rating:l.rating || null, txt:txt || (l.parcours || TYPE_LBL[l.type] || 'Ma séance'), pts:l.dist ? traceOf(l) : null, noMap:!l.dist };
     } else {
       const c = src.circ, km = c.distance / 1000;
       p = { act:c.mode || st.mode, km, min:Math.round(km / (cfg.speeds[c.mode] || 5) * 60), dplus:c.up || 0, txt:txt || c.name, pts:c.coords.map(q => [q[1], q[0]]) };
